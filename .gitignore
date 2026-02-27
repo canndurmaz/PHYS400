@@ -1,0 +1,4 @@
+*.lammps
+*.code-workspace
+CLAUDE.md
+GEMINI.md
