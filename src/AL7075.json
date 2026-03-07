@@ -1,0 +1,12 @@
+{
+    "composition": {
+        "Al": 0.91,
+        "Mg": 0.028999999999999998,
+        "Zn": 0.061
+    },
+    "box_size_m": 5e-09,
+    "temperature": 300,
+    "total_steps": 1000,
+    "thermo_interval": 10,
+    "dump_interval": 50
+}

@@ -8,3 +8,4 @@ GEMINI.md
 /src/__pycache__
 /.vscode
 /phys
+/src/visualization

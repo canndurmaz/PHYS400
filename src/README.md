@@ -34,67 +34,51 @@ source ~/.bashrc
 
 ## Architecture
 
-### `element.py` — Element Class & Predefined Instances
+### `element.py` — Dynamic Potential Parsing
 
-Defines a reusable `Element` class with properties parsed from `library.meam`:
-- `symbol`, `lattice_type`, `coord_number`, `atomic_number`, `mass`, `lattice_constant`, `meam_index`
+Instead of hardcoding element properties, this module dynamically scans the `EAM/` directory for MEAM potential pairs (`library_*.meam` and `*.meam`).
 
-Provides 8 predefined instances for the FeMnNiTiCuCrCoAl MEAM potential:
+- **`parse_meam_library(path)`**: Extracts element symbols, lattice types, masses, and lattice constants directly from the MEAM library file.
+- **`scan_eam_dir(dir)`**: Identifies all available potentials (e.g., `AlMgZn`, `FeMnNiTiCuCrCoAl`) and their constituent elements.
+- **`ELEMENTS`**: A merged lookup dictionary containing all elements discovered across all available potentials.
 
-| Element | meam_index | Lattice | Mass (amu) | a (A) |
-|---------|-----------|---------|------------|-------|
-| Fe | 1 | bcc | 55.845 | 2.8285 |
-| Mn | 2 | hcp | 54.940 | 2.4708 |
-| Ni | 3 | fcc | 58.6934 | 3.5214 |
-| Ti | 4 | hcp | 47.880 | 2.9200 |
-| Cu | 5 | fcc | 63.546 | 3.6200 |
-| Cr | 6 | bcc | 51.960 | 2.8810 |
-| Co | 7 | hcp | 58.933 | 2.5000 |
-| Al | 8 | fcc | 26.9815 | 4.0500 |
+### `config.py` — Potential Auto-Detection & Shared Config
 
-Exports `ELEMENTS` (dict lookup by symbol) and `MEAM_ELEMENT_ORDER` (list in meam_index order).
+The single source of truth for simulation parameters. It handles loading configuration JSON files and deriving physical quantities.
 
-### `config.py` — Shared Configuration
+- **`find_potential(symbols)`**: Automatically selects the first MEAM potential in `EAM/` that contains all elements requested in the composition.
+- **`potential`**: Exports a dictionary containing the paths to the matching `library` and `params` files, along with the required element ordering.
+- **Derived Quantities**: Calculates `a_mean` (weighted lattice constant) and `n_repeats` based on the selected alloy.
 
-Single source of truth for all simulation parameters. Both `lmp.py` and `viz.py` import from here, so changing the composition in one place updates everything.
+### `gui.py` — Web Configuration Tool
 
-```python
-CONFIG = {
-    "composition": {"Cu": 0.5, "Al": 0.5},  # element fractions (must sum to 1.0)
-    "box_size_m": 5e-9,                       # box side length in meters
-    "temperature": 300.0,                      # K
-    "total_steps": 1000,                       # total simulation steps
-    "thermo_interval": 10,                     # thermo output interval
-    "dump_interval": 50,                       # trajectory dump interval
-}
-```
-
-Also computes derived quantities used by both scripts:
-- `selected` — list of `Element` objects sorted by `meam_index`
-- `a_mean` — weighted average lattice constant
-- `n_repeats` — number of lattice repeats per box side
-
-To change the alloy, edit `CONFIG["composition"]` (e.g., `{"Fe": 0.7, "Al": 0.3}`). Everything else updates automatically.
+Provides a modern, browser-based interface to configure simulations without editing JSON manually.
+- **Dynamic Elements**: Polls `element.py` to show all elements available in the `EAM/` directory.
+- **Interactive Preview**: Features a 3D animated cube that reflects the selected alloy composition.
+- **Validation**: Ensures percentages sum to 100% and generates valid `config.json` files.
 
 ### `lmp.py` — LAMMPS Simulation
 
-Imports config from `config.py` and auto-generates all LAMMPS commands:
-- **`pair_coeff`** — lists all 8 MEAM elements for correct index mapping, active elements at the end
-- **`mass` commands** — one per atom type
-- **`set type/fraction`** — assigns random compositions sequentially
+Constructs and executes the simulation using the dynamic potential info:
+- **`pair_coeff`**: Auto-generated using the specific library and parameter files detected by `config.py`.
+- **Composition Mapping**: Handles the mapping between LAMMPS atom types and MEAM library indices for any supported potential.
 
 ### `viz.py` — OVITO Visualization
 
-Imports config from `config.py` and renders a trajectory animation for any composition:
-- **Per-element colors** — assigned via an OVITO modifier using a predefined color map (Fe=brown, Cu=copper, Al=light blue, etc.)
-- **Smaller spheres** — radius 0.8 for clearer visualization
-- **Dynamic legend** — auto-generated labels showing each element symbol and its fraction
-- **Auto-named output** — filename derived from composition (e.g., `Cu50Al50_vibration.mp4`)
+Renders high-quality animations of the simulation results.
+- **Expanded Color Map**: Includes specialized colors for common elements (Fe, Cu, Al, Mg, Zn, etc.).
+- **Deterministic Fallback**: Uses a hash-based generator to assign unique, consistent colors to any unknown elements found in new MEAM potentials.
 
 ## Running
 
+### Using the GUI (Recommended)
 ```bash
-cd src && bash run.sh
+python3 src/gui.py
 ```
+This opens a web interface. Save your configuration, then run the simulation.
 
-This runs `lmp.py` (LAMMPS simulation) followed by `viz.py` (OVITO rendering).
+### Running a specific config
+```bash
+python3 src/lmp.py path/to/your_config.json
+```
+This runs the LAMMPS simulation followed by the OVITO rendering for the specified configuration.

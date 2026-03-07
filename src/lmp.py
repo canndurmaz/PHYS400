@@ -1,11 +1,8 @@
 from lammps import lammps
-from element import MEAM_ELEMENT_ORDER
-from config import CONFIG, composition, selected, a_mean, n_repeats
-
-EAM_DIR = "/home/kenobi/Workspaces/PHYS400/EAM"
+from config import CONFIG, composition, selected, a_mean, n_repeats, potential
 
 # pair_coeff strings
-library_elements = " ".join(MEAM_ELEMENT_ORDER)
+library_elements = " ".join(e.symbol for e in potential["elements"])
 active_elements = " ".join(e.symbol for e in selected)
 
 # ── LAMMPS simulation ─────────────────────────────────────────
@@ -23,17 +20,18 @@ L.command(f"create_box {len(selected)} box")
 L.command("create_atoms 1 box")
 
 # Assign compositions via set type/fraction (skip first element — it's already type 1)
-cumulative = composition[selected[0].symbol]
+# Each iteration converts a fraction of remaining type-1 atoms to the next type.
+remaining = 1.0
 for i, elem in enumerate(selected[1:], start=2):
-    frac = composition[elem.symbol] / cumulative
-    L.command(f"set group all type/fraction {i} {frac:.6f} 12345")
-    cumulative -= composition[elem.symbol]
+    frac = composition[elem.symbol] / remaining
+    L.command(f"set type 1 type/fraction {i} {frac:.6f} 12345")
+    remaining -= composition[elem.symbol]
 
 # 3. MEAM Potential
 L.command("pair_style meam")
 L.command(
-    f"pair_coeff * * {EAM_DIR}/library.meam {library_elements} "
-    f"{EAM_DIR}/FeMnNiTiCuCrCoAl.meam {active_elements}"
+    f"pair_coeff * * {potential['library']} {library_elements} "
+    f"{potential['params']} {active_elements}"
 )
 
 # Masses
@@ -64,3 +62,7 @@ for i in range(n_iters):
 
 print("\nFinal temperatures:")
 print(temp_data)
+
+# ── Visualization ─────────────────────────────────────────────
+from viz import render
+render(composition, selected)
