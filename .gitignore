@@ -9,3 +9,4 @@ GEMINI.md
 /.vscode
 /phys
 /src/visualization
+/src/configs/config.json

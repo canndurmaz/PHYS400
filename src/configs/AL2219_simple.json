@@ -1,0 +1,11 @@
+{
+    "composition": {
+        "Al": 0.937,
+        "Cu": 0.063
+    },
+    "box_size_m": 4e-09,
+    "temperature": 0.1,
+    "total_steps": 1000,
+    "thermo_interval": 10,
+    "dump_interval": 50
+}

@@ -1,0 +1,7 @@
+{
+    "Random_AlMg_1": {"Al": 0.90, "Mg": 0.10},
+    "Random_AlZn_1": {"Al": 0.92, "Zn": 0.08},
+    "Random_AlCu_1": {"Al": 0.94, "Cu": 0.06},
+    "Random_Ternary_1": {"Al": 0.85, "Mg": 0.08, "Zn": 0.07},
+    "Random_Complex_1": {"Al": 0.80, "Cu": 0.10, "Mg": 0.05, "Zn": 0.05}
+}

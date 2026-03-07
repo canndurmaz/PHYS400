@@ -1,94 +1,111 @@
 # PHYS400 — Computational Materials Science
 
-Molecular dynamics (MD) simulations of metallic alloys using **LAMMPS** and **Python**.
-The project spans an initial Cu prototype through a full elastic tensor calculation for Fe-V alloys.
-
-## Background
-
-**Molecular dynamics** evolves a system of atoms in time by solving Newton's equations of motion
-under an interatomic potential. Here we use **EAM/FS** (Embedded Atom Method / Finnis-Sinclair)
-potentials — a standard choice for transition metals that captures metallic bonding through an
-electron-density embedding function.
-
-All simulations run in **LAMMPS metal units**: lengths in Å, energies in eV, pressures in bar.
+Molecular dynamics (MD) simulations of metallic alloys using **LAMMPS**, coupled with **TensorFlow Machine Learning (ML)** for elastic property prediction.
 
 ---
 
-## Project Structure
+## 1. Installation & Environment Setup
+
+This project requires a specific version of LAMMPS and a Python 3.12 environment.
+
+### Python Environment
+1. Create and activate the virtual environment:
+   ```bash
+   python3 -m venv phys
+   source phys/bin/activate
+   ```
+2. Install dependencies:
+   ```bash
+   pip install lammps ovito numpy tensorflow matplotlib
+   ```
+
+### Custom LAMMPS Build
+The default LAMMPS build often limits MEAM potentials to 5 elements. To support the 8-element potentials used in this project, you must rebuild from source with `maxelt=8`.
+
+```bash
+# 1. Get the source
+git clone -b patch_7Feb2024 --depth 1 https://github.com/lammps/lammps.git
+cd lammps/src
+
+# 2. Increase maxelt from 5 to 8
+sed -i 's/maxelt = 5/maxelt = 8/' MEAM/meam.h
+
+# 3. Build as a shared library
+cd ../
+mkdir build && cd build
+cmake ../cmake -D BUILD_SHARED_LIBS=yes \
+               -D PKG_MEAM=yes \
+               -D CMAKE_INSTALL_PREFIX=$HOME/.local
+make -j$(nproc)
+make install
+
+# 4. Export the library path
+echo 'export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+source ~/.bashrc
+```
+
+---
+
+## 2. Project Structure
 
 ```
 PHYS400/
-├── src/          # Prototype: Cu FCC MD at 300 K
-├── EAM/          # Interatomic potential library (EAM/FS files)
-└── Elastic/      # Main module: Fe-V elastic tensor calculator
+├── EAM/              # Interatomic potential library (MEAM files)
+├── src/
+│   ├── configs/      # Input alloy compositions (.json)
+│   ├── MD/           # Molecular Dynamics module (LAMMPS)
+│   └── ML/           # Machine Learning module (TensorFlow)
+├── phys/             # Python Virtual Environment
+└── README.md         # This file
 ```
 
 ---
 
-## Modules
+## 3. Workflows
 
-### `src/` — Copper MD Prototype
+### A. MD Simulation & Data Generation
+This workflow runs a physical simulation to calculate the Young's Modulus and Poisson's Ratio of an alloy.
 
-A minimal end-to-end MD pipeline used to learn the LAMMPS Python API.
+1.  **Configure Alloy**: Use the web-based GUI to create a composition.
+    ```bash
+    python3 src/MD/gui.py
+    ```
+2.  **Run Simulation**: Execute the MD engine. This automatically calculates elastic properties and appends them to `src/ML/results.json`.
+    ```bash
+    # Run the default config
+    ./src/MD/run.sh
+    # OR run a specific config
+    ./phys/bin/python3 src/MD/lmp.py src/configs/AL7075_simple.json
+    ```
 
-| File | Role |
-|---|---|
-| `lmp.py` | Build a 5×5×5 Cu FCC supercell, minimize, run NVT at 300 K for 1000 steps, collect temperature |
-| `viz.py` | Render the trajectory to `copper_vibration.mp4` using OVITO |
-| `run.sh` | Run `lmp.py` then `viz.py` |
-| `test.py` | MPI sanity check (`mpirun -np 4 python test.py`) |
+### B. Machine Learning Training
+This workflow trains a Neural Network on the data generated in the MD step.
 
-Run:
-```bash
-cd src
-bash run.sh
-```
+1.  **Batch Training**: Reads all results from `results.json`, trains the model, and saves it to `alloy_model.keras`.
+    ```bash
+    ./src/ML/run_nn.sh
+    ```
+    *This script also generates predictions for randomized alloys in `src/ML/predict.json`.*
 
----
+### C. Standalone Prediction
+Use the trained model to instantly estimate properties for any new composition without running a full MD simulation.
 
-### `EAM/` — Potential Library
-
-A collection of EAM and EAM/FS potential files for common metallic systems including Fe, V, Cu, Al, Ni, Zr, W, and their alloys. The Fe-V elastic calculation uses `VFe_mm.eam.fs`.
-
----
-
-### `Elastic/` — Fe-V Elastic Tensor
-
-The main research module. Computes the full **6×6 elastic tensor C_ij** of an Fe-V alloy
-supercell via central finite differences on stress, then derives polycrystalline moduli via
-Voigt-Reuss-Hill averaging.
-
-See [`Elastic/README.md`](Elastic/README.md) for full documentation.
-
-**Quick summary of results** (Fe + 10 at.% V, 5×5×5 supercell):
-
-| Modulus | Value |
-|---|---|
-| Young's modulus E | 257.0 GPa |
-| Bulk modulus K | 212.0 GPa |
-| Shear modulus G | 99.0 GPa |
-| Poisson's ratio ν | 0.298 |
-
-Run:
-```bash
-cd Elastic
-bash run.sh
-```
+1.  **Predict from JSON**:
+    ```bash
+    ./phys/bin/python3 src/ML/predict_from_model.py path/to/composition.json
+    ```
 
 ---
 
-## Environment
+## 4. Element Feature Mapping
+The following index order is strictly maintained for both MD integration and ML feature vectors:
 
-| Dependency | Version / Notes |
-|---|---|
-| Python | 3.12 (system) |
-| LAMMPS | 20240207 — system install, Python bindings via `lammps` module |
-| OVITO | 3.14.1 — installed in venv |
-| NumPy / Matplotlib | standard scientific Python stack |
+| Index | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Symbol** | Al | Co | Cr | Cu | Fe | Mg | Mn | Ni | Ti | Zn |
 
-Set up the virtual environment (inherits system LAMMPS):
-```bash
-python3 -m venv --system-site-packages .venv
-source .venv/bin/activate
-pip install ovito matplotlib numpy pytest
-```
+---
+
+## 5. Modules Documentation
+- [**MD Module (LAMMPS)**](src/MD/README.md): Details on potential parsing, relaxation protocols, and the static deformation method.
+- [**ML Module (TensorFlow)**](src/ML/README.md): Details on model architecture, training parameters, and data structures.
