@@ -1,4 +1,7 @@
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=4
+export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
 
-/home/kenobi/Workspaces/PHYS400/.venv/bin/python ./lmp.py
-/home/kenobi/Workspaces/PHYS400/.venv/bin/python ./viz.py
+PYTHON=/home/kenobi/Workspaces/PHYS400/phys/bin/python
+
+$PYTHON ./lmp.py
+$PYTHON ./viz.py
