@@ -11,5 +11,6 @@ GEMINI.md
 /src/visualization
 /src/configs/config.json
 /data
-/src/NNIP/__init__.py
 /src/NNIP/__pycache__/
+/src/NNIP/logs
+/src/NNIP/dft_scratch

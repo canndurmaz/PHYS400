@@ -29,7 +29,7 @@ os.environ.setdefault("TK_SILENT", "1")
 
 
 def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
-                 skip_optimize=False, skip_verify=False):
+                 skip_optimize=False, skip_verify=False, n_parallel=4):
     """Run the full MEAM potential pipeline.
 
     Args:
@@ -39,6 +39,7 @@ def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
         n_samples: number of NN parameter samples
         skip_optimize: skip NN optimization stage
         skip_verify: skip verification stage
+        n_parallel: max parallel DFT workers (default: 4)
     """
     eam_dir = os.path.join(project_root, "EAM")
     meam_opt_dir = os.path.dirname(__file__)
@@ -76,11 +77,12 @@ def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
 
         dft_work_dir = os.path.join(meam_opt_dir, "dft_scratch")
         print(f"  Scratch directory: {dft_work_dir}", flush=True)
-        print(f"  Calling generate_dft_reference({elements})...", flush=True)
+        print(f"  Calling generate_dft_reference({elements}, workers={n_parallel})...", flush=True)
         dft_results = generate_dft_reference(
             elements,
             output_path=dft_results_path,
             work_dir=dft_work_dir,
+            n_workers=n_parallel,
         )
         print(f"  DFT complete. Results saved to {dft_results_path}", flush=True)
         print(f"  Elements computed: {list(dft_results.get('elements', {}).keys())}", flush=True)
@@ -224,6 +226,10 @@ def main():
         "--samples", type=int, default=30,
         help="Number of NN parameter samples (default: 30)"
     )
+    parser.add_argument(
+        "--parallel", type=int, default=4,
+        help="Max parallel DFT workers (default: 4)"
+    )
     args = parser.parse_args()
 
     os.environ["TK_SILENT"] = "1"
@@ -235,6 +241,7 @@ def main():
         n_samples=args.samples,
         skip_optimize=args.skip_optimize,
         skip_verify=args.skip_verify,
+        n_parallel=args.parallel,
     )
 
 
