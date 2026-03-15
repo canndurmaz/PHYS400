@@ -4,7 +4,7 @@ import sys
 import tkinter as tk
 from tkinter import filedialog
 
-from element import ELEMENTS, POTENTIALS
+from src.MD.element import ELEMENTS, POTENTIALS
 
 # -- Configuration ------------------------------------------------------------
 _SRC_DIR = os.path.dirname(os.path.abspath(__file__))

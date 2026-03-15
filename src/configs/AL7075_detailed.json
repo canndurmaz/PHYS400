@@ -1,0 +1,22 @@
+{
+    "composition": {
+        "Al": 0.894,
+        "Zn": 0.056,
+        "Mg": 0.025,
+        "Cu": 0.016,
+        "Cr": 0.0023,
+        "Fe": 0.0025,
+        "Mn": 0.0015,
+        "Si": 0.002,
+        "Ti": 0.001
+    },
+    "box_size_m": 4e-09,
+    "temperature": 0.1,
+    "total_steps": 1000,
+    "thermo_interval": 10,
+    "dump_interval": 50,
+    "meam_potential": {
+        "library": "library_AlZnMgCuCrFeMnSiTi.meam",
+        "params": "AlZnMgCuCrFeMnSiTi.meam"
+    }
+}

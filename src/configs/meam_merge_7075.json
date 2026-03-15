@@ -1,0 +1,35 @@
+{
+    "target_elements": ["Al", "Zn", "Mg", "Cu", "Cr", "Fe", "Mn", "Si", "Ti"],
+    "source_files": [
+        "library_AlMgZn.meam",
+        "library_FeMnNiTiCuCrCoAl.meam"
+    ],
+    "literature_elements": {
+        "Si": {
+            "header": ["dia", 4, 14, 28.086],
+            "params": {
+                "alpha": 4.87, "b0": 4.40, "b1": 5.50, "b2": 6.00, "b3": 1.80,
+                "alat": 5.431, "esub": 4.630, "asub": 1.00,
+                "t0": 1.0, "t1": 3.30, "t2": 5.10, "t3": -0.80,
+                "rozero": 1.0, "ibar": 3.0
+            },
+            "self_params": [
+                ["Cmin(8,8,8)", 0.80],
+                ["Cmax(8,8,8)", 2.80],
+                ["attrac(8,8)", 0.0],
+                ["repuls(8,8)", 0.0],
+                ["nn2(8,8)", 1]
+            ]
+        }
+    },
+    "global_params": {
+        "rc": 6.0,
+        "delr": 0.1,
+        "ialloy": 2,
+        "augt1": 0,
+        "erose_form": 0,
+        "emb_lin_neg": 1,
+        "bkgd_dyn": 1
+    },
+    "output_prefix": "AlZnMgCuCrFeMnSiTi"
+}

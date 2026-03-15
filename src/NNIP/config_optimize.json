@@ -1,0 +1,79 @@
+{
+    "base_library": "EAM/library_AlMgZn.meam",
+    "base_params": "EAM/AlMgZn.meam",
+    "elements": ["Al", "Zn"],
+    "element_indices": {"Mg": 1, "Al": 2, "Zn": 3},
+
+    "reference": {
+        "Al": {
+            "a_lat": 4.05,
+            "E_coh": 3.36,
+            "C11": 114.0,
+            "C12": 61.3
+        },
+        "Zn": {
+            "a_lat": 2.665,
+            "E_coh": 1.35
+        }
+    },
+
+    "weights": {
+        "a_lat": 10.0,
+        "E_coh": 10.0,
+        "C11": 1.0,
+        "C12": 1.0
+    },
+
+    "optimize": {
+        "library": {
+            "Al": ["alpha", "b0", "b1", "b2", "b3", "esub", "asub", "t1", "t2", "t3"],
+            "Zn": ["alpha", "b0", "b1", "b2", "b3", "esub", "asub", "t1", "t2", "t3"]
+        },
+        "params": [
+            "Ec(2,3)", "re(2,3)", "alpha(2,3)",
+            "Cmin(2,2,3)", "Cmin(3,3,2)",
+            "repuls(2,3)", "attrac(2,3)"
+        ]
+    },
+
+    "bounds": {
+        "lib:Al:alpha":  [3.0, 7.0],
+        "lib:Al:b0":     [1.0, 6.0],
+        "lib:Al:b1":     [0.5, 5.0],
+        "lib:Al:b2":     [1.0, 10.0],
+        "lib:Al:b3":     [0.5, 5.0],
+        "lib:Al:esub":   [2.5, 4.5],
+        "lib:Al:asub":   [0.5, 2.0],
+        "lib:Al:t1":     [0.0, 8.0],
+        "lib:Al:t2":     [-5.0, 5.0],
+        "lib:Al:t3":     [0.0, 15.0],
+
+        "lib:Zn:alpha":  [4.0, 10.0],
+        "lib:Zn:b0":     [0.5, 4.0],
+        "lib:Zn:b1":     [0.5, 5.0],
+        "lib:Zn:b2":     [1.0, 10.0],
+        "lib:Zn:b3":     [1.0, 10.0],
+        "lib:Zn:esub":   [0.5, 2.5],
+        "lib:Zn:asub":   [0.3, 1.5],
+        "lib:Zn:t1":     [5.0, 40.0],
+        "lib:Zn:t2":     [-30.0, 0.0],
+        "lib:Zn:t3":     [10.0, 80.0],
+
+        "par:Ec(2,3)":      [1.0, 4.0],
+        "par:re(2,3)":      [2.5, 3.5],
+        "par:alpha(2,3)":   [3.5, 7.0],
+        "par:Cmin(2,2,3)":  [0.1, 1.5],
+        "par:Cmin(3,3,2)":  [0.5, 3.0],
+        "par:repuls(2,3)":  [0.0, 0.5],
+        "par:attrac(2,3)":  [0.0, 1.5]
+    },
+
+    "de_options": {
+        "popsize": 30,
+        "maxiter": 150,
+        "tol": 1e-6,
+        "seed": 42
+    },
+
+    "supercell_replicas": 3
+}

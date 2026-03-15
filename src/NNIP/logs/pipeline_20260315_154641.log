@@ -1,0 +1,31 @@
+============================================================
+DFT-Driven N-Element MEAM Potential Pipeline
+============================================================
+
+[Stage 0] Element Selection via GUI
+  Importing element_selector...
+  Launching GUI...
+Available pseudopotentials: ['Al', 'Au', 'B', 'C', 'Cr', 'Cu', 'Fe', 'H', 'Mg', 'Mn', 'Mo', 'N', 'O', 'Rh', 'S', 'Si', 'Ti', 'Zn']
+Starting HTTP server on port 8472...
+Opening element selector at http://127.0.0.1:8472
+Waiting for element selection (server.serve_forever)...
+  [GET] /
+  [HTTP] "GET / HTTP/1.1" 200 -
+  [GET] /elements
+  [GET /elements] Found 18 elements: ['Al', 'Au', 'B', 'C', 'Cr', 'Cu', 'Fe', 'H', 'Mg', 'Mn', 'Mo', 'N', 'O', 'Rh', 'S', 'Si', 'Ti', 'Zn']
+  [HTTP] "GET /elements HTTP/1.1" 200 -
+  [POST] /select
+  [POST /select] Raw body: b'{"elements":["Al","Au","C","Cr","Cu","Fe","Mg","Mn","Mo","Rh","S","Si","Ti","Zn"]}'
+  [POST /select] Stored elements: ['Al', 'Au', 'C', 'Cr', 'Cu', 'Fe', 'Mg', 'Mn', 'Mo', 'Rh', 'S', 'Si', 'Ti', 'Zn']
+  [HTTP] "POST /select HTTP/1.1" 200 -
+  [POST /select] Response sent, scheduling shutdown...
+  [SHUTDOWN] Shutting down HTTP server...
+serve_forever() returned.
+Selected elements: ['Al', 'Au', 'C', 'Cr', 'Cu', 'Fe', 'Mg', 'Mn', 'Mo', 'Rh', 'S', 'Si', 'Ti', 'Zn']
+  GUI returned: ['Al', 'Au', 'C', 'Cr', 'Cu', 'Fe', 'Mg', 'Mn', 'Mo', 'Rh', 'S', 'Si', 'Ti', 'Zn']
+
+Selected elements: ['Al', 'Au', 'C', 'Cr', 'Cu', 'Fe', 'Mg', 'Mn', 'Mo', 'Rh', 'S', 'Si', 'Ti', 'Zn']
+
+[Stage 1] DFT Reference Calculations
+----------------------------------------
+  [SHUTDOWN] Server stopped.
