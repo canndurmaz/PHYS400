@@ -1,21 +1,22 @@
 import os
+import ovito
 from ovito.io import import_file
 from ovito.vis import Viewport, TachyonRenderer, TextLabelOverlay
 from PySide6.QtCore import Qt
 
 
-# Per-element display colors (RGB 0-1)
+# Per-element display colors (RGB 0-1) - High contrast for 10 elements
 ELEMENT_COLORS = {
-    "Fe": (0.6, 0.3, 0.1),   # brown
-    "Mn": (0.6, 0.2, 0.6),   # purple
-    "Ni": (0.4, 0.7, 0.4),   # green
-    "Ti": (0.7, 0.7, 0.7),   # silver
-    "Cu": (0.9, 0.5, 0.1),   # copper/orange
-    "Cr": (0.3, 0.5, 0.8),   # steel blue
-    "Co": (0.2, 0.3, 0.8),   # blue
-    "Al": (0.5, 0.8, 1.0),   # light blue
-    "Mg": (0.9, 0.9, 0.1),   # yellow
-    "Zn": (0.6, 0.6, 0.8),   # bluish-white
+    "Al": (0.80, 0.80, 0.80),   # Light Gray
+    "Co": (0.00, 0.00, 0.70),   # Dark Blue
+    "Cr": (0.00, 0.90, 0.90),   # Cyan
+    "Cu": (1.00, 0.50, 0.00),   # Orange
+    "Fe": (0.55, 0.27, 0.07),   # Brown
+    "Mg": (1.00, 1.00, 0.00),   # Yellow
+    "Mn": (0.60, 0.00, 0.60),   # Purple
+    "Ni": (0.00, 0.80, 0.00),   # Green
+    "Ti": (0.40, 0.40, 0.40),   # Dark Gray
+    "Zn": (0.50, 0.50, 1.00),   # Slate Blue
 }
 
 
@@ -31,19 +32,25 @@ def get_color(symbol):
 
 def render(composition, selected, traj_file="traj.lammpstrj"):
     """Render animation from a LAMMPS trajectory file."""
+    if not os.path.exists(traj_file):
+        print(f"Warning: Trajectory file {traj_file} not found. Skipping visualization.")
+        return
+
+    # Clear any existing objects from the global scene
+    ovito.scene.clear()
+
     pipeline = import_file(traj_file)
 
     # Assign colors and radii per atom type via a modifier
     def assign_type_visuals(frame, data):
-        types = data.particles_.particle_types_
+        # Access particle types property
+        types = data.particles.particle_types
         for i, elem in enumerate(selected, start=1):
-            try:
-                pt = types.type_by_id_(i)
-            except KeyError:
-                continue
-            pt.name = elem.symbol
-            pt.color = get_color(elem.symbol)
-            pt.radius = 0.8  # Reduced size for better visibility
+            if i <= len(types):
+                pt = types[i-1] # 0-indexed access to types
+                pt.name = elem.symbol
+                pt.color = get_color(elem.symbol)
+                pt.radius = 0.8
 
     pipeline.modifiers.append(assign_type_visuals)
     pipeline.add_to_scene()
@@ -53,12 +60,15 @@ def render(composition, selected, traj_file="traj.lammpstrj"):
     vp.type = Viewport.Type.Perspective
     vp.camera_pos = (40, 40, 40)
     vp.camera_dir = (-1, -1, -1)
-    vp.zoom_all()  # Ensure all atoms are in frame
+    
+    # Force a refresh to ensure zoom_all sees the data
+    pipeline.compute()
+    vp.zoom_all()
 
     # Dynamic legend labels
     for i, elem in enumerate(selected):
         label = TextLabelOverlay()
-        frac = composition[elem.symbol]
+        frac = composition.get(elem.symbol, 0)
         label.text = f"● {elem.symbol} ({frac:.0%})"
         label.text_color = get_color(elem.symbol)
         label.font_size = 0.04
@@ -69,7 +79,7 @@ def render(composition, selected, traj_file="traj.lammpstrj"):
         vp.overlays.append(label)
 
     # Output filename from composition
-    comp_str = "".join(f"{e.symbol}{composition[e.symbol]:.0%}"
+    comp_str = "".join(f"{e.symbol}{composition.get(e.symbol, 0):.0%}"
                        for e in selected).replace("%", "")
     
     # Ensure visualization folder exists
@@ -88,10 +98,8 @@ def render(composition, selected, traj_file="traj.lammpstrj"):
 
 
 if __name__ == "__main__":
-    from config import composition, selected
-    render(composition, selected)
-
-
-if __name__ == "__main__":
-    from config import composition, selected
-    render(composition, selected)
+    try:
+        from config import composition, selected
+        render(composition, selected)
+    except ImportError:
+        print("Run from project root or ensure src/MD is in PYTHONPATH")

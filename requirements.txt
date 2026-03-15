@@ -2,3 +2,4 @@ lammps
 ovito
 numpy
 tensorflow
+ase

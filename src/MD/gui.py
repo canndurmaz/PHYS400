@@ -148,6 +148,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
     position: absolute; width: 140px; height: 140px;
     overflow: hidden; backface-visibility: visible;
     border: 1px solid rgba(255,255,255,0.08);
+    display: flex; flex-direction: column;
   }
   .cube-face.front  { transform: translateZ(70px); }
   .cube-face.back   { transform: rotateY(180deg) translateZ(70px); }
@@ -155,7 +156,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .cube-face.right  { transform: rotateY(90deg)  translateZ(70px); }
   .cube-face.top    { transform: rotateX(90deg)  translateZ(70px); }
   .cube-face.bottom { transform: rotateX(-90deg) translateZ(70px); }
-  .cube-band { width: 100%; }
+  .cube-band { width: 100%; display: block; }
   /* Save button */
   .save-btn {
     display: block; width: 100%; padding: 14px;
@@ -305,7 +306,7 @@ fetch('/config').then(r => r.json()).then(cfg => {
       if (cb && frac) {
         cb.checked = true;
         frac.disabled = false;
-        frac.value = val * 100;
+        frac.value = (val * 100).toFixed(4);
         const slider = cb.closest('.element-row').querySelector('.slider');
         slider.style.setProperty('--el-color', ELEMENT_COLORS[sym] || '#888');
       }
@@ -399,7 +400,6 @@ function fillRest(targetSym) {
 }
 
 function updateCube() {
-  // Collect enabled elements and their percentage values
   const bands = [];
   ELEMENTS.forEach(sym => {
     const cb = document.querySelector(`input[data-el="${sym}"]`);
@@ -409,16 +409,14 @@ function updateCube() {
       if (!isNaN(v) && v > 0) bands.push({ color: ELEMENT_COLORS[sym] || '#888', pct: v });
     }
   });
-  // Normalize to fill the face if total != 100
   const sum = bands.reduce((s, b) => s + b.pct, 0) || 1;
-  // Build HTML bands for each face
   let bandsHTML = '';
   bands.forEach(b => {
-    const h = (b.pct / sum) * 140;
-    bandsHTML += `<div class="cube-band" style="height:${h}px;background:${b.color}"></div>`;
+    const h = (b.pct / sum) * 100;
+    bandsHTML += `<div class="cube-band" style="height:${h}%;background:${b.color}"></div>`;
   });
   if (bands.length === 0) {
-    bandsHTML = `<div class="cube-band" style="height:140px;background:#0d1b2a"></div>`;
+    bandsHTML = `<div class="cube-band" style="height:100%;background:#0d1b2a"></div>`;
   }
   document.querySelectorAll('.cube-face').forEach(face => { face.innerHTML = bandsHTML; });
 }

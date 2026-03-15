@@ -5,8 +5,8 @@
             "Mg": 0.029,
             "Zn": 0.061
         },
-        "E_GPa": 77.08,
-        "nu": 0.313
+        "E_GPa": -70.46,
+        "nu": 0.406
     },
     "AL5052_simple.json": {
         "composition": {
@@ -22,16 +22,16 @@
             "Cu": 0.044,
             "Mn": 0.005
         },
-        "E_GPa": 66.69,
-        "nu": 0.353
+        "E_GPa": 67.78,
+        "nu": 0.342
     },
     "AL2219_simple.json": {
         "composition": {
             "Al": 0.937,
             "Cu": 0.063
         },
-        "E_GPa": 67.34,
-        "nu": 0.355
+        "E_GPa": 65.38,
+        "nu": 0.33
     },
     "manual_config.json": {
         "composition": {

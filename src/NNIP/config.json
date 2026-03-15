@@ -1,0 +1,75 @@
+{
+    "_comment": "Configuration for generate_configs.py — edit to control what gets generated",
+
+    "elements": {
+        "Al": {"structure": "fcc", "a": 4.05},
+        "Zn": {"structure": "hcp", "a": 2.66},
+        "Mg": {"structure": "hcp", "a": 3.21},
+        "Mn": {"structure": "bcc", "a": 8.91},
+        "Cu": {"structure": "fcc", "a": 3.61},
+        "Si": {"structure": "diamond", "a": 5.43},
+        "Cr": {"structure": "bcc", "a": 2.91},
+        "Fe": {"structure": "bcc", "a": 2.87},
+        "Ti": {"structure": "hcp", "a": 2.95}
+    },
+
+    "pure": {
+        "enabled": true,
+        "supercell_size": 2,
+        "volumetric_strains": [-0.05, -0.03, -0.01, 0.0, 0.01, 0.03, 0.05],
+        "shear_strains": [0.02, 0.05]
+    },
+
+    "binary": {
+        "enabled": true,
+        "fractions": [0.25, 0.50, 0.75],
+        "supercell_sizes": [2, 3],
+        "all_pairs": true
+    },
+
+    "ternary": {
+        "enabled": true,
+        "n_random": 30,
+        "supercell_sizes": [2, 3],
+        "seed": 42
+    },
+
+    "al_alloys": {
+        "enabled": true,
+        "supercell_sizes": [2, 3],
+        "compositions": [
+            {"elements": ["Al", "Cu"],           "fractions": [0.95, 0.05]},
+            {"elements": ["Al", "Cu"],           "fractions": [0.90, 0.10]},
+            {"elements": ["Al", "Mg"],           "fractions": [0.95, 0.05]},
+            {"elements": ["Al", "Mg"],           "fractions": [0.90, 0.10]},
+            {"elements": ["Al", "Zn"],           "fractions": [0.94, 0.06]},
+            {"elements": ["Al", "Zn", "Mg"],     "fractions": [0.90, 0.06, 0.04]},
+            {"elements": ["Al", "Cu", "Mn"],     "fractions": [0.93, 0.05, 0.02]},
+            {"elements": ["Al", "Si", "Mg"],     "fractions": [0.93, 0.04, 0.03]},
+            {"elements": ["Al", "Cu", "Mg", "Mn"], "fractions": [0.91, 0.04, 0.03, 0.02]},
+            {"elements": ["Al", "Zn", "Mg", "Cu"], "fractions": [0.88, 0.06, 0.03, 0.03]}
+        ]
+    },
+
+    "vacancy": {
+        "enabled": true,
+        "max_vacancies": 2,
+        "alloy_compositions": [
+            {"elements": ["Al", "Cu"],       "fractions": [0.90, 0.10]},
+            {"elements": ["Al", "Mg"],       "fractions": [0.95, 0.05]},
+            {"elements": ["Al", "Zn", "Mg"], "fractions": [0.90, 0.06, 0.04]}
+        ]
+    },
+
+    "rattled": {
+        "enabled": true,
+        "temperatures": {"300K": 0.05, "600K": 0.10, "1000K": 0.15},
+        "snapshots_per_temp": 3,
+        "alloy_compositions": [
+            {"elements": ["Al", "Cu"],       "fractions": [0.90, 0.10]},
+            {"elements": ["Al", "Zn", "Mg"], "fractions": [0.90, 0.06, 0.04]}
+        ]
+    },
+
+    "seed": 42
+}

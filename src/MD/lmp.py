@@ -2,48 +2,7 @@ import os
 import json
 import sys
 from lammps import lammps
-from config import CONFIG, composition, selected, a_mean, n_repeats, potential
-
-# pair_coeff strings
-library_elements = " ".join(e.symbol for e in potential["elements"])
-active_elements = " ".join(e.symbol for e in selected)
-
-# ── LAMMPS simulation ─────────────────────────────────────────
-L = lammps()
-
-# 1. Initialization
-L.command("units metal")
-L.command("atom_style atomic")
-L.command("boundary p p p")
-
-# 2. Geometry — use first element's lattice type, mean lattice constant
-L.command(f"lattice {selected[0].lattice_type} {a_mean:.4f}")
-L.command(f"region box block 0 {n_repeats} 0 {n_repeats} 0 {n_repeats}")
-L.command(f"create_box {len(selected)} box")
-L.command("create_atoms 1 box")
-
-# Assign compositions via set type/fraction (skip first element — it's already type 1)
-# Each iteration converts a fraction of remaining type-1 atoms to the next type.
-remaining = 1.0
-for i, elem in enumerate(selected[1:], start=2):
-    frac = composition[elem.symbol] / remaining
-    L.command(f"set type 1 type/fraction {i} {frac:.6f} 12345")
-    remaining -= composition[elem.symbol]
-
-# 3. MEAM Potential
-L.command("pair_style meam")
-L.command(
-    f"pair_coeff * * {potential['library']} {library_elements} "
-    f"{potential['params']} {active_elements}"
-)
-
-# Masses
-for i, elem in enumerate(selected, start=1):
-    L.command(f"mass {i} {elem.mass}")
-
-# 4. Initial Relaxation
-print("Relaxing ground state...")
-L.command("minimize 1.0e-4 1.0e-6 100 1000")
+from config import load_configuration, get_derived_quantities, select_multiple_configs
 
 # ── Elastic Properties ────────────────────────────────────────
 def get_elastic_moduli(L, delta=1e-3):
@@ -74,16 +33,8 @@ def get_elastic_moduli(L, delta=1e-3):
     nu = c12 / (c11 + c12)
     return E, nu
 
-E, nu = get_elastic_moduli(L)
-print(f"\nProperties: Young's Modulus (E) = {E:.2f} GPa, Poisson's Ratio (nu) = {nu:.3f}\n")
-
 # ── Save Results to ML ────────────────────────────────────────
-def save_to_ml_results(E_val, nu_val):
-    # Try to identify the config filename from CLI arguments
-    config_name = "manual_config.json"
-    if len(sys.argv) > 1 and os.path.isfile(sys.argv[1]):
-        config_name = os.path.basename(sys.argv[1])
-    
+def save_to_ml_results(E_val, nu_val, config_name, composition):
     # Path to ML results relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
     results_path = os.path.abspath(os.path.join(script_dir, "..", "ML", "results.json"))
@@ -110,33 +61,85 @@ def save_to_ml_results(E_val, nu_val):
         json.dump(results, f, indent=4)
     print(f"Results updated in {results_path} for: {config_name}")
 
-save_to_ml_results(E, nu)
-
-# 5. Production Simulation (Optional)
-def run_thermal_simulation(L, config):
-    """Run an NVT production simulation and collect temperature data."""
-    temp = config["temperature"]
-    print(f"Starting thermal simulation at {temp} K...")
-    L.command(f"velocity all create {temp} 4928459")
-    L.command(f"fix 1 all nvt temp {temp} {temp} 0.1")
-    L.command(f"thermo {config['thermo_interval']}")
-    L.command(f"dump 1 all custom {config['dump_interval']} traj.lammpstrj id type x y z")
-
-    temp_data = []
-    steps_per_iter = config["thermo_interval"]
-    n_iters = config["total_steps"] // steps_per_iter
-
-    for i in range(n_iters):
-        L.command(f"run {steps_per_iter}")
-        current_temp = L.get_thermo("temp")
-        temp_data.append(current_temp)
-        print(f"Step {(i+1)*steps_per_iter}: Temperature = {current_temp:.2f} K")
+# ── Simulation Function ───────────────────────────────────────
+def run_simulation(config_path):
+    print(f"\n" + "="*60)
+    print(f"Processing: {config_path if config_path else 'Default'}")
+    print("="*60)
     
-    return temp_data
+    config, config_name = load_configuration(config_path)
+    comp, sel, a_m, n_rep, pot = get_derived_quantities(config)
 
-# Skip thermal test by default as requested
-# temp_data = run_thermal_simulation(L, CONFIG)
+    # pair_coeff strings
+    library_elements = " ".join(e.symbol for e in pot["elements"])
+    active_elements = " ".join(e.symbol for e in sel)
 
-# ── Visualization ─────────────────────────────────────────────
-from viz import render
-render(composition, selected)
+    L = lammps(cmdargs=["-log", "none", "-screen", "none"])
+    L.command("units metal")
+    L.command("atom_style atomic")
+    L.command("boundary p p p")
+
+    L.command(f"lattice {sel[0].lattice_type} {a_m:.4f}")
+    L.command(f"region box block 0 {n_rep} 0 {n_rep} 0 {n_rep}")
+    L.command(f"create_box {len(sel)} box")
+    L.command("create_atoms 1 box")
+
+    remaining = 1.0
+    for i, elem in enumerate(sel[1:], start=2):
+        frac = comp[elem.symbol] / remaining
+        L.command(f"set type 1 type/fraction {i} {frac:.6f} 12345")
+        remaining -= comp[elem.symbol]
+
+    L.command("pair_style meam")
+    L.command(
+        f"pair_coeff * * {pot['library']} {library_elements} "
+        f"{pot['params']} {active_elements}"
+    )
+
+    for i, elem in enumerate(sel, start=1):
+        L.command(f"mass {i} {elem.mass}")
+
+    print("Relaxing ground state...")
+    L.command("minimize 1.0e-4 1.0e-6 100 1000")
+
+    E, nu = get_elastic_moduli(L)
+    print(f"\nProperties: Young's Modulus (E) = {E:.2f} GPa, Poisson's Ratio (nu) = {nu:.3f}\n")
+
+    save_to_ml_results(E, nu, config_name, comp)
+
+    # ── Visualization ─────────────────────────────────────────────
+    from viz import render
+    render(comp, sel)
+    
+    L.close()
+
+def clear_old_videos():
+    """Remove all existing mp4 files from the visualization directory."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    vis_dir = os.path.join(script_dir, "visualization")
+    if os.path.exists(vis_dir):
+        import glob
+        videos = glob.glob(os.path.join(vis_dir, "*.mp4"))
+        for v in videos:
+            try:
+                os.remove(v)
+            except:
+                pass
+        if videos:
+            print(f"Cleared {len(videos)} existing video(s) from {vis_dir}")
+
+if __name__ == "__main__":
+    clear_old_videos()
+    # Select multiple files via GUI
+    paths = select_multiple_configs()
+    
+    if not paths:
+        print("No files selected or operation cancelled.")
+        # Optional: run_simulation(None) to run default if nothing selected?
+        # Let's just exit to respect user cancellation
+    else:
+        for p in paths:
+            try:
+                run_simulation(p)
+            except Exception as ex:
+                print(f"Error processing {p}: {ex}")

@@ -18,13 +18,14 @@ _DEFAULTS = {
     "dump_interval": 50,
 }
 
-# Accept config path as CLI argument; fall back to file dialog if not silent
-def load_configuration():
-    if len(sys.argv) > 1 and os.path.isfile(sys.argv[1]):
-        _config_path = sys.argv[1]
-    elif os.environ.get("TK_SILENT") == "1":
-        return _DEFAULTS.copy()
-    else:
+def load_configuration(path=None):
+    """Load a single configuration from a path or return defaults."""
+    if path and os.path.isfile(path):
+        with open(path) as f:
+            return json.load(f), os.path.basename(path)
+    
+    # If no path provided and not in silent mode, open a dialog for one file
+    if os.environ.get("TK_SILENT") != "1":
         try:
             _root = tk.Tk()
             _root.withdraw()
@@ -34,50 +35,67 @@ def load_configuration():
                 filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
             )
             _root.destroy()
+            if _config_path and os.path.isfile(_config_path):
+                with open(_config_path) as _f:
+                    return json.load(_f), os.path.basename(_config_path)
         except:
-            return _DEFAULTS.copy()
+            pass
+            
+    return _DEFAULTS.copy(), "default"
 
-    if _config_path and os.path.isfile(_config_path):
-        with open(_config_path) as _f:
-            return json.load(_f)
-    return _DEFAULTS.copy()
-
-CONFIG = load_configuration()
-
-# -- Derived quantities --------------------------------------------------------
-# Filter out elements with zero fraction
-composition = {sym: frac for sym, frac in CONFIG["composition"].items() if frac > 0}
-selected = sorted(
-    [ELEMENTS[sym] for sym in composition],
-    key=lambda e: e.meam_index,
-)
-
-# Weighted average lattice constant
-a_mean = sum(composition[e.symbol] * e.lattice_constant for e in selected)
-
-# Box repeats: convert box_size from meters to Angstroms, divide by lattice constant
-box_angstrom = CONFIG["box_size_m"] * 1e10
-n_repeats = max(1, round(box_angstrom / a_mean))
-
+def select_multiple_configs():
+    """Open a dialog to select multiple configuration files."""
+    if os.environ.get("TK_SILENT") == "1":
+        return []
+        
+    try:
+        _root = tk.Tk()
+        _root.withdraw()
+        _paths = filedialog.askopenfilenames(
+            title="Select one or more configuration JSONs",
+            initialdir=_SRC_DIR,
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        _root.destroy()
+        return list(_paths)
+    except:
+        return []
 
 # -- Potential auto-detection --------------------------------------------------
 def find_potential(symbols):
-    """Find a MEAM potential that covers all requested element symbols.
-
-    Returns the matching potential dict (library, params, elements) or raises.
-    """
+    """Find a MEAM potential that covers all requested element symbols."""
     needed = set(symbols)
     for name, pot in POTENTIALS.items():
         available = {e.symbol for e in pot["elements"]}
         if needed <= available:
             return pot
-    raise RuntimeError(
-        f"No MEAM potential covers all selected elements: {sorted(needed)}. "
-        f"Available potentials: "
-        + ", ".join(
-            f"{n} ({', '.join(e.symbol for e in p['elements'])})"
-            for n, p in POTENTIALS.items()
-        )
+    raise RuntimeError(f"No MEAM potential covers elements: {sorted(needed)}")
+
+def get_derived_quantities(config):
+    # Filter out elements with zero fraction
+    comp = {sym: frac for sym, frac in config["composition"].items() if frac > 0}
+    sel = sorted(
+        [ELEMENTS[sym] for sym in comp],
+        key=lambda e: e.meam_index,
     )
 
-potential = find_potential(composition.keys())
+    # Weighted average lattice constant
+    a_m = sum(comp[e.symbol] * e.lattice_constant for e in sel)
+
+    # Box repeats: convert box_size from meters to Angstroms, divide by lattice constant
+    box_ang = config["box_size_m"] * 1e10
+    n_rep = max(1, round(box_ang / a_m))
+    
+    pot = find_potential(comp.keys())
+    
+    return comp, sel, a_m, n_rep, pot
+
+# For backwards compatibility with single-run usage
+if __name__ == "config": # If imported
+    # We don't automatically load here to avoid multiple dialogs
+    # Users should call the functions explicitly
+    pass
+else:
+    # If run as a script
+    CONFIG, CONFIG_NAME = load_configuration()
+    composition, selected, a_mean, n_repeats, potential = get_derived_quantities(CONFIG)
