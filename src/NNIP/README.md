@@ -415,6 +415,59 @@ The script automatically detects whether `pair_style deepmd` is available in LAM
 
 LAMMPS trajectory is saved to `src/NNIP/md_traj.lammpstrj` (or `.traj` for ASE).
 
+After simulation completes, the trajectory is automatically rendered to an animated
+MP4 video using OVITO (`viz.py`). The video is saved to `src/NNIP/visualization/`.
+
+### Visualization
+
+The `viz.py` module provides OVITO-based trajectory rendering with:
+- Per-element coloring (consistent color scheme across the project)
+- Composition legend overlay (element symbol + atomic fraction)
+- Title overlay with alloy designation
+- Perspective camera with auto-zoom
+
+**Standalone usage:**
+
+```bash
+# Render a LAMMPS trajectory
+python src/NNIP/viz.py md_traj.lammpstrj -c "Al:0.95,Cu:0.05"
+
+# Render with custom output path and framerate
+python src/NNIP/viz.py md_traj.lammpstrj -c "Al:0.90,Zn:0.06,Mg:0.04" -o output.mp4 --fps 15
+```
+
+**From Python:**
+
+```python
+from viz import render_lammps, render_ase, render_trajectory
+
+# LAMMPS trajectory (uses TYPE_MAP ordering for atom types)
+render_lammps("md_traj.lammpstrj", {"Al": 0.95, "Cu": 0.05})
+
+# ASE trajectory
+render_ase("md_traj.traj", {"Al": 0.95, "Cu": 0.05})
+
+# Generic (auto-detect element ordering from composition)
+render_trajectory("traj.xyz", {"Al": 0.90, "Zn": 0.06, "Mg": 0.04},
+                  output="custom_output.mp4", size=(1920, 1080), fps=30)
+```
+
+**Element color scheme:**
+
+| Element | Color | RGB |
+|---------|-------|-----|
+| Al | Light Gray | (0.80, 0.80, 0.80) |
+| Zn | Slate Blue | (0.50, 0.50, 1.00) |
+| Mg | Yellow | (1.00, 1.00, 0.00) |
+| Mn | Purple | (0.60, 0.00, 0.60) |
+| Cu | Orange | (1.00, 0.50, 0.00) |
+| Si | Green | (0.00, 0.60, 0.00) |
+| Cr | Cyan | (0.00, 0.90, 0.90) |
+| Fe | Brown | (0.55, 0.27, 0.07) |
+| Ti | Dark Gray | (0.40, 0.40, 0.40) |
+
+Unlisted elements get a deterministic hash-based color.
+
 ### Elastic Properties
 
 ```bash
@@ -719,6 +772,8 @@ src/NNIP/
 ├── run_md.py              # Phase 6: LAMMPS/ASE MD simulation
 ├── elastic.py             # Phase 6: Elastic property computation
 ├── calculator.py          # Phase 6: ASE Calculator wrapper
+├── viz.py                 # Phase 6: OVITO trajectory visualization
+├── visualization/         # Rendered MP4 videos (auto-created)
 └── README.md              # This file
 
 data/

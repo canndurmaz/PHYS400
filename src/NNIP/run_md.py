@@ -85,7 +85,9 @@ def run_lammps_deepmd():
     print(f"  Trajectory: {traj_path}")
 
     L.close()
-    return True
+
+    composition = {"Al": 0.95, "Cu": 0.05}
+    return traj_path, composition, "lammps"
 
 
 def run_ase_md():
@@ -138,7 +140,12 @@ def run_ase_md():
 
     traj.close()
     print(f"Trajectory: {traj_path}")
-    return True
+
+    # Compute actual composition from final symbols
+    from collections import Counter
+    counts = Counter(symbols)
+    composition = {e: c / n_atoms for e, c in counts.items()}
+    return traj_path, composition, "ase"
 
 
 def main():
@@ -158,10 +165,23 @@ def main():
         L.command(f"pair_style deepmd {MODEL_PATH}")
         L.close()
         print("LAMMPS DeePMD available, using native LAMMPS MD\n")
-        run_lammps_deepmd()
+        traj_path, composition, backend = run_lammps_deepmd()
     except Exception:
         print("LAMMPS DeePMD not available, falling back to ASE\n")
-        run_ase_md()
+        traj_path, composition, backend = run_ase_md()
+
+    # Render visualization
+    print("\n" + "=" * 60)
+    print("Rendering visualization...")
+    print("=" * 60)
+    try:
+        from viz import render_lammps, render_ase
+        if backend == "lammps":
+            render_lammps(traj_path, composition)
+        else:
+            render_ase(traj_path, composition)
+    except Exception as e:
+        print(f"Visualization skipped: {e}")
 
 
 if __name__ == "__main__":
