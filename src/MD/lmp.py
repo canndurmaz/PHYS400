@@ -78,7 +78,7 @@ def save_to_ml_results(E_val, nu_val, config_name, composition):
     print(f"Results updated in {results_path} for: {config_name}")
 
 # ── Simulation Function ───────────────────────────────────────
-def run_simulation(config_path, viz=False):
+def run_simulation(config_path, viz=False, sim_md=False):
     print(f"\n" + "="*60)
     print(f"Processing: {config_path if config_path else 'Default'}")
     print("="*60)
@@ -126,28 +126,32 @@ def run_simulation(config_path, viz=False):
     save_to_ml_results(E, nu, config_name, comp)
 
     # ── MD Run ────────────────────────────────────────────────────
-    temp = config.get("temperature", 300.0)
-    total_steps = config.get("total_steps", 1000)
-    thermo_int = config.get("thermo_interval", 10)
-    dump_int = config.get("dump_interval", 50)
-
     traj_file = f"traj_{config_name}.lammpstrj"
 
-    L.command(f"velocity all create {temp} 54321 dist gaussian")
-    L.command(f"fix nvt all nvt temp {temp} {temp} 0.1")
-    L.command(f"thermo {thermo_int}")
-    L.command(f"dump traj all atom {dump_int} {traj_file}")
-    print(f"Running MD: {total_steps} steps at {temp} K...")
-    L.command(f"run {total_steps}")
-    L.command("undump traj")
-    L.command("unfix nvt")
+    if sim_md:
+        temp = config.get("temperature", 300.0)
+        total_steps = config.get("total_steps", 1000)
+        thermo_int = config.get("thermo_interval", 10)
+        dump_int = config.get("dump_interval", 50)
+
+        L.command(f"velocity all create {temp} 54321 dist gaussian")
+        L.command(f"fix nvt all nvt temp {temp} {temp} 0.1")
+        L.command(f"thermo {thermo_int}")
+        L.command(f"dump traj all atom {dump_int} {traj_file}")
+        print(f"Running MD: {total_steps} steps at {temp} K...")
+        L.command(f"run {total_steps}")
+        L.command("undump traj")
+        L.command("unfix nvt")
 
     L.close()
 
     # ── Visualization ─────────────────────────────────────────────
     if viz:
-        from viz import render
-        render(comp, sel, traj_file=traj_file)
+        if not os.path.exists(traj_file):
+            print(f"Warning: {traj_file} not found. Run with --simMD to generate trajectory.")
+        else:
+            from viz import render
+            render(comp, sel, traj_file=traj_file)
 
 def clear_old_videos():
     """Remove all existing mp4 files from the visualization directory."""
@@ -168,6 +172,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="MEAM MD Simulation")
     parser.add_argument("--viz", action="store_true", help="Enable visualization")
+    parser.add_argument("--simMD", action="store_true", help="Run NVT molecular dynamics")
     args = parser.parse_args()
 
     if args.viz:
@@ -180,6 +185,6 @@ if __name__ == "__main__":
     else:
         for p in paths:
             try:
-                run_simulation(p, viz=args.viz)
+                run_simulation(p, viz=args.viz, sim_md=args.simMD)
             except Exception as ex:
                 print(f"Error processing {p}: {ex}")

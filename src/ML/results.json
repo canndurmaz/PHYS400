@@ -1,0 +1,36 @@
+{
+    "AL2024_noMg.json": {
+        "composition": {
+            "Al": 0.951,
+            "Cu": 0.044,
+            "Mn": 0.005
+        },
+        "E_GPa": 66.31,
+        "nu": 0.355
+    },
+    "AL2219_simple.json": {
+        "composition": {
+            "Al": 0.937,
+            "Cu": 0.063
+        },
+        "E_GPa": 73.65,
+        "nu": 0.353
+    },
+    "AL5052_simple.json": {
+        "composition": {
+            "Al": 0.975,
+            "Mg": 0.025
+        },
+        "E_GPa": 73.42,
+        "nu": 0.342
+    },
+    "AL7075_simple.json": {
+        "composition": {
+            "Al": 0.91,
+            "Mg": 0.029,
+            "Zn": 0.061
+        },
+        "E_GPa": 68.8,
+        "nu": 0.342
+    }
+}
