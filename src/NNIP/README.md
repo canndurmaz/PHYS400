@@ -1,198 +1,119 @@
 # NNIP: Neural Network Interatomic Potential Pipeline
 
-DFT-driven N-element MEAM potential generation and optimization. Select elements, run ab-initio reference calculations, initialize MEAM parameters from first principles, then optimize via a neural network surrogate trained against experimental alloy data.
+Automated generation of multi-element MEAM interatomic potentials from first principles. The only required input is **element selection** -- everything else is derived automatically.
 
 ---
 
-## Pipeline Architecture
+## Scientific Background
 
-```
-GUI: Select N elements from pseudopotentials/
-  |
-Stage 1: dft_reference.py
-  QE SCF for N elements + all binary pairs
-  -> dft_results.json
-  |
-Stage 2: dft_to_meam.py
-  Overlay DFT values onto merged MEAM base files
-  -> initial MEAM library + params files
-  |
-Stage 3: nn_optimizer.py
-  Train NN surrogate using src/ML/results.json
-  (composition, E_GPa, nu) as training targets
-  loss < 5 or 10000 epochs
-  -> optimized MEAM files in EAM/optimized/
-  |
-Stage 4: verify
-  Validate optimized potential against known properties
-```
+### The Problem
+
+Molecular dynamics simulations of alloys require interatomic potentials that accurately reproduce mechanical properties (Young's modulus, Poisson's ratio) across compositions. Developing these potentials traditionally requires extensive manual fitting against experimental data -- a process that scales poorly with the number of elements.
+
+### The Approach
+
+This pipeline combines three computational methods into an automated workflow:
+
+1. **Density Functional Theory (DFT)** provides quantum-mechanical reference data: equilibrium lattice constants, cohesive energies, bulk moduli, elastic constants, and binary formation energies. These are computed from the electronic structure with no empirical parameters.
+
+2. **Modified Embedded Atom Method (MEAM)** is a semi-empirical potential form used by LAMMPS for fast MD simulations. Each element requires ~14 parameters (embedding function coefficients, electron density weights, lattice geometry), plus cross-terms for each binary pair. DFT results initialize these parameters via:
+   - **Cohesive energy** -> `esub` (sublimation energy parameter)
+   - **Lattice constant** -> `alat` (equilibrium lattice spacing)
+   - **Rose equation**: `alpha = sqrt(9 * B * Omega / E_coh)` (universal binding curve shape)
+   - **Formation energies** -> `Ec(i,j)` cross-terms
+
+3. **Neural Network Surrogate Optimization** bridges the gap between DFT-initialized parameters and experimental alloy properties. A neural network learns the mapping `MEAM_params -> (E, nu)` from sampled LAMMPS evaluations, then gradient descent through the trained network finds parameters that reproduce target mechanical properties across all compositions simultaneously.
 
 ---
 
-## Quick Start
+## Workflow
 
-```bash
-# Full pipeline with GUI element selection
-./src/NNIP/run_pipeline.sh
-
-# Specify elements directly (skips GUI)
-./src/NNIP/run_pipeline.sh Al Cu Zn Mg
-
-# Skip DFT (use existing dft_results.json), 50 NN samples
-./src/NNIP/run_pipeline.sh --skip-dft --samples 50 Al Cu Zn Mg
-
-# Only run DFT + MEAM init, no optimization
-./src/NNIP/run_pipeline.sh --skip-optimize --skip-verify Al Cu
 ```
-
-Or call `pipeline.py` directly:
-
-```bash
-source phys/bin/activate
-python src/NNIP/pipeline.py --elements Al Cu Zn Mg --samples 30
-python src/NNIP/pipeline.py --skip-dft --elements Al Cu Zn Mg
-python src/NNIP/pipeline.py --help
+  Element Selection (GUI or CLI)
+          |
+          v
+  Stage 1: DFT Reference (Quantum Espresso)
+          |  EOS fits, elastic constants, formation energies
+          |  -> dft_results.json
+          v
+  Stage 2: MEAM Initialization
+          |  Map DFT values onto MEAM parameter space
+          |  -> EAM/dft_initialized/
+          v
+  Stage 3: NN Surrogate Optimization
+          |  Sample -> Train NN -> Inverse optimize
+          |  -> EAM/optimized/
+          v
+  Stage 4: Verification
+          |  Compare against experimental alloy data
+          v
+  Stage 5: Visualization (optional)
 ```
 
 ---
 
-## Stage Details
+## Usage
 
-### Stage 0: Element Selection (`element_selector.py`)
+**The only configuration required is element selection.** The pipeline auto-discovers pseudopotentials, base MEAM files, and training targets.
 
-Web GUI on `http://127.0.0.1:8472`. Scans `pseudopotentials/` for available UPF files and shows clickable element cards. Returns sorted list of selected symbols.
-
-**Available elements** (depends on pseudopotentials/):
-Al, Au, B, C, Cr, Cu, Fe, H, Mg, Mn, Mo, N, O, Rh, S, Si, Ti, Zn
-
-**Bypass GUI**: use `--elements Al Cu Fe` on the CLI.
-
-### Stage 1: DFT Reference (`dft_reference.py`)
-
-Runs Quantum Espresso (pw.x) via ASE for each selected element:
-
-1. **EOS fit** (7 strain points, Birch-Murnaghan) -> equilibrium lattice constant `a0`, cohesive energy `E_coh`, bulk modulus `B`
-2. **Elastic constants** (stress-strain, cubic elements only) -> `C11`, `C12`
-3. **Binary formation energies** (all N*(N-1)/2 pairs) -> `E_form` per pair
-
-**Binary reference structures** (chosen by lattice type combination):
-
-| Pair lattices     | Structure | Example        |
-|-------------------|-----------|----------------|
-| fcc + fcc         | L1_2      | Cu3Au          |
-| bcc + bcc         | B2        | FeCr           |
-| fcc + bcc         | B2        | FeAl, CuZn     |
-| fcc + hcp         | L1_2      | Al3Mg, Al3Ti   |
-| bcc + hcp         | B2        | TiFe           |
-| fcc + diamond     | L1_2      | Al3Si          |
-| bcc + diamond     | B2        | FeSi           |
-| hcp + hcp         | B2        | MgZn           |
-| diamond + hcp     | L1_2      | SiTi           |
-| diamond + diamond | B2        | (fallback)     |
-
-**Magnetic elements** (Fe, Cr, Mn) use `nspin=2`.
-
-**QE settings**: ecutwfc=40 Ry, ecutrho=320 Ry, kpts=(6,6,6), Marzari-Vanderbilt smearing.
-
-**Output**: `src/NNIP/dft_results.json` — saved incrementally after each element and pair so progress is not lost on failure.
-
-**Scratch files**: `src/NNIP/dft_scratch/<Element>/eos_0..6/`, `elastic_base/`, `elastic_strain/`, `binary_X_Y/`
-
-**Standalone usage**:
 ```bash
-python src/NNIP/dft_reference.py Al Cu Fe --output my_results.json
+# From src/NNIP/:
+./run_pipeline.sh                              # Full pipeline with GUI
+./run_pipeline.sh Al Cu Zn Mg                  # Skip GUI, specify elements
+./run_pipeline.sh --skip-dft Al Cu Zn Mg       # Reuse existing DFT results
+./run_pipeline.sh --samples 50 Al Cu Zn Mg     # More NN training samples
 ```
 
-### Stage 2: DFT-to-MEAM Initialization (`dft_to_meam.py`)
+### CLI Options
 
-Overlays DFT reference values onto merged MEAM base files:
-
-- **esub** (cohesive energy) <- DFT `E_coh`
-- **alat** (lattice constant) <- DFT `a0`
-- **alpha** (Rose equation parameter) <- computed from `E_coh`, `B`, atomic volume
-- **Ec(i,j)** (cross-term cohesive energy) <- average of pure `esub` + DFT `E_form`
-- **re(i,j)** (cross-term equilibrium distance) <- average nearest-neighbor distances
-- **alpha(i,j)** <- average of pure alphas
-- All other parameters retain base values from the merged potential
-
-**Input**: DFT results + existing merged MEAM files in `EAM/`
-
-**Output**: `EAM/dft_initialized/library_<elements>.meam` + `<elements>.meam`
-
-**Standalone usage**:
-```bash
-python src/NNIP/dft_to_meam.py \
-    --dft-results src/NNIP/dft_results.json \
-    --elements Al Cu Zn Mg \
-    --eam-dir EAM/
-```
-
-### Stage 3: NN Optimization (`nn_optimizer.py`)
-
-Trains a neural network surrogate model on the mapping `MEAM_params -> (E, nu)` for all alloy compositions in `src/ML/results.json`, then performs inverse optimization.
-
-**Training targets** (from `src/ML/results.json`):
-
-| Config          | Composition         | E (GPa) | nu    |
-|-----------------|---------------------|---------|-------|
-| AL7075_simple   | Al91/Mg2.9/Zn6.1    | -70.46  | 0.406 |
-| AL5052_simple   | Al97.5/Mg2.5        | 83.25   | 0.311 |
-| AL2024_noMg     | Al95.1/Cu4.4/Mn0.5  | 67.78   | 0.342 |
-| AL2219_simple   | Al93.7/Cu6.3        | 65.38   | 0.330 |
-| manual_config   | Cu50/Al50           | 92.15   | 0.296 |
-
-**Workflow**:
-1. **Sample**: Random perturbations of initial MEAM vector, evaluate LAMMPS for each composition
-2. **Train NN**: Input(params) -> Dense(64) -> Dense(64) -> Dense(32) -> Output(N_entries x 2)
-3. **Early stop**: normalized loss < 5.0 or 10,000 epochs
-4. **Inverse design**: gradient descent through trained NN to minimize distance to all targets
-5. **Validate**: final LAMMPS run with optimized parameters
-
-**Output**: `EAM/optimized/optimized_library_<name>.meam` + `optimized_<name>.meam`
-
-**Standalone usage**:
-```bash
-python src/NNIP/nn_optimizer.py \
-    --library EAM/dft_initialized/library_AlCuZnMg.meam \
-    --params  EAM/dft_initialized/AlCuZnMg.meam \
-    --samples 50
-```
-
-### Stage 4: Verification (`verify_7075.py`)
-
-Validates optimized potential against results.json targets by running LAMMPS for each composition and comparing (E, nu). Reports per-entry and average percentage errors.
-
-**Pass criteria**: average error < 10% for both E and nu.
-
-**Standalone usage**:
-```bash
-python src/NNIP/verify_7075.py
-```
+| Flag               | Effect                                          |
+|--------------------|--------------------------------------------------|
+| `--elements X Y Z` | Bypass GUI element selection                     |
+| `--skip-dft`       | Use existing `dft_results.json`                  |
+| `--skip-optimize`  | Stop after MEAM initialization                   |
+| `--skip-verify`    | Skip verification stage                          |
+| `--samples N`      | NN parameter samples (default: 30)               |
+| `--parallel N`     | Max parallel DFT workers (default: 4)            |
+| `--no-plots`       | Skip visualization generation                    |
 
 ---
 
-## Supporting Modules
+## Pipeline Stages
 
-### `meam_io.py` — MEAM File I/O
+### Stage 0: Element Selection
 
-- `parse_library(path)` -> dict of element data (header + 14 params)
-- `parse_params(path)` -> ordered list of (key, value) tuples
-- `write_library(lib_data, element_order, path)`
-- `write_params(entries, path)`
-- `params_to_vector(lib_data, param_entries, opt_spec)` -> (numpy array, names)
-- `vector_to_files(vec, names, base_lib, base_params, out_dir)` -> (lib_path, params_path)
+A web GUI (`http://127.0.0.1:8472`) scans `pseudopotentials/` for available UPF files and displays clickable element cards. Alternatively, pass `--elements` on the CLI.
 
-### `merge_potentials.py` — MEAM Potential Merger
+### Stage 1: DFT Reference
 
-Combines multiple source MEAM files and literature data into a single multi-element potential. Handles index remapping, missing cross-terms via mixing rules, and proper ordering.
+For each selected element, Quantum Espresso computes:
+- **Equation of state** (7 strain points, Birch-Murnaghan fit) -> `a0`, `E_coh`, `B`
+- **Elastic constants** (stress-strain with `cubic=True`) -> `C11`, `C12`
+- **Isolated atom energy** for true cohesive energy: `E_coh = E_atom - E_bulk/N`
 
-```bash
-python src/NNIP/merge_potentials.py --config src/configs/meam_merge_7075.json
-```
+For all N(N-1)/2 binary pairs:
+- **Formation energy** in an appropriate reference structure (L1_2, B2, etc. chosen by lattice type)
 
-### `reference_data.py` — Config Loader
+Results are saved incrementally -- partial progress survives failures.
 
-Loads `config_optimize.json` for reference targets, weights, and bounds used by the optimizer.
+### Stage 2: MEAM Initialization
+
+DFT values are mapped onto the MEAM parameter space. Base MEAM files are auto-discovered from `EAM/` (any `library_*.meam` covering the selected elements). Cross-terms use mixing rules where DFT data is unavailable.
+
+### Stage 3: NN Optimization
+
+1. **Sample**: Perturb initial MEAM parameters, evaluate each with LAMMPS across all target compositions
+2. **Train**: Feed-forward NN (64-64-32 architecture) learns params-to-properties mapping
+3. **Optimize**: Gradient descent through the trained NN toward experimental targets from `src/ML/results.json`
+4. **Validate**: Final LAMMPS evaluation with optimized parameters
+
+### Stage 4: Verification
+
+Compares optimized potential against all target compositions. Reports per-entry and average percentage errors for Young's modulus and Poisson's ratio. Pass criterion: average error < 10%.
+
+### Stage 5: Visualization
+
+Generates diagnostic plots from NN training and verification results.
 
 ---
 
@@ -200,68 +121,50 @@ Loads `config_optimize.json` for reference targets, weights, and bounds used by 
 
 ```
 src/NNIP/
-  README.md              # This file
-  __init__.py
-  pipeline.py            # Pipeline orchestrator (main entry point)
-  run_pipeline.sh        # Shell wrapper with logging
-  element_selector.py    # Web GUI for element selection
-  dft_reference.py       # DFT calculations (QE + ASE)
-  dft_to_meam.py         # DFT-to-MEAM parameter initialization
-  nn_optimizer.py        # NN surrogate optimization
-  verify_7075.py         # Validation against known properties
-  meam_io.py             # MEAM file parsing/writing
-  merge_potentials.py    # Multi-element potential merger
-  reference_data.py      # Config/reference data loader
-  config_optimize.json   # Optimization bounds and weights
-  dft_results.json       # DFT output (generated)
-  dft_scratch/           # QE scratch files (generated)
-  tmp_nn/                # NN temp files (generated)
-  logs/                  # Pipeline log files (generated)
+  pipeline.py            Main entry point (orchestrator)
+  run_pipeline.sh        Shell wrapper
+  element_selector.py    Web GUI for element selection
+  dft_reference.py       DFT calculations via QE + ASE
+  dft_to_meam.py         DFT -> MEAM parameter mapping
+  nn_optimizer.py        NN surrogate training + inverse optimization
+  meam_io.py             MEAM library/params file I/O
+  merge_potentials.py    Multi-source MEAM potential merger
+  visualize.py           Diagnostic plotting
+  logging_config.py      Centralized logging setup
+  verify_7075.py         Standalone verification script
 ```
 
----
+**Auto-discovered inputs** (no manual configuration needed):
+- `pseudopotentials/*.UPF` -- QE pseudopotential files (determines available elements)
+- `EAM/library_*.meam` + matching `*.meam` -- base MEAM potentials
+- `src/ML/results.json` -- experimental training targets (composition, E, nu)
 
-## Output Locations
-
-| Stage | Output | Location |
-|-------|--------|----------|
-| DFT reference | Per-element and binary pair data | `src/NNIP/dft_results.json` |
-| DFT scratch | QE input/output files | `src/NNIP/dft_scratch/` |
-| MEAM init | DFT-initialized potentials | `EAM/dft_initialized/` |
-| NN optimization | Optimized potentials | `EAM/optimized/` |
-| Pipeline logs | Timestamped run logs | `src/NNIP/logs/` |
+**Generated outputs:**
+- `src/NNIP/dft_results.json` -- DFT reference data
+- `src/NNIP/dft_scratch/` -- QE working files
+- `EAM/dft_initialized/` -- DFT-initialized MEAM potentials
+- `EAM/optimized/` -- Final optimized MEAM potentials
+- `src/NNIP/pipeline_summary.json` -- Timing and results summary
+- `src/NNIP/logs/` -- Timestamped pipeline logs
 
 ---
 
 ## Prerequisites
 
-- **Python 3.12** with venv at `phys/` (created with `--system-site-packages`)
-- **Quantum Espresso 7.5** — `pw.x` at `/home/kenobi/Workspaces/qe/bin/pw.x`
-- **LAMMPS** with MEAM support and `maxelt >= 20`
+- **Python 3.12** with venv (`phys/`) created using `--system-site-packages`
+- **Quantum Espresso 7.5** (`pw.x` accessible via venv PATH)
+- **LAMMPS** with MEAM support (system install, `maxelt >= 20`)
+- **ASE** for QE calculator interface
 - **TensorFlow** for NN surrogate
-- **ASE** for Espresso calculator interface
-- **Pseudopotentials** in `pseudopotentials/` directory
+- **Pseudopotentials** in `pseudopotentials/` (PAW-PBE UPF format)
 
 ---
 
 ## Troubleshooting
 
-### "Too many elements extracted from MEAM library"
-LAMMPS compiled with low `maxelt` limit (default 5). Use a custom build with `maxelt=20`:
-```bash
-export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
-```
-
-### DFT calculations hang or fail
-- Check that `pw.x` is accessible: `which pw.x`
-- Check pseudopotential files exist: `ls pseudopotentials/`
-- Intermediate results are saved after each element — restart with `--skip-dft` if partial results are sufficient
-
-### NN optimization fails to converge
-- Increase `--samples` (more data for the surrogate)
-- Ensure initial MEAM files are stable (test with `verify_7075.py` first)
-- Check that target properties in `results.json` are physically reachable
-
-### GUI doesn't respond after selection
-- Check terminal for `[POST /select]` and `[SHUTDOWN]` log messages
-- If the server doesn't shut down, Ctrl+C and use `--elements` CLI flag instead
+| Problem | Solution |
+|---------|----------|
+| "Too many elements" from LAMMPS | Rebuild LAMMPS with `maxelt=20`; set `LD_LIBRARY_PATH=$HOME/.local/lib` |
+| DFT hangs or fails | Check `which pw.x`; verify pseudopotentials exist; partial results are saved |
+| NN won't converge | Increase `--samples`; check that `results.json` targets are physically reasonable |
+| GUI unresponsive | Use `--elements` CLI flag instead |

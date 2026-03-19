@@ -125,12 +125,19 @@ def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
     from src.NNIP.dft_to_meam import initialize_meam_from_dft
 
     init_dir = os.path.join(eam_dir, "dft_initialized")
-    merge_config = os.path.join(project_root, "src", "configs", "meam_merge_7075.json")
-    if not os.path.exists(merge_config):
-        merge_config = None
+
+    # Auto-discover merge config if available, otherwise proceed without
+    merge_config = None
+    configs_dir = os.path.join(project_root, "src", "configs")
+    if os.path.isdir(configs_dir):
+        for f in os.listdir(configs_dir):
+            if f.startswith("meam_merge") and f.endswith(".json"):
+                merge_config = os.path.join(configs_dir, f)
+                break
+
     logger.info(f"  Output directory: {init_dir}")
     logger.info(f"  EAM base directory: {eam_dir}")
-    logger.info(f"  Merge config: {merge_config}")
+    logger.info(f"  Merge config: {merge_config or '(auto-discover base files)'}")
     try:
         lib_init, par_init = initialize_meam_from_dft(
             dft_results, elements, eam_dir,
@@ -140,16 +147,27 @@ def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
     except FileNotFoundError as exc:
         logger.warning(f"  ERROR: {exc}")
         logger.info(f"  Falling back to existing merged files...")
-        prefix = "".join(elements)
-        lib_init = os.path.join(eam_dir, f"library_{prefix}.meam")
-        par_init = os.path.join(eam_dir, f"{prefix}.meam")
-        logger.info(f"  Trying: {lib_init}")
-        if not os.path.exists(lib_init):
-            lib_init = os.path.join(eam_dir, "library_AlZnMgCuCrFeMnSiTi.meam")
-            par_init = os.path.join(eam_dir, "AlZnMgCuCrFeMnSiTi.meam")
-            logger.info(f"  Trying 9-element fallback: {lib_init}")
-        if not os.path.exists(lib_init):
-            logger.info("  FATAL: No suitable MEAM files found. Run merge_potentials.py first.")
+        # Search EAM/ for any library file covering all selected elements
+        from src.NNIP.meam_io import parse_library
+        needed = set(elements)
+        lib_init, par_init = None, None
+        for fname in sorted(os.listdir(eam_dir)):
+            if fname.startswith("library_") and fname.endswith(".meam"):
+                candidate = os.path.join(eam_dir, fname)
+                try:
+                    lib_data = parse_library(candidate)
+                    if needed <= set(lib_data.keys()):
+                        lib_init = candidate
+                        par_init = os.path.join(eam_dir, fname[len("library_"):])
+                        if os.path.exists(par_init):
+                            break
+                        lib_init = None
+                except Exception:
+                    continue
+        if lib_init is None:
+            logger.info("  FATAL: No MEAM potential found covering all selected elements.")
+            logger.info(f"  Needed: {sorted(needed)}")
+            logger.info(f"  Place library_*.meam + matching *.meam files in {eam_dir}")
             return
 
     logger.info(f"  Library: {lib_init}  (exists: {os.path.exists(lib_init)})")
