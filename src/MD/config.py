@@ -4,7 +4,7 @@ import sys
 import tkinter as tk
 from tkinter import filedialog
 
-from src.MD.element import ELEMENTS, POTENTIALS
+from element import ELEMENTS, POTENTIALS
 
 # -- Configuration ------------------------------------------------------------
 _SRC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -63,21 +63,55 @@ def select_multiple_configs():
 
 # -- Potential auto-detection --------------------------------------------------
 def find_potential(symbols):
-    """Find a MEAM potential that covers all requested element symbols."""
+    """Find the best MEAM potential that covers all requested element symbols.
+
+    Prefers the potential with the fewest extra elements (best fit).
+    """
     needed = set(symbols)
+    best = None
+    best_extra = float("inf")
     for name, pot in POTENTIALS.items():
         available = {e.symbol for e in pot["elements"]}
         if needed <= available:
-            return pot
-    raise RuntimeError(f"No MEAM potential covers elements: {sorted(needed)}")
+            extra = len(available) - len(needed)
+            if extra < best_extra:
+                best = pot
+                best_extra = extra
+    if best is None:
+        all_available = set()
+        for pot in POTENTIALS.values():
+            all_available.update(e.symbol for e in pot["elements"])
+        missing = needed - all_available
+        if missing:
+            raise RuntimeError(
+                f"Elements not found in any EAM potential: {sorted(missing)}. "
+                f"Available: {sorted(all_available)}"
+            )
+        raise RuntimeError(
+            f"No single MEAM potential covers all of {sorted(needed)}. "
+            f"Available potentials cover: "
+            + ", ".join(
+                f"{name}: {{{', '.join(sorted(e.symbol for e in pot['elements']))}}}"
+                for name, pot in POTENTIALS.items()
+            )
+        )
+    return best
 
 def get_derived_quantities(config):
     # Filter out elements with zero fraction
     comp = {sym: frac for sym, frac in config["composition"].items() if frac > 0}
+
+    pot = find_potential(comp.keys())
+
+    # Use element data from the selected potential (not the global ELEMENTS dict)
+    pot_elements = {e.symbol: e for e in pot["elements"]}
     sel = sorted(
-        [ELEMENTS[sym] for sym in comp],
+        [pot_elements[sym] for sym in comp],
         key=lambda e: e.meam_index,
     )
+
+    # Dominant element determines the lattice type and base lattice constant
+    dominant = max(sel, key=lambda e: comp[e.symbol])
 
     # Weighted average lattice constant
     a_m = sum(comp[e.symbol] * e.lattice_constant for e in sel)
@@ -85,17 +119,10 @@ def get_derived_quantities(config):
     # Box repeats: convert box_size from meters to Angstroms, divide by lattice constant
     box_ang = config["box_size_m"] * 1e10
     n_rep = max(1, round(box_ang / a_m))
-    
-    pot = find_potential(comp.keys())
-    
-    return comp, sel, a_m, n_rep, pot
 
-# For backwards compatibility with single-run usage
-if __name__ == "config": # If imported
-    # We don't automatically load here to avoid multiple dialogs
-    # Users should call the functions explicitly
-    pass
-else:
-    # If run as a script
+    return comp, sel, a_m, n_rep, pot, dominant
+
+# Only auto-load when run directly as a script
+if __name__ == "__main__":
     CONFIG, CONFIG_NAME = load_configuration()
     composition, selected, a_mean, n_repeats, potential = get_derived_quantities(CONFIG)

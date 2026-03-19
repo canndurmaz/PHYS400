@@ -31,8 +31,8 @@ def parse_library(path):
         parts = lines[i].split()
         symbol = parts[0].strip("'\"")
         lattice_type = parts[1].strip("'\"")
-        coord = int(parts[2])
-        atomic_num = int(parts[3])
+        coord = int(float(parts[2]))
+        atomic_num = int(float(parts[3]))
         mass = float(parts[4])
 
         # Line 2: alpha b0 b1 b2 b3 alat esub asub

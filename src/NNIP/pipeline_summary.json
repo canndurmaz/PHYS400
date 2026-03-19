@@ -1,0 +1,68 @@
+{
+  "elements": [
+    "Al",
+    "Cr",
+    "Cu",
+    "Fe",
+    "Mg",
+    "Mn",
+    "Si",
+    "Ti",
+    "Zn"
+  ],
+  "n_samples": 30,
+  "skip_dft": false,
+  "skip_optimize": false,
+  "skip_verify": false,
+  "stage_timings_sec": {
+    "element_selection": 47.32,
+    "dft_reference": 8203.33,
+    "meam_init": 0.0,
+    "nn_optimization": 19.47,
+    "verification": 0.01,
+    "visualization": 1.37,
+    "total": 8271.5
+  },
+  "verification": {
+    "AL7075_simple.json": {
+      "E_opt": 0.0,
+      "E_target": -70.46,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.406,
+      "nu_err_pct": 23.15
+    },
+    "AL5052_simple.json": {
+      "E_opt": 0.0,
+      "E_target": 83.25,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.311,
+      "nu_err_pct": 60.77
+    },
+    "AL2024_noMg.json": {
+      "E_opt": 0.0,
+      "E_target": 67.78,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.342,
+      "nu_err_pct": 46.2
+    },
+    "AL2219_simple.json": {
+      "E_opt": 0.0,
+      "E_target": 65.38,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.33,
+      "nu_err_pct": 51.52
+    },
+    "manual_config.json": {
+      "E_opt": 0.0,
+      "E_target": 92.15,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.296,
+      "nu_err_pct": 68.92
+    }
+  }
+}

@@ -34,6 +34,9 @@ from src.NNIP.meam_io import (
 )
 from src.MD.config import find_potential
 from src.MD.element import ELEMENTS
+from src.NNIP.logging_config import setup_logger
+
+logger = setup_logger("nn_optimizer")
 
 
 # ── LAMMPS evaluation ─────────────────────────────────────────────────────────
@@ -56,6 +59,7 @@ def get_elastic_moduli(L, delta=1e-3):
         nu = c12 / (c11 + c12)
         return E, nu
     except Exception:
+        logger.warning("get_elastic_moduli failed", exc_info=True)
         return 0.0, 0.5
 
 
@@ -104,6 +108,7 @@ def _run_lammps_composition(lib_path, params_path, composition):
         E, nu = get_elastic_moduli(L)
         return E, nu
     except Exception:
+        logger.warning("_run_lammps_composition failed", exc_info=True)
         return 0.0, 0.5
     finally:
         L.close()
@@ -148,10 +153,10 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=30, results_path
     entries = load_training_targets(results_path)
     n_entries = len(entries)
 
-    print(f"\nMulti-Target NN Optimization")
-    print(f"Training entries: {n_entries}")
+    logger.info(f"\nMulti-Target NN Optimization")
+    logger.info(f"Training entries: {n_entries}")
     for name, data in entries.items():
-        print(f"  {name}: E={data['E_GPa']:.2f} GPa, nu={data['nu']:.3f}")
+        logger.info(f"  {name}: E={data['E_GPa']:.2f} GPa, nu={data['nu']:.3f}")
 
     # Build target vector: [E_1, nu_1, E_2, nu_2, ...]
     target_vec = []
@@ -176,10 +181,10 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=30, results_path
         opt_spec = {"params": par_keys}
 
     initial_vec, names = params_to_vector(base_lib, base_params, opt_spec)
-    print(f"Optimizing {len(names)} parameters: {names}")
+    logger.info(f"Optimizing {len(names)} parameters: {names}")
 
     # 1. Sample parameter space
-    print(f"\nSampling {n_samples} points...")
+    logger.info(f"\nSampling {n_samples} points...")
     X_samples = []
     y_samples = []
     tmp_dir = os.path.join(os.path.dirname(__file__), "tmp_nn")
@@ -196,7 +201,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=30, results_path
     y0 = eval_to_flat(initial_vec)
     X_samples.append(initial_vec)
     y_samples.append(y0)
-    print(f"  Baseline: {y0}")
+    logger.info(f"  Baseline: {y0}")
 
     for i in range(n_samples * 3):
         pert = 1.0 + (np.random.rand(len(initial_vec)) - 0.5) * 0.2
@@ -207,7 +212,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=30, results_path
         if valid >= n_entries // 2:
             X_samples.append(vec_pert)
             y_samples.append(y)
-            print(f"  Sample {len(X_samples)}/{n_samples}: valid_entries={valid}/{n_entries}")
+            logger.info(f"  Sample {len(X_samples)}/{n_samples}: valid_entries={valid}/{n_entries}")
         if len(X_samples) >= n_samples:
             break
 
@@ -215,7 +220,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=30, results_path
     y_train = np.array(y_samples)
 
     # 2. Train NN Surrogate
-    print(f"\nTraining NN surrogate ({len(initial_vec)} → {n_entries * 2})...")
+    logger.info(f"\nTraining NN surrogate ({len(initial_vec)} -> {n_entries * 2})...")
     model = tf.keras.Sequential([
         tf.keras.layers.Input(shape=(len(initial_vec),)),
         tf.keras.layers.Dense(64, activation="relu"),
@@ -236,37 +241,41 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=30, results_path
     class StopAtLoss(tf.keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs=None):
             if logs and logs.get("loss", 999) < 5.0:
-                print(f"\n  Target loss reached at epoch {epoch}")
+                logger.info(f"\n  Target loss reached at epoch {epoch}")
                 self.model.stop_training = True
 
-    model.fit(X_norm, y_norm, epochs=10000, verbose=0, callbacks=[StopAtLoss()])
+    history = model.fit(X_norm, y_norm, epochs=10000, verbose=0, callbacks=[StopAtLoss()])
+    training_loss_history = history.history.get("loss", [])
     final_loss = model.evaluate(X_norm, y_norm, verbose=0)
-    print(f"  Final training loss: {final_loss:.4f}")
+    logger.info(f"  Final training loss: {final_loss:.4f}")
 
     # 3. Inverse optimization through NN
-    print("\nOptimizing through NN surrogate...")
+    logger.info("\nOptimizing through NN surrogate...")
     target_norm = (target_vec - y_mean) / y_std
     v_opt = tf.Variable(tf.zeros((1, len(initial_vec)), dtype=tf.float32))
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
+    opt_losses = []
     for step in range(3000):
         with tf.GradientTape() as tape:
             pred_norm = model(v_opt)
             loss = tf.reduce_mean(tf.square(pred_norm - target_norm))
         grads = tape.gradient(loss, v_opt)
         optimizer.apply_gradients([(grads, v_opt)])
+        opt_losses.append(float(loss.numpy()))
         if step % 500 == 0:
-            print(f"  Step {step}: loss={loss.numpy():.6f}")
+            logger.info(f"  Step {step}: loss={loss.numpy():.6f}")
 
     # 4. Validate with LAMMPS
     optimized_vec = v_opt.numpy()[0] * X_std + X_mean
-    print("\nValidating optimized parameters with LAMMPS...")
+    logger.info("\nValidating optimized parameters with LAMMPS...")
     y_final = eval_to_flat(optimized_vec)
 
-    print("\n" + "=" * 60)
-    print("OPTIMIZATION RESULTS")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("OPTIMIZATION RESULTS")
+    logger.info("=" * 60)
     entry_names = list(entries.keys())
+    final_predictions = []
     for k, name in enumerate(entry_names):
         E_target = entries[name]["E_GPa"]
         nu_target = entries[name]["nu"]
@@ -274,10 +283,26 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=30, results_path
         nu_opt = y_final[k * 2 + 1]
         E_err = abs(E_opt - E_target) / max(abs(E_target), 1e-6) * 100
         nu_err = abs(nu_opt - nu_target) / max(abs(nu_target), 1e-6) * 100
-        print(f"  {name}:")
-        print(f"    E:  target={E_target:.2f}  opt={E_opt:.2f}  err={E_err:.1f}%")
-        print(f"    nu: target={nu_target:.3f}  opt={nu_opt:.3f}  err={nu_err:.1f}%")
-    print("=" * 60)
+        logger.info(f"  {name}:")
+        logger.info(f"    E:  target={E_target:.2f}  opt={E_opt:.2f}  err={E_err:.1f}%")
+        logger.info(f"    nu: target={nu_target:.3f}  opt={nu_opt:.3f}  err={nu_err:.1f}%")
+        final_predictions.append({"name": name, "E_opt": float(E_opt), "nu_opt": float(nu_opt)})
+    logger.info("=" * 60)
+
+    # Write diagnostics JSON
+    diag_path = os.path.join(os.path.dirname(__file__), "nn_diagnostics.json")
+    diagnostics = {
+        "training_loss_history": [float(x) for x in training_loss_history],
+        "optimization_trajectory": opt_losses,
+        "param_names": list(names),
+        "initial_vec": initial_vec.tolist(),
+        "optimized_vec": optimized_vec.tolist(),
+        "target_vec": target_vec.tolist(),
+        "final_predictions": final_predictions,
+    }
+    with open(diag_path, "w") as f:
+        json.dump(diagnostics, f, indent=2)
+    logger.info(f"  Diagnostics saved to {diag_path}")
 
     # 5. Save optimized files
     out_dir = os.path.join(project_root, "EAM", "optimized")
@@ -291,9 +316,9 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=30, results_path
     os.replace(lib_out, final_lib)
     os.replace(par_out, final_par)
 
-    print(f"\nOptimized files saved to {out_dir}")
-    print(f"  Library: {final_lib}")
-    print(f"  Params:  {final_par}")
+    logger.info(f"\nOptimized files saved to {out_dir}")
+    logger.info(f"  Library: {final_lib}")
+    logger.info(f"  Params:  {final_par}")
 
     return final_lib, final_par
 

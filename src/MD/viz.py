@@ -36,18 +36,18 @@ def render(composition, selected, traj_file="traj.lammpstrj"):
         print(f"Warning: Trajectory file {traj_file} not found. Skipping visualization.")
         return
 
-    # Clear any existing objects from the global scene
-    ovito.scene.clear()
+    # Clear any existing pipelines from the global scene
+    for p in list(ovito.scene.pipelines):
+        p.remove_from_scene()
 
     pipeline = import_file(traj_file)
 
     # Assign colors and radii per atom type via a modifier
     def assign_type_visuals(frame, data):
-        # Access particle types property
-        types = data.particles.particle_types
+        types_prop = data.particles_.particle_types_
         for i, elem in enumerate(selected, start=1):
-            if i <= len(types):
-                pt = types[i-1] # 0-indexed access to types
+            pt = types_prop.type_by_id_(i)
+            if pt is not None:
                 pt.name = elem.symbol
                 pt.color = get_color(elem.symbol)
                 pt.radius = 0.8

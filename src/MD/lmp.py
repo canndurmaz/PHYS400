@@ -6,28 +6,44 @@ from config import load_configuration, get_derived_quantities, select_multiple_c
 
 # ── Elastic Properties ────────────────────────────────────────
 def get_elastic_moduli(L, delta=1e-3):
-    """Estimate Young's Modulus and Poisson's Ratio via axial strain."""
+    """Estimate Young's Modulus and Poisson's Ratio via axial strain.
+
+    Uses symmetric +/- strain for better accuracy and cancellation of
+    odd-order stress terms. No minimize after strain — avoids local
+    minimum hopping in random alloys.
+    """
     print(f"Estimating elastic properties (delta={delta})...")
-    
+
     # Baseline stress
     L.command("run 0")
-    s0_xx = -L.get_thermo("pxx") * 1e-4
-    s0_yy = -L.get_thermo("pyy") * 1e-4
-    
+    pxx0 = L.get_thermo("pxx")
+    pyy0 = L.get_thermo("pyy")
+    print(f"  Baseline pressure (bar): pxx={pxx0:.2f}, pyy={pyy0:.2f}")
+
     # Apply +delta strain in x
     L.command(f"change_box all x scale {1.0 + delta} remap units box")
-    L.command("minimize 1e-10 1e-10 1000 10000")
-    s_plus_xx = -L.get_thermo("pxx") * 1e-4
-    s_plus_yy = -L.get_thermo("pyy") * 1e-4
-    
-    # C11, C12 estimate from axial perturbation
-    c11 = (s_plus_xx - s0_xx) / delta
-    c12 = (s_plus_yy - s0_yy) / delta
-    
-    # Revert strain for production run
+    L.command("run 0")
+    pxx_plus = L.get_thermo("pxx")
+    pyy_plus = L.get_thermo("pyy")
+
+    # Revert and apply -delta strain in x
     L.command(f"change_box all x scale {1.0 / (1.0 + delta)} remap units box")
-    L.command("minimize 1e-10 1e-10 1000 10000")
-    
+    L.command(f"change_box all x scale {1.0 - delta} remap units box")
+    L.command("run 0")
+    pxx_minus = L.get_thermo("pxx")
+    pyy_minus = L.get_thermo("pyy")
+
+    # Revert to original box
+    L.command(f"change_box all x scale {1.0 / (1.0 - delta)} remap units box")
+
+    # Central difference: C = -(dp/de), bar -> GPa
+    c11 = -(pxx_plus - pxx_minus) / (2 * delta) * 1e-4
+    c12 = -(pyy_plus - pyy_minus) / (2 * delta) * 1e-4
+
+    print(f"  +strain pressure (bar): pxx={pxx_plus:.2f}, pyy={pyy_plus:.2f}")
+    print(f"  -strain pressure (bar): pxx={pxx_minus:.2f}, pyy={pyy_minus:.2f}")
+    print(f"  C11={c11:.2f} GPa, C12={c12:.2f} GPa")
+
     # Formula for cubic/isotropic materials
     E = (c11 - c12) * (c11 + 2 * c12) / (c11 + c12)
     nu = c12 / (c11 + c12)
@@ -62,24 +78,24 @@ def save_to_ml_results(E_val, nu_val, config_name, composition):
     print(f"Results updated in {results_path} for: {config_name}")
 
 # ── Simulation Function ───────────────────────────────────────
-def run_simulation(config_path):
+def run_simulation(config_path, viz=False):
     print(f"\n" + "="*60)
     print(f"Processing: {config_path if config_path else 'Default'}")
     print("="*60)
     
     config, config_name = load_configuration(config_path)
-    comp, sel, a_m, n_rep, pot = get_derived_quantities(config)
+    comp, sel, a_m, n_rep, pot, dominant = get_derived_quantities(config)
 
-    # pair_coeff strings
-    library_elements = " ".join(e.symbol for e in pot["elements"])
-    active_elements = " ".join(e.symbol for e in sel)
+    # pair_coeff strings — use meam_label (the label in the library file)
+    library_elements = " ".join(e.meam_label for e in pot["elements"])
+    active_elements = " ".join(e.meam_label for e in sel)
 
     L = lammps(cmdargs=["-log", "none", "-screen", "none"])
     L.command("units metal")
     L.command("atom_style atomic")
     L.command("boundary p p p")
 
-    L.command(f"lattice {sel[0].lattice_type} {a_m:.4f}")
+    L.command(f"lattice {dominant.lattice_type} {a_m:.4f}")
     L.command(f"region box block 0 {n_rep} 0 {n_rep} 0 {n_rep}")
     L.command(f"create_box {len(sel)} box")
     L.command("create_atoms 1 box")
@@ -99,19 +115,39 @@ def run_simulation(config_path):
     for i, elem in enumerate(sel, start=1):
         L.command(f"mass {i} {elem.mass}")
 
-    print("Relaxing ground state...")
-    L.command("minimize 1.0e-4 1.0e-6 100 1000")
+    print("Relaxing ground state (box + atoms)...")
+    L.command("fix boxrelax all box/relax aniso 0.0 vmax 0.001")
+    L.command("minimize 1.0e-6 1.0e-8 1000 10000")
+    L.command("unfix boxrelax")
 
     E, nu = get_elastic_moduli(L)
     print(f"\nProperties: Young's Modulus (E) = {E:.2f} GPa, Poisson's Ratio (nu) = {nu:.3f}\n")
 
     save_to_ml_results(E, nu, config_name, comp)
 
-    # ── Visualization ─────────────────────────────────────────────
-    from viz import render
-    render(comp, sel)
-    
+    # ── MD Run ────────────────────────────────────────────────────
+    temp = config.get("temperature", 300.0)
+    total_steps = config.get("total_steps", 1000)
+    thermo_int = config.get("thermo_interval", 10)
+    dump_int = config.get("dump_interval", 50)
+
+    traj_file = f"traj_{config_name}.lammpstrj"
+
+    L.command(f"velocity all create {temp} 54321 dist gaussian")
+    L.command(f"fix nvt all nvt temp {temp} {temp} 0.1")
+    L.command(f"thermo {thermo_int}")
+    L.command(f"dump traj all atom {dump_int} {traj_file}")
+    print(f"Running MD: {total_steps} steps at {temp} K...")
+    L.command(f"run {total_steps}")
+    L.command("undump traj")
+    L.command("unfix nvt")
+
     L.close()
+
+    # ── Visualization ─────────────────────────────────────────────
+    if viz:
+        from viz import render
+        render(comp, sel, traj_file=traj_file)
 
 def clear_old_videos():
     """Remove all existing mp4 files from the visualization directory."""
@@ -129,17 +165,21 @@ def clear_old_videos():
             print(f"Cleared {len(videos)} existing video(s) from {vis_dir}")
 
 if __name__ == "__main__":
-    clear_old_videos()
-    # Select multiple files via GUI
+    import argparse
+    parser = argparse.ArgumentParser(description="MEAM MD Simulation")
+    parser.add_argument("--viz", action="store_true", help="Enable visualization")
+    args = parser.parse_args()
+
+    if args.viz:
+        clear_old_videos()
+
     paths = select_multiple_configs()
-    
+
     if not paths:
         print("No files selected or operation cancelled.")
-        # Optional: run_simulation(None) to run default if nothing selected?
-        # Let's just exit to respect user cancellation
     else:
         for p in paths:
             try:
-                run_simulation(p)
+                run_simulation(p, viz=args.viz)
             except Exception as ex:
                 print(f"Error processing {p}: {ex}")

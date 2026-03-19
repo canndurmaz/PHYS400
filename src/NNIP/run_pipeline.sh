@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run the full DFT-driven N-element MEAM potential pipeline.
 #
-# Usage:
+# Usage (from src/NNIP/):
 #   ./run_pipeline.sh                        # Full pipeline with GUI
 #   ./run_pipeline.sh Al Cu Zn Mg            # Skip GUI, specify elements
 #   ./run_pipeline.sh --skip-dft Al Cu Zn Mg # Skip DFT stage
@@ -15,10 +15,9 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd ../.. && pwd)"
 VENV="$PROJECT_ROOT/phys"
-LOG_DIR="$SCRIPT_DIR/logs"
+LOG_DIR="./logs"
 
 # ── Activate venv ────────────────────────────────────────────────────────────
 if [ -f "$VENV/bin/activate" ]; then
@@ -83,10 +82,19 @@ echo " Flags:        ${FLAGS[*]+"${FLAGS[*]}"}"
 echo "============================================================"
 echo ""
 
-# ── Run pipeline ─────────────────────────────────────────────────────────────
-cd "$PROJECT_ROOT"
+# ── Ensure merged MEAM potentials exist ──────────────────────────────────────
+EAM_DIR="$PROJECT_ROOT/EAM"
+MERGE_CONFIG="$PROJECT_ROOT/src/configs/meam_merge_7075.json"
+MERGED_LIB="$EAM_DIR/library_AlZnMgCuCrFeMnSiTi.meam"
 
-python src/NNIP/pipeline.py "${PYARGS[@]+"${PYARGS[@]}"}" 2>&1 | tee "$LOGFILE"
+if [ -f "$MERGE_CONFIG" ] && [ ! -f "$MERGED_LIB" ]; then
+    echo "Merged MEAM potentials not found. Running merge_potentials.py..."
+    python "$PROJECT_ROOT/src/NNIP/merge_potentials.py" --config "$MERGE_CONFIG" --eam-dir "$EAM_DIR" --output-dir "$EAM_DIR"
+    echo ""
+fi
+
+# ── Run pipeline ─────────────────────────────────────────────────────────────
+python "$PROJECT_ROOT/src/NNIP/pipeline.py" "${PYARGS[@]+"${PYARGS[@]}"}" 2>&1 | tee "$LOGFILE"
 
 EXIT_CODE=${PIPESTATUS[0]}
 

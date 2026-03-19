@@ -2,11 +2,19 @@ import os
 import re
 
 
+# Atomic number → standard symbol (covers common MEAM elements)
+_Z_TO_SYMBOL = {
+    12: "Mg", 13: "Al", 14: "Si", 22: "Ti", 24: "Cr", 25: "Mn",
+    26: "Fe", 27: "Co", 28: "Ni", 29: "Cu", 30: "Zn", 40: "Zr",
+    41: "Nb", 42: "Mo", 47: "Ag", 50: "Sn", 74: "W", 79: "Au",
+}
+
+
 class Element:
     """Represents a MEAM element with its physical properties."""
 
     def __init__(self, symbol, lattice_type, coord_number, atomic_number,
-                 mass, lattice_constant, meam_index):
+                 mass, lattice_constant, meam_index, meam_label=None):
         self.symbol = symbol
         self.lattice_type = lattice_type
         self.coord_number = coord_number
@@ -14,6 +22,7 @@ class Element:
         self.mass = mass
         self.lattice_constant = lattice_constant
         self.meam_index = meam_index
+        self.meam_label = meam_label or symbol  # label used in the library file
 
     def __repr__(self):
         return f"Element({self.symbol}, {self.lattice_type}, a={self.lattice_constant} A)"
@@ -26,6 +35,8 @@ def parse_meam_library(path):
       line 1: 'Sym' 'lat' coord atomic_num mass
       line 2: alpha b0 b1 b2 b3 alat esub asub
       line 3: t0 t1 t2 t3 rozero ibar
+
+    Handles non-standard labels (e.g. 'AlS') by resolving via atomic number.
     """
     elements = []
     with open(path) as f:
@@ -36,15 +47,17 @@ def parse_meam_library(path):
     while i + 2 < len(lines):
         header = lines[i]
         params = lines[i + 1].split()
-        # line 3 unused here
         # Parse header: 'Sym' 'lat' coord atomic_num mass
         parts = header.split()
-        symbol = parts[0].strip("'\"")
+        meam_label = parts[0].strip("'\"")
         lattice_type = parts[1].strip("'\"")
-        coord_number = int(parts[2])
-        atomic_number = int(parts[3])
+        coord_number = int(float(parts[2]))
+        atomic_number = int(float(parts[3]))
         mass = float(parts[4])
         lattice_constant = float(params[5])  # alat is at index 5
+
+        # Resolve standard symbol from atomic number
+        symbol = _Z_TO_SYMBOL.get(atomic_number, meam_label)
 
         elements.append(Element(
             symbol=symbol,
@@ -54,6 +67,7 @@ def parse_meam_library(path):
             mass=mass,
             lattice_constant=lattice_constant,
             meam_index=idx,
+            meam_label=meam_label,
         ))
         idx += 1
         i += 3
@@ -75,7 +89,7 @@ def scan_eam_dir(eam_dir):
       }
     """
     potentials = {}
-    for fname in os.listdir(eam_dir):
+    for fname in sorted(os.listdir(eam_dir)):
         m = re.match(r'^library_(.+)\.meam$', fname)
         if not m:
             continue
@@ -84,7 +98,11 @@ def scan_eam_dir(eam_dir):
         params_path = os.path.join(eam_dir, f"{name}.meam")
         if not os.path.isfile(params_path):
             continue
-        elements = parse_meam_library(library_path)
+        try:
+            elements = parse_meam_library(library_path)
+        except Exception as exc:
+            print(f"Warning: skipping {fname}: {exc}")
+            continue
         potentials[name] = {
             "library": library_path,
             "params": params_path,

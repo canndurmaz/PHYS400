@@ -29,6 +29,10 @@ from ase.build import bulk
 from ase.eos import EquationOfState
 from ase.calculators.espresso import Espresso, EspressoProfile
 
+from src.NNIP.logging_config import setup_logger
+
+logger = setup_logger("dft")
+
 QE_BIN = "/home/kenobi/Workspaces/qe/bin/pw.x"
 PSEUDO_DIR = "/home/kenobi/Workspaces/PHYS400/pseudopotentials"
 
@@ -91,6 +95,26 @@ def _make_calculator(pseudopotentials, directory, magnetic=False):
     )
 
 
+# ── Isolated atom energy (for true cohesive energy) ──────────────────────────
+
+def _isolated_atom_energy(symbol, pseudo, calc_dir, magnetic):
+    """Run SCF for an isolated atom in a large box. Returns energy or None."""
+    from ase import Atoms
+
+    box_size = 12.0  # large enough to avoid periodic image interaction
+    atoms = Atoms(symbol, positions=[[0, 0, 0]], cell=[box_size] * 3, pbc=True)
+    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic)
+    try:
+        t0 = time.time()
+        e = atoms.get_potential_energy()
+        dt = time.time() - t0
+        print(f"    [SCF] Isolated {symbol}: E={e:.4f} eV ({dt:.1f}s)", flush=True)
+        return e
+    except Exception as exc:
+        print(f"    [SCF] Isolated {symbol}: FAILED: {exc}", flush=True)
+        return None
+
+
 # ── Single EOS point (top-level function for pickling) ───────────────────────
 
 def _run_eos_point(symbol, pseudo, ase_lat, a, calc_dir, magnetic, strain_idx):
@@ -110,22 +134,24 @@ def _run_eos_point(symbol, pseudo, ase_lat, a, calc_dir, magnetic, strain_idx):
 
 
 def _eos_fit(symbol, work_dir, n_workers=4):
-    """Equation of state fit → (a0, E_coh, B) for one element.
+    """Equation of state fit → (a0, E_coh, B, eos_data_dict) for one element.
 
     Runs 7 strain-point SCF calculations in parallel.
+    Returns:
+        (a0, E_coh, B_GPa, eos_data_dict) where eos_data_dict has volumes/energies lists.
     """
     data = ELEMENT_DATA[symbol]
     lat, a_guess, pseudo = data
     magnetic = symbol in MAGNETIC_ELEMENTS
 
-    print(f"  [EOS] Starting EOS fit for {symbol}", flush=True)
-    print(f"  [EOS]   lattice={lat}, a_guess={a_guess} A, pseudo={pseudo}, magnetic={magnetic}", flush=True)
-    print(f"  [EOS]   scratch dir: {work_dir}", flush=True)
+    logger.info(f"  [EOS] Starting EOS fit for {symbol}")
+    logger.debug(f"  [EOS]   lattice={lat}, a_guess={a_guess} A, pseudo={pseudo}, magnetic={magnetic}")
+    logger.debug(f"  [EOS]   scratch dir: {work_dir}")
 
     if lat in ("hcp", "hex"):
         ase_lat = "fcc"
         a_guess_ase = a_guess * math.sqrt(2)
-        print(f"  [EOS]   HCP -> FCC proxy, a_ase={a_guess_ase:.4f} A", flush=True)
+        logger.info(f"  [EOS]   HCP -> FCC proxy, a_ase={a_guess_ase:.4f} A")
     elif lat == "diamond":
         ase_lat = "diamond"
         a_guess_ase = a_guess
@@ -135,7 +161,7 @@ def _eos_fit(symbol, work_dir, n_workers=4):
 
     strains = np.linspace(0.96, 1.04, 7)
     eos_workers = min(n_workers, 7)
-    print(f"  [EOS]   Running 7 SCF points in parallel ({eos_workers} workers)...", flush=True)
+    logger.info(f"  [EOS]   Running 7 SCF points in parallel ({eos_workers} workers)...")
 
     t_eos_start = time.time()
 
@@ -159,28 +185,55 @@ def _eos_fit(symbol, work_dir, n_workers=4):
     energies = [e for _, v, e in eos_results if v is not None]
 
     t_eos = time.time() - t_eos_start
-    print(f"  [EOS]   7 points finished in {t_eos:.1f}s ({len(volumes)} succeeded)", flush=True)
+    logger.info(f"  [EOS]   7 points finished in {t_eos:.1f}s ({len(volumes)} succeeded)")
 
     if len(volumes) < 5:
-        print(f"  [EOS]   WARNING: Only {len(volumes)} valid points, need 5. Using fallback.", flush=True)
-        return a_guess, 3.0, 70.0
+        logger.warning(f"  [EOS]   Only {len(volumes)} valid points, need 5. Using fallback.")
+        return a_guess, 3.0, 70.0, {"volumes": volumes, "energies": energies}, 0.0
 
-    print(f"  [EOS]   Fitting Birch-Murnaghan EOS...", flush=True)
+    logger.info(f"  [EOS]   Fitting Birch-Murnaghan EOS...")
     eos = EquationOfState(volumes, energies, "birchmurnaghan")
     v0, e0, B = eos.fit()
-    print(f"  [EOS]   V0={v0:.3f} A^3, E0={e0:.4f} eV, B_raw={B:.6f} eV/A^3", flush=True)
+    logger.debug(f"  [EOS]   V0={v0:.3f} A^3, E0={e0:.4f} eV, B_raw={B:.6f} eV/A^3")
 
-    n_atoms = 4 if ase_lat == "fcc" else (2 if ase_lat == "bcc" else 8 if ase_lat == "diamond" else 4)
-    a0 = (v0 / (n_atoms / 4.0)) ** (1.0 / 3.0) if ase_lat == "fcc" else (v0 * 2) ** (1.0 / 3.0)
+    # ASE bulk() creates primitive cells:
+    #   FCC: 1 atom, V_prim = a^3/4  →  a = (4V)^(1/3)
+    #   BCC: 1 atom, V_prim = a^3/2  →  a = (2V)^(1/3)
+    #   Diamond: 2 atoms, V_prim = a^3/4  →  a = (4V)^(1/3)
+    if ase_lat == "fcc":
+        n_atoms = 1
+        a0 = (4.0 * v0) ** (1.0 / 3.0)
+    elif ase_lat == "bcc":
+        n_atoms = 1
+        a0 = (2.0 * v0) ** (1.0 / 3.0)
+    elif ase_lat == "diamond":
+        n_atoms = 2
+        a0 = (4.0 * v0) ** (1.0 / 3.0)
+    else:
+        n_atoms = 1
+        a0 = v0 ** (1.0 / 3.0)
 
     if lat in ("hcp", "hex"):
         a0 = a0 / math.sqrt(2)
 
-    E_coh = -e0 / n_atoms
+    # Compute true cohesive energy: E_coh = E_atom(isolated) - E_bulk/N
+    logger.info(f"  [EOS]   Computing isolated atom energy for true E_coh...")
+    iso_dir = os.path.join(work_dir, "isolated_atom")
+    os.makedirs(iso_dir, exist_ok=True)
+    e_atom = _isolated_atom_energy(symbol, pseudo, iso_dir, magnetic)
+
+    if e_atom is not None:
+        E_coh = e_atom - e0 / n_atoms
+    else:
+        logger.warning(f"  [EOS]   Isolated atom calc failed, using E_bulk/N as fallback")
+        E_coh = -e0 / n_atoms
+
     B_GPa = B / 0.00624
 
-    print(f"  [EOS] === Result: a0={a0:.4f} A, E_coh={E_coh:.4f} eV, B={B_GPa:.1f} GPa ===", flush=True)
-    return a0, E_coh, B_GPa
+    e_bulk_per_atom = e0 / n_atoms  # total DFT energy per atom (for formation energy refs)
+    logger.info(f"  [EOS] === Result: a0={a0:.4f} A, E_coh={E_coh:.4f} eV, B={B_GPa:.1f} GPa ===")
+    eos_data_dict = {"volumes": volumes, "energies": energies}
+    return a0, E_coh, B_GPa, eos_data_dict, e_bulk_per_atom
 
 
 def _elastic_constants(symbol, a0, work_dir):
@@ -190,28 +243,28 @@ def _elastic_constants(symbol, a0, work_dir):
     magnetic = symbol in MAGNETIC_ELEMENTS
 
     if lat not in ("fcc", "bcc"):
-        print(f"  [ELASTIC] Skipping {symbol} (lattice={lat}, not cubic)", flush=True)
+        logger.info(f"  [ELASTIC] Skipping {symbol} (lattice={lat}, not cubic)")
         return None, None
 
-    print(f"  [ELASTIC] Computing C11, C12 for {symbol} ({lat}, a0={a0:.4f} A)", flush=True)
+    logger.info(f"  [ELASTIC] Computing C11, C12 for {symbol} ({lat}, a0={a0:.4f} A)")
 
-    # Baseline stress
-    print(f"  [ELASTIC] Step 1/2: Baseline stress...", flush=True)
-    atoms = bulk(symbol, lat, a=a0)
+    # Baseline stress — use cubic conventional cell so Cartesian strain maps to C11/C12
+    logger.info(f"  [ELASTIC] Step 1/2: Baseline stress...")
+    atoms = bulk(symbol, lat, a=a0, cubic=True)
     calc_dir = os.path.join(work_dir, "elastic_base")
     atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic)
 
     try:
         t0 = time.time()
         stress0 = atoms.get_stress()
-        print(f"  [ELASTIC]   Baseline done in {time.time()-t0:.1f}s", flush=True)
+        logger.info(f"  [ELASTIC]   Baseline done in {time.time()-t0:.1f}s")
     except Exception as exc:
-        print(f"  [ELASTIC]   Baseline FAILED: {exc}", flush=True)
+        logger.warning(f"  [ELASTIC]   Baseline FAILED: {exc}", exc_info=True)
         return None, None
 
     # Strained
     delta = 0.01
-    print(f"  [ELASTIC] Step 2/2: Strained stress (delta={delta})...", flush=True)
+    logger.info(f"  [ELASTIC] Step 2/2: Strained stress (delta={delta})...")
     cell = atoms.get_cell().copy()
     cell[0, 0] *= (1 + delta)
     atoms_strained = atoms.copy()
@@ -222,16 +275,16 @@ def _elastic_constants(symbol, a0, work_dir):
     try:
         t0 = time.time()
         stress1 = atoms_strained.get_stress()
-        print(f"  [ELASTIC]   Strained done in {time.time()-t0:.1f}s", flush=True)
+        logger.info(f"  [ELASTIC]   Strained done in {time.time()-t0:.1f}s")
     except Exception as exc:
-        print(f"  [ELASTIC]   Strained FAILED: {exc}", flush=True)
+        logger.warning(f"  [ELASTIC]   Strained FAILED: {exc}", exc_info=True)
         return None, None
 
     to_GPa = 1.0 / 0.00624
     C11 = abs((stress1[0] - stress0[0]) / delta * to_GPa)
     C12 = abs((stress1[1] - stress0[1]) / delta * to_GPa)
 
-    print(f"  [ELASTIC] === Result: C11={C11:.1f} GPa, C12={C12:.1f} GPa ===", flush=True)
+    logger.info(f"  [ELASTIC] === Result: C11={C11:.1f} GPa, C12={C12:.1f} GPa ===")
     return C11, C12
 
 
@@ -329,28 +382,28 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
         work_dir = os.path.join(os.path.dirname(__file__), "dft_scratch")
     os.makedirs(work_dir, exist_ok=True)
 
-    print(f"\n{'='*60}", flush=True)
-    print(f"DFT Reference Generator", flush=True)
-    print(f"{'='*60}", flush=True)
-    print(f"  Elements:        {elements}", flush=True)
-    print(f"  Output:          {output_path}", flush=True)
-    print(f"  Scratch:         {work_dir}", flush=True)
-    print(f"  Parallel workers: {n_workers}", flush=True)
-    print(f"  pw.x:            {QE_BIN} ({'found' if os.path.isfile(QE_BIN) else 'NOT FOUND'})", flush=True)
+    logger.info(f"\n{'='*60}")
+    logger.info(f"DFT Reference Generator")
+    logger.info(f"{'='*60}")
+    logger.info(f"  Elements:        {elements}")
+    logger.info(f"  Output:          {output_path}")
+    logger.info(f"  Scratch:         {work_dir}")
+    logger.info(f"  Parallel workers: {n_workers}")
+    logger.info(f"  pw.x:            {QE_BIN} ({'found' if os.path.isfile(QE_BIN) else 'NOT FOUND'})")
 
     valid = [e for e in elements if e in ELEMENT_DATA]
     skipped = [e for e in elements if e not in ELEMENT_DATA]
     if skipped:
-        print(f"  Skipping (no metadata): {skipped}", flush=True)
-    print(f"  Valid elements:  {valid}", flush=True)
+        logger.info(f"  Skipping (no metadata): {skipped}")
+    logger.info(f"  Valid elements:  {valid}")
 
     n_eos = len(valid) * 7
     n_elastic = sum(1 for e in valid if ELEMENT_DATA[e][0] in ("fcc", "bcc")) * 2
     n_binary = len(valid) * (len(valid) - 1) // 2
-    print(f"\n  Planned: {n_eos} EOS + {n_elastic} elastic + {n_binary} binary = ~{n_eos+n_elastic+n_binary} SCF runs", flush=True)
-    print(f"  EOS runs parallelized ({min(n_workers, 7)} at a time per element)", flush=True)
-    print(f"  Binary pairs parallelized ({min(n_workers, n_binary)} at a time)", flush=True)
-    print(f"{'='*60}\n", flush=True)
+    logger.info(f"\n  Planned: {n_eos} EOS + {n_elastic} elastic + {n_binary} binary = ~{n_eos+n_elastic+n_binary} SCF runs")
+    logger.info(f"  EOS runs parallelized ({min(n_workers, 7)} at a time per element)")
+    logger.info(f"  Binary pairs parallelized ({min(n_workers, n_binary)} at a time)")
+    logger.info(f"{'='*60}\n")
 
     results = {"elements": {}, "binary_pairs": {}}
     e_per_atom = {}
@@ -360,20 +413,21 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
     # Elements run sequentially (elastic depends on EOS a0),
     # but EOS strain points within each element run in parallel.
     for idx, sym in enumerate(valid, 1):
-        print(f"\n{'─'*60}", flush=True)
-        print(f"  ELEMENT {idx}/{len(valid)}: {sym}", flush=True)
-        print(f"{'─'*60}", flush=True)
+        logger.info(f"\n{'─'*60}")
+        logger.info(f"  ELEMENT {idx}/{len(valid)}: {sym}")
+        logger.info(f"{'─'*60}")
         elem_dir = os.path.join(work_dir, sym)
         os.makedirs(elem_dir, exist_ok=True)
 
         t_elem_start = time.time()
-        a0, E_coh, B = _eos_fit(sym, elem_dir, n_workers=n_workers)
+        a0, E_coh, B, eos_data, e_bulk = _eos_fit(sym, elem_dir, n_workers=n_workers)
 
         entry = {
             "a_lat": round(a0, 4),
             "E_coh": round(E_coh, 4),
             "B_GPa": round(B, 1),
             "lattice": ELEMENT_DATA[sym][0],
+            "eos_data": eos_data,
         }
 
         C11, C12 = _elastic_constants(sym, a0, elem_dir)
@@ -382,24 +436,22 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
             entry["C12"] = round(C12, 1)
 
         results["elements"][sym] = entry
-        print(f"  Element {sym} done in {time.time()-t_elem_start:.1f}s", flush=True)
+        logger.info(f"  Element {sym} done in {time.time()-t_elem_start:.1f}s")
 
         # Save intermediate
         with open(output_path, "w") as f:
             json.dump(results, f, indent=2)
-        print(f"  [SAVE] Intermediate results -> {output_path}", flush=True)
+        logger.info(f"  [SAVE] Intermediate results -> {output_path}")
 
-        lat = ELEMENT_DATA[sym][0]
-        n_atoms = 4 if lat == "fcc" else (2 if lat == "bcc" else 8 if lat == "diamond" else 2)
-        e_per_atom[sym] = -E_coh
+        e_per_atom[sym] = e_bulk  # DFT total energy per atom for formation energy reference
 
     # ── Stage 2: Binary pairs — ALL in parallel ──────────────────────────
     pairs = [(valid[i], valid[j]) for i in range(len(valid)) for j in range(i+1, len(valid))]
 
     if pairs:
-        print(f"\n{'─'*60}", flush=True)
-        print(f"  BINARY PAIRS: {len(pairs)} total, running {min(n_workers, len(pairs))} in parallel", flush=True)
-        print(f"{'─'*60}", flush=True)
+        logger.info(f"\n{'─'*60}")
+        logger.info(f"  BINARY PAIRS: {len(pairs)} total, running {min(n_workers, len(pairs))} in parallel")
+        logger.info(f"{'─'*60}")
 
         t_pairs_start = time.time()
         with ProcessPoolExecutor(max_workers=n_workers) as pool:
@@ -414,41 +466,41 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
                 done_count += 1
                 if e_form is not None:
                     results["binary_pairs"][pair_key] = {"E_form": round(e_form, 4)}
-                print(f"  [{done_count}/{len(pairs)}] {pair_key}: {'OK' if e_form is not None else 'FAILED'}", flush=True)
+                logger.info(f"  [{done_count}/{len(pairs)}] {pair_key}: {'OK' if e_form is not None else 'FAILED'}")
 
                 # Save after each completion
                 with open(output_path, "w") as f:
                     json.dump(results, f, indent=2)
 
         t_pairs = time.time() - t_pairs_start
-        print(f"  All {len(pairs)} pairs done in {t_pairs:.1f}s ({t_pairs/60:.1f} min)", flush=True)
+        logger.info(f"  All {len(pairs)} pairs done in {t_pairs:.1f}s ({t_pairs/60:.1f} min)")
 
     # ── Final summary ────────────────────────────────────────────────────
     t_total = time.time() - t_total_start
-    print(f"\n{'='*60}", flush=True)
-    print(f"DFT REFERENCE COMPLETE", flush=True)
-    print(f"{'='*60}", flush=True)
-    print(f"  Total wall time: {t_total:.1f}s ({t_total/60:.1f} min)", flush=True)
-    print(f"  Elements: {list(results['elements'].keys())}", flush=True)
-    print(f"  Pairs:    {list(results['binary_pairs'].keys())}", flush=True)
-    print(f"  Output:   {output_path}", flush=True)
+    logger.info(f"\n{'='*60}")
+    logger.info(f"DFT REFERENCE COMPLETE")
+    logger.info(f"{'='*60}")
+    logger.info(f"  Total wall time: {t_total:.1f}s ({t_total/60:.1f} min)")
+    logger.info(f"  Elements: {list(results['elements'].keys())}")
+    logger.info(f"  Pairs:    {list(results['binary_pairs'].keys())}")
+    logger.info(f"  Output:   {output_path}")
 
-    print(f"\n  Per-element results:", flush=True)
+    logger.info(f"\n  Per-element results:")
     for sym, data in results["elements"].items():
         line = f"    {sym:3s}: a_lat={data['a_lat']:.4f} A, E_coh={data['E_coh']:.4f} eV, B={data['B_GPa']:.1f} GPa"
         if "C11" in data:
             line += f", C11={data['C11']:.1f}, C12={data['C12']:.1f} GPa"
-        print(line, flush=True)
+        logger.info(line)
 
     if results["binary_pairs"]:
-        print(f"\n  Binary pair results:", flush=True)
+        logger.info(f"\n  Binary pair results:")
         for pair, data in results["binary_pairs"].items():
-            print(f"    {pair}: E_form={data['E_form']:.4f} eV/atom", flush=True)
+            logger.info(f"    {pair}: E_form={data['E_form']:.4f} eV/atom")
 
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\n  [SAVE] Final results -> {output_path}", flush=True)
-    print(f"{'='*60}\n", flush=True)
+    logger.info(f"\n  [SAVE] Final results -> {output_path}")
+    logger.info(f"{'='*60}\n")
 
     return results
 

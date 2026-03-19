@@ -10,10 +10,13 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.MD.config import load_configuration, get_derived_quantities
+from src.NNIP.logging_config import setup_logger
+
+logger = setup_logger("verify_7075")
 
 def get_elastic_moduli(L, delta=1e-3):
     """Estimate Young's Modulus and Poisson's Ratio via axial strain."""
-    print(f"Estimating elastic properties (delta={delta})...")
+    logger.info(f"Estimating elastic properties (delta={delta})...")
     
     # Baseline stress
     L.command("run 0")
@@ -40,9 +43,9 @@ def get_elastic_moduli(L, delta=1e-3):
     return E, nu
 
 def verify_7075(config_path):
-    print(f"\n" + "="*60)
-    print(f"Verifying AA 7075 Potential: {config_path}")
-    print("="*60)
+    logger.info(f"\n" + "="*60)
+    logger.info(f"Verifying AA 7075 Potential: {config_path}")
+    logger.info("="*60)
     
     config, _ = load_configuration(config_path)
     comp, sel, a_m, n_rep, pot = get_derived_quantities(config)
@@ -84,22 +87,22 @@ def verify_7075(config_path):
     for i, elem in enumerate(sel, start=1):
         L.command(f"mass {i} {elem.mass}")
 
-    print("Relaxing ground state...")
+    logger.info("Relaxing ground state...")
     L.command("minimize 1.0e-6 1.0e-8 1000 10000")
 
     E, nu = get_elastic_moduli(L)
-    
-    print(f"\nResults for AA 7075 Detailed Composition:")
-    print(f"  Young's Modulus (E): {E:.2f} GPa")
-    print(f"  Poisson's Ratio (nu): {nu:.3f}")
-    
+
+    logger.info(f"\nResults for AA 7075 Detailed Composition:")
+    logger.info(f"  Young's Modulus (E): {E:.2f} GPa")
+    logger.info(f"  Poisson's Ratio (nu): {nu:.3f}")
+
     # Literature values for AA 7075-T6
     E_lit = 71.7
     nu_lit = 0.33
-    
-    print(f"\nLiterature Comparison:")
-    print(f"  Target E:  {E_lit} GPa (Diff: {((E-E_lit)/E_lit)*100:.1f}%)")
-    print(f"  Target nu: {nu_lit} (Diff: {((nu-nu_lit)/nu_lit)*100:.1f}%)")
+
+    logger.info(f"\nLiterature Comparison:")
+    logger.info(f"  Target E:  {E_lit} GPa (Diff: {((E-E_lit)/E_lit)*100:.1f}%)")
+    logger.info(f"  Target nu: {nu_lit} (Diff: {((nu-nu_lit)/nu_lit)*100:.1f}%)")
     
     L.close()
     
