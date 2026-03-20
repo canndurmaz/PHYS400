@@ -110,7 +110,7 @@ DFT values are mapped onto the MEAM parameter space. Base MEAM files are auto-di
 ### Stage 3: NN Optimization
 
 1. **Sample**: Perturb initial MEAM parameters, evaluate each with LAMMPS across all target compositions
-2. **Train**: Feed-forward NN (64-64-32 architecture) learns params-to-properties mapping using MD results from `src/ML/results.json`
+2. **Train**: Feed-forward NN (20-20-10 architecture) learns params-to-properties mapping using MD results from `src/ML/results.json`
 3. **Optimize**: Gradient descent through the trained NN toward target E and ν values
 4. **Validate**: Final LAMMPS evaluation with optimized parameters
 

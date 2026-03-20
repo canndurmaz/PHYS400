@@ -18,3 +18,12 @@ GEMINI.md
 /src/NNIP/tmp_nn
 /src/MD/__pycache__
 /src/configs/*.json
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
+*.toc
+*.out

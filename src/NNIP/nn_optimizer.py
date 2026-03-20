@@ -9,7 +9,7 @@ Workflow:
 1. Load training targets from results.json
 2. Sample MEAM parameter space (random perturbations) — parallel via MPI + OpenMP
 3. For each sample: run LAMMPS for every composition → (E, nu) per entry
-4. Train NN surrogate: Input(params) → Dense(64) → Dense(64) → Dense(32) → Output(N×2)
+4. Train NN surrogate: Input(params) → Dense(20) → Dense(20) → Dense(10) → Output(N×2)
 5. Inverse-optimize parameters through NN to match all targets
 6. Validate with LAMMPS and save optimized files
 """
@@ -356,8 +356,8 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=50,
     model = tf.keras.Sequential([
         tf.keras.layers.Input(shape=(len(initial_vec),)),
         tf.keras.layers.Dense(20, activation="relu"),
+        tf.keras.layers.Dense(20, activation="relu"),
         tf.keras.layers.Dense(10, activation="relu"),
-        #tf.keras.layers.Dense(32, activation="relu"),
         tf.keras.layers.Dense(n_entries * 2),
     ])
     model.compile(optimizer="adam", loss="mse")
