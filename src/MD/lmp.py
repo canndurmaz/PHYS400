@@ -170,21 +170,31 @@ def clear_old_videos():
 
 if __name__ == "__main__":
     import argparse
+    import glob
     parser = argparse.ArgumentParser(description="MEAM MD Simulation")
     parser.add_argument("--viz", action="store_true", help="Enable visualization")
     parser.add_argument("--simMD", action="store_true", help="Run NVT molecular dynamics")
+    parser.add_argument("--all", metavar="DIR", help="Run all .json configs in DIR")
     args = parser.parse_args()
 
     if args.viz:
         clear_old_videos()
 
-    paths = select_multiple_configs()
+    if args.all:
+        paths = sorted(glob.glob(os.path.join(args.all, "*.json")))
+        if not paths:
+            print(f"No .json files found in {args.all}")
+            sys.exit(1)
+        print(f"Running {len(paths)} configs from {args.all}")
+    else:
+        paths = select_multiple_configs()
 
     if not paths:
         print("No files selected or operation cancelled.")
     else:
-        for p in paths:
+        for i, p in enumerate(paths, 1):
             try:
+                print(f"\n[{i}/{len(paths)}] {os.path.basename(p)}")
                 run_simulation(p, viz=args.viz, sim_md=args.simMD)
             except Exception as ex:
                 print(f"Error processing {p}: {ex}")

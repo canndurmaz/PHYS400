@@ -2,8 +2,8 @@
 # Run the full DFT-driven N-element MEAM potential pipeline.
 #
 # Usage (from src/NNIP/):
-#   ./run_pipeline.sh                        # Full pipeline with GUI
-#   ./run_pipeline.sh Al Cu Zn Mg            # Skip GUI, specify elements
+#   ./run_pipeline.sh                        # Auto-discover elements from EAM/
+#   ./run_pipeline.sh Al Cu Zn Mg            # Specify elements explicitly
 #   ./run_pipeline.sh --skip-dft Al Cu Zn Mg # Skip DFT stage
 #
 # Options (place before element list):
@@ -14,6 +14,59 @@
 #   --parallel N     Max parallel DFT workers (default: 4)
 
 set -euo pipefail
+
+TIMER_PID=""
+TIMER_START=$(date +%s)
+HAS_TTY=false
+[ -t 1 ] && HAS_TTY=true
+
+_setup_timer() {
+    $HAS_TTY || return 0
+    local rows
+    rows=$(tput lines)
+    # Reserve last line: set scroll region to rows 1..(rows-1)
+    printf '\e[1;%dr' "$((rows - 1))" > /dev/tty
+    # Draw initial timer bar on last row
+    printf '\e[%d;1H\e[7m Elapsed: 0m 00s \e[K\e[0m' "$rows" > /dev/tty
+    # Position cursor inside scroll region
+    printf '\e[1;1H' > /dev/tty
+    # Background updater — writes directly to /dev/tty, never through pipes
+    (
+        while true; do
+            sleep 1
+            local now elapsed m s rows
+            now=$(date +%s)
+            elapsed=$((now - TIMER_START))
+            m=$((elapsed / 60))
+            s=$((elapsed % 60))
+            rows=$(tput lines)
+            printf '\e[s\e[%d;1H\e[7m Elapsed: %dm %02ds \e[K\e[0m\e[u' \
+                "$rows" "$m" "$s" > /dev/tty
+        done
+    ) &
+    TIMER_PID=$!
+}
+
+_teardown_timer() {
+    # Kill background timer
+    [[ -n "${TIMER_PID:-}" ]] && kill "$TIMER_PID" 2>/dev/null || true
+    wait "$TIMER_PID" 2>/dev/null || true
+    TIMER_PID=""
+    $HAS_TTY || return 0
+    # Compute final elapsed time
+    local now elapsed m s rows
+    now=$(date +%s)
+    elapsed=$((now - TIMER_START))
+    m=$((elapsed / 60))
+    s=$((elapsed % 60))
+    rows=$(tput lines)
+    # Clear timer bar and restore full scroll region
+    printf '\e[%d;1H\e[K' "$rows" > /dev/tty
+    printf '\e[r' > /dev/tty
+    printf '\e[%d;1H' "$rows" > /dev/tty
+    echo "Total runtime: ${m}m ${s}s"
+}
+trap _teardown_timer EXIT
 
 PROJECT_ROOT="$(cd ../.. && pwd)"
 VENV="$PROJECT_ROOT/phys"
@@ -76,7 +129,7 @@ echo " Log file:     $LOGFILE"
 if [ ${#ELEMENTS[@]} -gt 0 ]; then
     echo " Elements:     ${ELEMENTS[*]}"
 else
-    echo " Elements:     (GUI selection)"
+    echo " Elements:     (auto-discover from EAM/)"
 fi
 echo " Flags:        ${FLAGS[*]+"${FLAGS[*]}"}"
 echo "============================================================"
@@ -94,6 +147,7 @@ if [ -f "$MERGE_CONFIG" ] && [ ! -f "$MERGED_LIB" ]; then
 fi
 
 # ── Run pipeline ─────────────────────────────────────────────────────────────
+_setup_timer
 python "$PROJECT_ROOT/src/NNIP/pipeline.py" "${PYARGS[@]+"${PYARGS[@]}"}" 2>&1 | tee "$LOGFILE"
 
 EXIT_CODE=${PIPESTATUS[0]}

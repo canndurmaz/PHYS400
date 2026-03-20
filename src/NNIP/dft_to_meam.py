@@ -16,7 +16,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.NNIP.meam_io import parse_library, parse_params, write_library, write_params
-from src.NNIP.merge_potentials import merge_from_config, nn_distance
+from src.NNIP.merge_potentials import merge_from_config, auto_merge, nn_distance
 
 
 def _rose_alpha(E_coh, B_GPa, omega, mass_amu):
@@ -89,10 +89,11 @@ def initialize_meam_from_dft(dft_results, elements, eam_dir, merge_config_path=N
                     break
 
     if not os.path.exists(lib_file):
-        raise FileNotFoundError(
-            f"No MEAM library file found covering {elements} in {eam_dir}. "
-            "Run merge_potentials.py first."
-        )
+        # Auto-merge from available library files
+        print("No single library file covers all elements. Running auto-merge...")
+        merged_lib_path, merged_par_path = auto_merge(elements, eam_dir, eam_dir)
+        lib_file = merged_lib_path
+        par_file = merged_par_path
 
     lib_data = parse_library(lib_file)
     param_entries = parse_params(par_file)

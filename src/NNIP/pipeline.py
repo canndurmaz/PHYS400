@@ -2,15 +2,15 @@
 """DFT-driven N-element MEAM potential pipeline.
 
 Orchestrates the full workflow:
-  1. GUI element selection (or --elements CLI override)
+  1. Element discovery (auto from EAM library files, or --elements CLI override)
   2. DFT reference calculations
   3. MEAM initialization from DFT
   4. NN surrogate optimization against results.json targets
   5. Verification of optimized potential
 
 Usage:
-    python pipeline.py                          # Full pipeline with GUI
-    python pipeline.py --elements Al Cu Zn Mg   # Skip GUI
+    python pipeline.py                          # Auto-discover elements from EAM/
+    python pipeline.py --elements Al Cu Zn Mg   # Specify elements explicitly
     python pipeline.py --skip-dft --elements Al Cu Zn Mg  # Skip DFT stage
     python pipeline.py --samples 50             # More NN samples
 """
@@ -33,15 +33,14 @@ from src.NNIP.logging_config import setup_logger
 logger = setup_logger("pipeline")
 
 
-def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
+def run_pipeline(elements=None, skip_dft=False, n_samples=50,
                  skip_optimize=False, skip_verify=False, n_parallel=4,
                  no_plots=False):
     """Run the full MEAM potential pipeline.
 
     Args:
-        elements: list of element symbols (bypasses GUI if provided)
+        elements: list of element symbols (auto-discovered from EAM if None)
         skip_dft: skip DFT reference calculations (use existing dft_results.json)
-        skip_gui: skip GUI even if elements not provided
         n_samples: number of NN parameter samples
         skip_optimize: skip NN optimization stage
         skip_verify: skip verification stage
@@ -57,22 +56,23 @@ def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
     logger.info("DFT-Driven N-Element MEAM Potential Pipeline")
     logger.info("=" * 60)
 
-    # ── Stage 0: Element Selection ──────────────────────────────────────────
+    # ── Stage 0: Element Discovery ──────────────────────────────────────────
     t0 = time.time()
-    if elements is None and not skip_gui:
-        logger.info("\n[Stage 0] Element Selection via GUI")
-        logger.info("  Importing element_selector...")
-        from src.NNIP.element_selector import select_elements
-        logger.info("  Launching GUI...")
-        elements = select_elements()
-        logger.info(f"  GUI returned: {elements}")
+    if elements is None:
+        logger.info("\n[Stage 0] Dynamic Element Discovery from EAM library files")
+        sys.path.insert(0, os.path.join(project_root, "src", "MD"))
+        from element import scan_eam_dir
+        potentials = scan_eam_dir(eam_dir)
+        all_symbols = set()
+        for pot in potentials.values():
+            for elem in pot["elements"]:
+                all_symbols.add(elem.symbol)
+        elements = sorted(all_symbols)
+        logger.info(f"  Discovered {len(elements)} elements from {len(potentials)} potentials: {elements}")
         if not elements:
-            logger.info("No elements selected. Exiting.")
+            logger.info("No elements found in EAM library files. Exiting.")
             return
-    elif elements is None:
-        logger.info("ERROR: No elements specified. Use --elements or remove --skip-gui")
-        return
-    stage_timings["element_selection"] = round(time.time() - t0, 2)
+    stage_timings["element_discovery"] = round(time.time() - t0, 2)
 
     logger.info(f"\nSelected elements: {elements}")
 
@@ -85,6 +85,11 @@ def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
     if not skip_dft:
         logger.info(f"  Mode: RUNNING DFT (skip_dft=False)")
         logger.info("-" * 40)
+
+        logger.info("  Ensuring pseudopotentials are available...")
+        from src.NNIP.download_pseudopotentials import ensure_pseudopotentials
+        ensure_pseudopotentials(elements)
+
         from src.NNIP.dft_reference import generate_dft_reference
 
         dft_work_dir = os.path.join(meam_opt_dir, "dft_scratch")
@@ -145,30 +150,9 @@ def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
         )
         logger.info(f"  DFT-initialized MEAM files created successfully.")
     except FileNotFoundError as exc:
-        logger.warning(f"  ERROR: {exc}")
-        logger.info(f"  Falling back to existing merged files...")
-        # Search EAM/ for any library file covering all selected elements
-        from src.NNIP.meam_io import parse_library
-        needed = set(elements)
-        lib_init, par_init = None, None
-        for fname in sorted(os.listdir(eam_dir)):
-            if fname.startswith("library_") and fname.endswith(".meam"):
-                candidate = os.path.join(eam_dir, fname)
-                try:
-                    lib_data = parse_library(candidate)
-                    if needed <= set(lib_data.keys()):
-                        lib_init = candidate
-                        par_init = os.path.join(eam_dir, fname[len("library_"):])
-                        if os.path.exists(par_init):
-                            break
-                        lib_init = None
-                except Exception:
-                    continue
-        if lib_init is None:
-            logger.info("  FATAL: No MEAM potential found covering all selected elements.")
-            logger.info(f"  Needed: {sorted(needed)}")
-            logger.info(f"  Place library_*.meam + matching *.meam files in {eam_dir}")
-            return
+        logger.error(f"  FATAL: {exc}")
+        logger.info(f"  Ensure library_*.meam files in {eam_dir} cover all selected elements.")
+        return
 
     logger.info(f"  Library: {lib_init}  (exists: {os.path.exists(lib_init)})")
     logger.info(f"  Params:  {par_init}  (exists: {os.path.exists(par_init)})")
@@ -183,6 +167,7 @@ def run_pipeline(elements=None, skip_dft=False, skip_gui=False, n_samples=30,
 
         lib_opt, par_opt = optimize_nn(
             lib_init, par_init, n_samples=n_samples,
+            n_parallel=n_parallel,
         )
     else:
         logger.info("\n[Stage 3] Skipping NN optimization")
@@ -286,15 +271,11 @@ def main():
     )
     parser.add_argument(
         "--elements", nargs="+", default=None,
-        help="Element symbols (bypasses GUI). e.g. --elements Al Cu Fe"
+        help="Element symbols (auto-discovered from EAM/ if omitted). e.g. --elements Al Cu Fe"
     )
     parser.add_argument(
         "--skip-dft", action="store_true",
         help="Skip DFT stage, use existing dft_results.json"
-    )
-    parser.add_argument(
-        "--skip-gui", action="store_true",
-        help="Skip GUI (requires --elements)"
     )
     parser.add_argument(
         "--skip-optimize", action="store_true",
@@ -305,8 +286,8 @@ def main():
         help="Skip verification stage"
     )
     parser.add_argument(
-        "--samples", type=int, default=30,
-        help="Number of NN parameter samples (default: 30)"
+        "--samples", type=int, default=50,
+        help="Number of NN parameter samples (default: 50)"
     )
     parser.add_argument(
         "--parallel", type=int, default=4,
@@ -323,7 +304,6 @@ def main():
     run_pipeline(
         elements=args.elements,
         skip_dft=args.skip_dft,
-        skip_gui=args.skip_gui or (args.elements is not None),
         n_samples=args.samples,
         skip_optimize=args.skip_optimize,
         skip_verify=args.skip_verify,

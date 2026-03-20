@@ -14,3 +14,6 @@ GEMINI.md
 /src/NNIP/__pycache__/
 /src/NNIP/logs
 /src/NNIP/dft_scratch
+/src/NNIP/plots
+/src/NNIP/tmp_nn
+/src/MD/__pycache__

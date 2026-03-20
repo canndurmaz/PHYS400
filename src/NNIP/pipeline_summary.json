@@ -6,63 +6,56 @@
     "Fe",
     "Mg",
     "Mn",
+    "Mo",
     "Si",
     "Ti",
     "Zn"
   ],
   "n_samples": 30,
-  "skip_dft": false,
+  "skip_dft": true,
   "skip_optimize": false,
   "skip_verify": false,
   "stage_timings_sec": {
-    "element_selection": 47.32,
-    "dft_reference": 8203.33,
-    "meam_init": 0.0,
-    "nn_optimization": 19.47,
-    "verification": 0.01,
-    "visualization": 1.37,
-    "total": 8271.5
+    "element_selection": 13.67,
+    "dft_reference": 0.0,
+    "meam_init": 0.09,
+    "nn_optimization": 3130.84,
+    "verification": 139.81,
+    "visualization": 1.5,
+    "total": 3285.91
   },
   "verification": {
-    "AL7075_simple.json": {
-      "E_opt": 0.0,
-      "E_target": -70.46,
-      "E_err_pct": 100.0,
-      "nu_opt": 0.5,
-      "nu_target": 0.406,
-      "nu_err_pct": 23.15
-    },
-    "AL5052_simple.json": {
-      "E_opt": 0.0,
-      "E_target": 83.25,
-      "E_err_pct": 100.0,
-      "nu_opt": 0.5,
-      "nu_target": 0.311,
-      "nu_err_pct": 60.77
-    },
     "AL2024_noMg.json": {
-      "E_opt": 0.0,
-      "E_target": 67.78,
-      "E_err_pct": 100.0,
-      "nu_opt": 0.5,
-      "nu_target": 0.342,
-      "nu_err_pct": 46.2
+      "E_opt": 89.537483928382,
+      "E_target": 66.31,
+      "E_err_pct": 35.03,
+      "nu_opt": 0.28327041680842957,
+      "nu_target": 0.355,
+      "nu_err_pct": 20.21
     },
     "AL2219_simple.json": {
-      "E_opt": 0.0,
-      "E_target": 65.38,
-      "E_err_pct": 100.0,
-      "nu_opt": 0.5,
-      "nu_target": 0.33,
-      "nu_err_pct": 51.52
+      "E_opt": 90.47965424847865,
+      "E_target": 73.65,
+      "E_err_pct": 22.85,
+      "nu_opt": 0.31482134572891457,
+      "nu_target": 0.353,
+      "nu_err_pct": 10.82
     },
-    "manual_config.json": {
-      "E_opt": 0.0,
-      "E_target": 92.15,
-      "E_err_pct": 100.0,
-      "nu_opt": 0.5,
-      "nu_target": 0.296,
-      "nu_err_pct": 68.92
+    "AL5052_simple.json": {
+      "E_opt": -10.915849964182913,
+      "E_target": 73.42,
+      "E_err_pct": 114.87,
+      "nu_opt": 0.5078826426675624,
+      "nu_target": 0.342,
+      "nu_err_pct": 48.5
+    },
+    "AL7075_simple.json": {
+      "E_opt": -324.5323693042269,
+      "E_target": 68.8,
+      "E_err_pct": 571.7,
+      "nu_opt": 0.5707909449588892,
+      "nu_target": 0.342,
+      "nu_err_pct": 66.9
     }
   }
 }

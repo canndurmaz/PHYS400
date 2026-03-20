@@ -4,6 +4,12 @@ import sys
 import tkinter as tk
 from tkinter import filedialog
 
+# Ensure src/MD/ is on sys.path so bare imports (element, viz) resolve
+# when this module is imported from a different working directory.
+_SRC_MD = os.path.dirname(os.path.abspath(__file__))
+if _SRC_MD not in sys.path:
+    sys.path.insert(0, _SRC_MD)
+
 from element import ELEMENTS, POTENTIALS
 
 # -- Configuration ------------------------------------------------------------

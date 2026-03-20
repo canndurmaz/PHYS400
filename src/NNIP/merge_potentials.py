@@ -26,6 +26,41 @@ if __name__ == "__main__" and __package__ is None:
 from src.NNIP.meam_io import parse_library, parse_params, write_library, write_params
 
 
+# ── Atomic number → standard symbol lookup ───────────────────────────────────
+_Z_TO_SYMBOL = {
+    1: "H", 2: "He", 3: "Li", 4: "Be", 5: "B", 6: "C", 7: "N", 8: "O",
+    9: "F", 10: "Ne", 11: "Na", 12: "Mg", 13: "Al", 14: "Si", 15: "P",
+    16: "S", 17: "Cl", 18: "Ar", 19: "K", 20: "Ca", 21: "Sc", 22: "Ti",
+    23: "V", 24: "Cr", 25: "Mn", 26: "Fe", 27: "Co", 28: "Ni", 29: "Cu",
+    30: "Zn", 31: "Ga", 32: "Ge", 33: "As", 34: "Se", 40: "Zr", 41: "Nb",
+    42: "Mo", 44: "Ru", 45: "Rh", 46: "Pd", 47: "Ag", 48: "Cd", 49: "In",
+    50: "Sn", 51: "Sb", 73: "Ta", 74: "W", 75: "Re", 77: "Ir", 78: "Pt",
+    79: "Au", 82: "Pb",
+}
+
+
+_KNOWN_SYMBOLS = set(_Z_TO_SYMBOL.values())
+
+
+def _canonical_symbol(lib_name, header):
+    """Map a library element name to a standard chemical symbol.
+
+    Some MEAM library files use non-standard names (e.g. 'SiS', 'AlS') to
+    distinguish parameter sets from different publications.  We resolve the
+    standard symbol via the atomic number stored in the header.
+
+    If the raw name is already a recognized element symbol, trust it — some
+    library files store dummy atomic numbers (e.g. Z=1 for all elements).
+    """
+    if lib_name in _KNOWN_SYMBOLS:
+        return lib_name
+    # Non-standard name — try resolving via atomic number
+    std = _Z_TO_SYMBOL.get(header[2])
+    if std:
+        return std
+    return lib_name
+
+
 # ── Nearest-neighbor distance helpers ─────────────────────────────────────────
 
 def nn_distance(lattice, alat):
@@ -320,6 +355,146 @@ def merge_from_config(config_path, eam_dir, output_dir):
     print(f"  Library: {lib_out}")
     print(f"  Params:  {par_out}")
     print(f"Elements: {' '.join(target_elements)}")
+
+
+def auto_merge(elements, eam_dir, output_dir):
+    """Auto-discover and merge MEAM potentials for the requested elements.
+
+    Scans all library_*.meam files in eam_dir, pulls each element from the
+    first source that has it, remaps params, generates missing cross-terms,
+    and writes merged output files.  No config file needed.
+
+    Args:
+        elements: list of element symbols in desired order
+        eam_dir: directory containing library_*.meam + matching *.meam files
+        output_dir: directory to write merged output
+
+    Returns:
+        (lib_path, params_path) — paths to the written files
+
+    Raises:
+        FileNotFoundError: if not all elements are available across source files
+    """
+    # 1. Discover all library files and their elements
+    # Some files use non-standard names (e.g. 'SiS' for Si) — resolve via atomic number.
+    sources = []  # [(lib_path, par_path, lib_data, raw_names, alias_map)]
+    for fname in sorted(os.listdir(eam_dir)):
+        if not (fname.startswith("library_") and fname.endswith(".meam")):
+            continue
+        lib_path = os.path.join(eam_dir, fname)
+        par_file = fname[len("library_"):]
+        par_path = os.path.join(eam_dir, par_file)
+        try:
+            lib_data = parse_library(lib_path)
+        except Exception:
+            continue
+        raw_names = list(lib_data.keys())
+        # alias_map: canonical_symbol -> raw_name_in_file
+        alias_map = {}
+        for raw in raw_names:
+            canon = _canonical_symbol(raw, lib_data[raw]["header"])
+            alias_map[canon] = raw
+        sources.append((lib_path, par_path, lib_data, raw_names, alias_map))
+
+    # 2. Check that all requested elements are available (using canonical names)
+    available = set()
+    for _, _, _, _, alias_map in sources:
+        available.update(alias_map.keys())
+
+    missing = set(elements) - available
+    if missing:
+        raise FileNotFoundError(
+            f"Elements {sorted(missing)} not found in any library_*.meam file in {eam_dir}. "
+            f"Available elements: {sorted(available)}"
+        )
+
+    # 3. Build merged library — pull each element from the first source that has it
+    #    Re-key aliased names to standard symbols so the merged file is clean.
+    merged_lib = {}
+    for sym in elements:
+        for _, _, lib_data, _, alias_map in sources:
+            if sym in alias_map:
+                raw = alias_map[sym]
+                merged_lib[sym] = lib_data[raw]
+                break
+
+    # 4. Build merged params — remap from each source
+    merged_params = {}
+    for lib_path, par_path, lib_data, src_elements, alias_map in sources:
+        if not os.path.exists(par_path):
+            continue
+
+        # Map raw source names to canonical symbols for this source
+        src_canonical = [_canonical_symbol(raw, lib_data[raw]["header"]) for raw in src_elements]
+
+        # Only process if this source contributes at least one element
+        contributing = [c for c in src_canonical if c in elements]
+        if not contributing:
+            continue
+
+        src_par_entries = parse_params(par_path)
+
+        # Build index map: source 1-based index -> target 1-based index
+        index_map = {}
+        drop_indices = set()
+        for i, canon in enumerate(src_canonical, start=1):
+            if canon in elements:
+                index_map[i] = elements.index(canon) + 1
+            else:
+                drop_indices.add(i)
+
+        remapped = remap_params(src_par_entries, index_map, drop_indices)
+        # Only update keys not already set (first source wins)
+        for k, v in remapped.items():
+            if k not in merged_params:
+                merged_params[k] = v
+
+    # 5. Generate missing cross-term pairs
+    n = len(elements)
+    all_pairs = {(i, j) for i in range(1, n + 1) for j in range(i + 1, n + 1)}
+
+    known_pairs = set()
+    for key in merged_params:
+        if key.startswith("Ec("):
+            _, indices = _parse_key(key)
+            if indices and len(indices) == 2:
+                known_pairs.add(tuple(sorted(indices)))
+
+    # Collect self-screening for mixing rules
+    self_screen = {}
+    for key, val in merged_params.items():
+        if isinstance(val, (int, float)):
+            name, indices = _parse_key(key)
+            if indices and name in ("Cmin", "Cmax") and len(indices) == 3:
+                if indices[0] == indices[1] == indices[2]:
+                    self_screen[key] = val
+
+    for i, j in sorted(all_pairs - known_pairs):
+        pair_entries = generate_missing_pair(i, j, elements, merged_lib, self_screen)
+        for key, val in pair_entries:
+            merged_params[key] = val
+
+    # 6. Add default global params if not already set
+    defaults = {"rc": 6.0, "delr": 0.1, "ialloy": 2, "emb_lin_neg": 1, "bkgd_dyn": 1}
+    for k, v in defaults.items():
+        if k not in merged_params:
+            merged_params[k] = v
+
+    # 7. Write output
+    os.makedirs(output_dir, exist_ok=True)
+    prefix = "".join(elements)
+    lib_out = os.path.join(output_dir, f"library_{prefix}.meam")
+    par_out = os.path.join(output_dir, f"{prefix}.meam")
+
+    write_library(merged_lib, elements, lib_out)
+    write_params(_order_params(merged_params), par_out)
+
+    print(f"Auto-merged potential written to {output_dir}")
+    print(f"  Library: {lib_out}")
+    print(f"  Params:  {par_out}")
+    print(f"  Elements: {' '.join(elements)}")
+
+    return lib_out, par_out
 
 
 def main():

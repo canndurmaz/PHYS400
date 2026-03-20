@@ -41,28 +41,24 @@ def render(composition, selected, traj_file="traj.lammpstrj"):
         p.remove_from_scene()
 
     pipeline = import_file(traj_file)
-
-    # Assign colors and radii per atom type via a modifier
-    def assign_type_visuals(frame, data):
-        types_prop = data.particles_.particle_types_
-        for i, elem in enumerate(selected, start=1):
-            pt = types_prop.type_by_id_(i)
-            if pt is not None:
-                pt.name = elem.symbol
-                pt.color = get_color(elem.symbol)
-                pt.radius = 0.8
-
-    pipeline.modifiers.append(assign_type_visuals)
     pipeline.add_to_scene()
+
+    # Compute first, then set visuals directly on the pipeline's source data
+    # so the rendering engine picks them up (modifier-based assignment doesn't
+    # persist to the renderer in OVITO 3.15).
+    data = pipeline.compute()
+    types_prop = pipeline.source.data.particles_.particle_types_
+    for i, elem in enumerate(selected, start=1):
+        pt = types_prop.add_type_id(i)
+        pt.name = elem.symbol
+        pt.color = get_color(elem.symbol)
+        pt.radius = 0.8
 
     # Camera — position scales with box size
     vp = Viewport()
     vp.type = Viewport.Type.Perspective
     vp.camera_pos = (40, 40, 40)
     vp.camera_dir = (-1, -1, -1)
-    
-    # Force a refresh to ensure zoom_all sees the data
-    pipeline.compute()
     vp.zoom_all()
 
     # Dynamic legend labels

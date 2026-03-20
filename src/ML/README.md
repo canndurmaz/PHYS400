@@ -1,6 +1,19 @@
 # Machine Learning (ML) Subfolder
 
-This folder contains machine learning tools for predicting alloy elastic properties.
+This folder contains machine learning tools for predicting alloy elastic properties. It serves as both a standalone prediction tool and the data bridge between MD simulations and the NNIP optimization pipeline.
+
+## Role in the Pipeline
+
+```
+Config Generation → MD Simulation → [results.json] → DFT + NN Optimization
+                                          ↓
+                                     This module
+                                   (train / predict)
+```
+
+- **`results.json`** is populated by the MD module (`src/MD/lmp.py`) with computed E and ν for each alloy config
+- The NNIP pipeline (`src/NNIP/`) reads `results.json` as training targets for NN surrogate optimization
+- This module can also train a standalone predictor on the same data
 
 ## Contents
 
@@ -18,7 +31,7 @@ A baseline script to verify the TensorFlow installation using the MNIST dataset.
 
 ## Data Files
 
-- **`results.json`**: The ground-truth dataset. This is automatically updated by the MD module (`src/MD/lmp.py`) with calculated $E$ and $\nu$ values.
+- **`results.json`**: The ground-truth dataset. Automatically populated by MD simulations (`src/MD/lmp.py`) with calculated E and ν values. Also used as training targets by the NNIP optimization pipeline.
 - **`predict.json`**: A batch input file for testing the model on novel randomized or custom compositions.
 - **`alloy_model.keras`**: The persistent trained weights of the neural network.
 

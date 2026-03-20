@@ -55,7 +55,7 @@ Stored in the project root at `pseudopotentials/`:
 |---------|------|------|---------------|
 | Al | `Al.pbe-n-kjpaw_psl.1.0.0.UPF` | PAW (Projector Augmented Wave) | PBE |
 
-Additional pseudopotentials can be downloaded from the [QE pseudopotential library](https://pseudopotentials.quantum-espresso.org/) and placed in the `pseudopotentials/` directory.
+Additional pseudopotentials are **auto-downloaded** by the NNIP pipeline (`src/NNIP/download_pseudopotentials.py`) when needed. They can also be manually downloaded from the [QE pseudopotential library](https://pseudopotentials.quantum-espresso.org/) and placed in the `pseudopotentials/` directory.
 
 ## Python Interface
 

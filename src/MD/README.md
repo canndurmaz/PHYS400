@@ -1,5 +1,7 @@
 # LAMMPS MEAM Simulation — Configurable HEA Alloys
 
+This module is **Stage 2** of the overall pipeline: it takes alloy composition configs (generated in Stage 1 via `src/configs/generate.sh`) and runs LAMMPS MD simulations to compute Young's modulus (E) and Poisson's ratio (ν). Results feed into the DFT and NN optimization stages downstream.
+
 ## Prerequisites
 
 - Python 3.12+
@@ -105,16 +107,39 @@ Renders high-quality animations of the simulation results.
 - **Expanded Color Map**: Includes specialized colors for common elements (Fe, Cu, Al, Mg, Zn, etc.).
 - **Deterministic Fallback**: Uses a hash-based generator to assign unique, consistent colors to any unknown elements found in new MEAM potentials.
 
-## Running
+## Pipeline Integration
 
-### Using the GUI (Recommended)
-```bash
-python3 src/gui.py
-```
-This opens a web interface. Save your configuration, then run the simulation.
+In the full pipeline workflow:
+1. **Config Generation** (`src/configs/generate.sh --samples N`) creates random alloy compositions
+2. **MD Simulation** (this module) computes E and ν for each config
+3. Results are appended to `src/ML/results.json`, which feeds DFT and NN optimization stages
+
+## Running
 
 ### Running a specific config
 ```bash
-python3 src/lmp.py path/to/your_config.json
+./src/MD/run.sh src/configs/AL7075_simple.json
+
+# With visualization
+./src/MD/run.sh --viz src/configs/AL7075_simple.json
 ```
-This runs the LAMMPS simulation followed by the OVITO rendering for the specified configuration.
+
+### Running all configs in a directory
+```bash
+# Run every .json in the configs folder
+./src/MD/run.sh --all ../configs/
+
+# With visualization
+./src/MD/run.sh --viz --all ../configs/
+
+# With NVT molecular dynamics
+./src/MD/run.sh --simMD --all ../configs/
+```
+
+Progress is printed as `[1/N]`, `[2/N]`, etc. Results are appended to `src/ML/results.json` automatically.
+
+### Using the GUI
+```bash
+python3 src/MD/gui.py
+```
+This opens a web interface. Save your configuration, then run the simulation.
