@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+clear
 TIMER_PID=""
 TIMER_START=$(date +%s)
 HAS_TTY=false; [ -t 1 ] && HAS_TTY=true
@@ -28,5 +29,5 @@ trap _teardown_timer EXIT
 export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
 _setup_timer
 
-# Usage: ./run.sh [--viz] [--simMD] [--all path/to/configs/]
+# Usage: ./run.sh [--viz] [--simMD] [--force] [--all path/to/configs/]
 /home/kenobi/Workspaces/PHYS400/phys/bin/python lmp.py "$@"

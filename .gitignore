@@ -17,3 +17,4 @@ GEMINI.md
 /src/NNIP/plots
 /src/NNIP/tmp_nn
 /src/MD/__pycache__
+/src/configs/*.json

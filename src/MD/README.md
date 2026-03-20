@@ -67,22 +67,21 @@ Constructs and executes the simulation using the dynamic potential info:
 - **Elastic Estimation**: Includes `get_elastic_moduli(L)` which calculates:
     - **Young's Modulus (E)**: Axial stiffness.
     - **Poisson's Ratio (ν)**: Ratio of transverse to axial strain.
-  This is performed via an axial strain perturbation after the initial relaxation but before the NVT production run.
+  This is performed via axial strain perturbations in all 3 directions after the initial relaxation but before the NVT production run. Configs producing negative ν are automatically discarded and their JSON files deleted.
 
 #### Elastic Property Calculation Method
 
 The simulation employs a **static deformation method** to estimate mechanical properties. This process occurs in several stages:
 
-1. **Ground State Relaxation**: Before any measurements, the system undergoes an isotropic pressure minimization to ensure it is in a stress-free state (0 bar).
-2. **Baseline Measurement**: The initial diagonal stress components ($\sigma_{xx}$, $\sigma_{yy}$) are recorded as a reference.
-3. **Axial Perturbation**: A small positive strain ($\epsilon_x = \delta$, where $\delta = 0.001$) is applied to the simulation box in the X-direction. The atom positions are then re-minimized while the box dimensions are held constant.
-4. **Stress Response**: The resulting stresses ($\sigma'_{xx}$, $\sigma'_{yy}$) are measured. Because the material is treated as isotropic/cubic, the change in stress is related to the elastic constants $C_{11}$ and $C_{12}$:
-   - $C_{11} \approx \frac{\Delta\sigma_{xx}}{\delta}$ (Stiffness in the direction of pull)
-   - $C_{12} \approx \frac{\Delta\sigma_{yy}}{\delta}$ (Lateral stress response)
-5. **Analytical Derivation**: Using standard relations for cubic crystals, the polycrystalline moduli are calculated:
+1. **Ground State Relaxation**: The system undergoes anisotropic pressure minimization (box + atoms) followed by an atom-only re-minimize to reach a stress-free state.
+2. **Baseline Measurement**: The diagonal stress components ($\sigma_{xx}$, $\sigma_{yy}$, $\sigma_{zz}$) are recorded as a reference.
+3. **3-Direction Strain**: For each direction (x, y, z), a symmetric central-difference strain ($\pm\delta$, where $\delta = 0.001$) is applied. Atoms are re-minimized at each strained geometry to obtain equilibrium stress. This 3-direction averaging reduces noise from local disorder in random alloy supercells.
+4. **Stress Response**: For each strain direction, the axial stress derivative gives $C_{11}$ and the transverse stress derivatives give $C_{12}$. Results are averaged (3 $C_{11}$ samples, 6 $C_{12}$ samples).
+5. **Analytical Derivation**: Using standard relations for cubic crystals:
    - **Young's Modulus ($E$)**: $E = \frac{(C_{11} - C_{12})(C_{11} + 2C_{12})}{C_{11} + C_{12}}$
    - **Poisson's Ratio ($\nu$)**: $\nu = \frac{C_{12}}{C_{11} + C_{12}}$
-6. **Automatic Integration**: The calculated values are automatically appended to `src/ML/results.json`, creating a dataset for downstream Machine Learning tasks.
+6. **Quality Filter**: If $\nu < 0$ (physically unreasonable for metallic alloys), the result is discarded and the config file is deleted.
+7. **Automatic Integration**: Valid results are appended to `src/ML/results.json` for downstream tasks.
 
 #### Element Mapping and Indices
 
