@@ -17,69 +17,69 @@
 
 \begin{boxedabstract}
 \small
-Molecular dynamics (MD) simulations of multi-component metallic alloys require interatomic potentials that accurately capture the interactions between all constituent elements. The Modified Embedded Atom Method (MEAM) provides a well-established framework for describing metallic bonding, yet published MEAM parameter sets typically cover only small subsets of elements, and no single file spans the full composition space of industrially relevant alloys such as Al~7075 (Al--Zn--Mg--Cu). When elements do not share a common MEAM parameterization, cross-interaction terms are unavailable and simulations cannot proceed. This project develops an automated pipeline that bridges this gap by combining first-principles density functional theory (DFT) calculations with neural-network surrogate optimization. Quantum Espresso is used to compute reference properties---equilibrium lattice constants, cohesive energies, bulk moduli, elastic constants, and binary formation energies---for each element and element pair. These quantities initialize MEAM parameters through analytic mapping relations derived from the Rose universal equation of state. A neural network surrogate is then trained on LAMMPS-evaluated elastic properties (Young's modulus and Poisson's ratio) across randomized alloy compositions, enabling gradient-based inverse optimization of the MEAM parameter set to reproduce target mechanical behavior. The resulting pipeline accepts an arbitrary list of elements, automatically discovers and merges existing MEAM libraries, fills missing cross-terms from DFT, and produces optimized multi-element potential files ready for large-scale MD simulations.
+Molecular dynamics (MD) simulations of multi-component metallic alloys require interatomic potentials that accurately capture the interactions between all constituent elements. The Modified Embedded Atom Method (MEAM) provides a well-established framework for describing metallic bonding. However, published MEAM parameter sets typically cover only small subsets of elements, and no single file spans the full composition space of industrially relevant alloys such as Al~7075 (Al--Zn--Mg--Cu--Si--Fe--Cr--Mn--Ti). When elements do not share a common MEAM parameterization, cross-interaction terms are unavailable and molecular simulations cannot proceed. This project will develop an automated pipeline that bridges this gap by combining first-principles density functional theory (DFT) calculations with neural-network surrogate optimization. Quantum Espresso will be used to compute reference properties---equilibrium lattice constants, cohesive energies, bulk moduli, elastic constants, and binary formation energies---for each element and element pair. These quantities will be used to initialize MEAM parameters through analytic mapping relations derived from the Rose universal equation of state \citep{vinet1989universal}. A neural network surrogate will then be trained on LAMMPS-evaluated elastic properties (Young's modulus and Poisson's ratio) across randomized alloy compositions, enabling gradient-based inverse optimization of the MEAM parameter set to reproduce target elastical behavior of the compositions. The resulting pipeline will accept an arbitrary list of elements, automatically discover and merge existing MEAM libraries, fill missing cross-terms from DFT, and produce optimized multi-element potential files ready for large-scale MD simulations.
 
 \vspace{0.5em}
 \end{boxedabstract}
 
 \introduction
-Atomistic simulations of metallic alloys rely on interatomic potentials that balance computational efficiency with physical accuracy. Among classical potential formalisms, the Modified Embedded Atom Method \citep{baskes1992} extends the original EAM by incorporating angular dependence of bonding, making it suitable for a broad range of metallic and covalent systems. MEAM potentials have been widely adopted for studying mechanical properties, defect energetics, and phase stability in metals and alloys \citep{lee2001}.
+Molecular simulations of metallic alloys rely on interatomic potentials that balance computational efficiency with physical accuracy. Among classical potential formalisms, the Modified Embedded Atom Method \citep{baskes1992} extends the original EAM by incorporating angular dependence of bonding, making it suitable for a broad range of metallic and covalent systems. MEAM potentials have been widely adopted for studying elastic properties, defect energetics, and phase stability in metals and alloys \citep{lee2001}.
 
-However, a persistent challenge in multi-component alloy simulation is the availability of consistent MEAM parameterizations. Published potential files typically cover small element subsets---for example, a ternary Al--Mg--Zn set or a quinary Al--Si--Cu--Mg--Fe set---and the cross-interaction parameters between elements from different files are undefined. For an alloy such as Al~7075, which contains Al, Zn, Mg, Cu, and trace elements (Cr, Mn, Fe, Si, Ti), no single published MEAM file spans the full composition. Naively combining parameters from separate sources without proper cross-terms leads to unphysical results.
+However, a persistent challenge in multi-component alloy simulation is the availability of consistent MEAM parameterizations. Published potential files typically cover small element subsets---for example, a ternary Al--Mg--Zn set\citep{Dickel_2018} or a quinary Al--Si--Cu--Mg--Fe set\citep{jelinek2012}---and the cross-interaction parameters between elements from different files are undefined. For an industrially used alloy such as Al~7075, which contains Al, Zn, Mg, Cu, and trace elements (Cr, Mn, Fe, Si, Ti), no single published MEAM file spans the full composition. Naively combining parameters from separate sources without proper cross-terms leads to unphysical results.
 
-Traditional approaches to this problem involve laborious manual fitting of MEAM parameters against experimental or \textit{ab initio} databases \citep{jelinek2012}. More recently, machine-learning interatomic potentials (MLIPs) trained on DFT data have shown remarkable accuracy \citep{behler2007, shapeev2016}, but they require large training datasets and lack the interpretable functional form of MEAM. Neural-network interatomic potentials (NNIPs) represent an intermediate approach that can either replace or augment classical potentials \citep{mishin2021}.
+Traditional approaches to this problem involve laborious manual fitting of MEAM parameters against experimental or initial databases \citep{jelinek2012}. More recently, machine-learning interatomic potentials (MLIPs) trained on DFT data have shown remarkable accuracy \citep{behler2007, shapeev2016}, but they require large training datasets and lack the interpretable functional form of MEAM. Neural-network interatomic potentials (NNIPs) represent an intermediate approach that can either replace or augment classical potentials \citep{mishin2021}.
 
-This project takes a hybrid approach: rather than replacing MEAM with a purely data-driven potential, we use neural networks as surrogate models to optimize MEAM parameters so that the resulting classical potential reproduces DFT-quality mechanical properties. This preserves the computational efficiency and transferability of the MEAM formalism while leveraging DFT accuracy for parameter initialization and neural-network optimization for automated fitting.
+This project will take a hybrid approach: rather than replacing MEAM with a purely data-driven potential, neural networks will be used as surrogate models to optimize MEAM parameters so that the resulting classical potential reproduces DFT-quality mechanical properties. This will preserve the computational efficiency and transferability of the MEAM formalism while leveraging DFT accuracy for parameter initialization and neural-network optimization for automated fitting.
 
-\begin{table}[htbp]
-	\centering
-	\caption{Available MEAM potential libraries and their element coverage. No single file covers all elements needed for Al~7075 simulation.}
-	\label{tab:meam_coverage}
-	\begin{tabular}{|l|l|c|}
-		\hline
-		\textbf{Library File} & \textbf{Elements} & \textbf{Count} \\
-		\hline
-		\texttt{library\_AlMgZn.meam} & Al, Mg, Zn & 3 \\
-		\texttt{library\_AlSiCuMgFE.meam} & Al, Si, Cu, Mg, Fe & 5 \\
-		\texttt{library\_CuMo.meam} & Cu, Mo & 2 \\
-		\texttt{library\_FeMnNiTiCuCrCoAl.meam} & Fe, Mn, Ni, Ti, Cu, Cr, Co, Al & 8 \\
-		\hline
-	\end{tabular}
-\end{table}
+%\begin{table}[htbp]
+%	\centering
+%	\caption{Examples of Available MEAM potential libraries and their element coverage. No single file covers all elements needed for Al~7075 simulation.}
+%	\label{tab:meam_coverage}
+%	\begin{tabular}{|l|l|c|}
+%		\hline
+%		\textbf{Library File} & \textbf{Elements} & \textbf{Count} \\
+%		\hline
+%		\texttt{library\_AlMgZn.meam} & Al, Mg, Zn & 3 \\
+%		\texttt{library\_AlSiCuMgFE.meam} & Al, Si, Cu, Mg, Fe & 5 \\
+%		\texttt{library\_CuMo.meam} & Cu, Mo & 2 \\
+%		\texttt{library\_FeMnNiTiCuCrCoAl.meam} & Fe, Mn, Ni, Ti, Cu, Cr, Co, Al & 8 \\
+%		\hline
+%	\end{tabular}
+%\end{table}
 
-As shown in Table~\ref{tab:meam_coverage}, the existing MEAM libraries in this project cover 12 elements in total, but each file spans only a subset. Elements such as Al and Cu appear in multiple files with potentially different parameterizations, while cross-terms between elements from different files (e.g., Zn--Fe or Mg--Cr) are entirely absent.
+A%s shown in Table~\ref{tab:meam_coverage}, the existing MEAM libraries in this project cover 12 elements in total, but each file spans only a subset. Elements such as Al and Cu appear in multiple files with potentially different parameterizations, while cross-terms between elements from different files (e.g., Zn--Fe or Mg--Cr) are entirely absent.
 
 \researchquestion
 Can an automated pipeline combining density functional theory reference calculations with neural-network surrogate optimization produce multi-element MEAM interatomic potentials that accurately reproduce the elastic properties of arbitrary metallic alloy compositions, even when the constituent elements do not share a common published MEAM parameterization?
 
 \methodology
-The pipeline consists of five stages, each implemented as a modular Python component orchestrated by a central driver script.
+The pipeline will consist of five stages, each implemented as a modular Python component orchestrated by a central driver script.
 
 \textbf{Stage 1: Configuration Generation.}
-Random alloy compositions are generated by sampling element fractions at $10^{-4}$ precision from the set of 12 available elements (Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, Zn). Each configuration specifies composition fractions, simulation box size, temperature, and integration parameters, and is stored as a JSON file.
+Random alloy compositions will be generated by sampling element fractions at $10^{-4}$ precision from the set of available elements (e.g. Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, Zn). Each configuration will specify composition fractions, simulation box size, temperature, and integration parameters.
 
 \textbf{Stage 2: Molecular Dynamics Evaluation.}
-Each composition is simulated in LAMMPS \citep{thompson2022} using the MEAM potential formalism. The elastic tensor is computed via a strain--stress protocol: after energy minimization under anisotropic barostat conditions, uniaxial strains of $\delta = 0.001$ are applied along three orthogonal directions and the resulting stress tensors are used to extract the Voigt-averaged elastic constants $C_{11}$ and $C_{12}$ via central differences. Young's modulus $E$ and Poisson's ratio $\nu$ are then computed as:
+Each composition will be simulated in LAMMPS \citep{thompson2022} using the MEAM potential formalism. The elastic tensor will be computed via a strain--stress protocol: after energy minimization under anisotropic barostat conditions, uniaxial strains of $\delta = 0.001$ will be applied along three orthogonal directions and the resulting stress tensors will be used to extract the Voigt-averaged\citep{voigt} elastic constants $C_{11}$ and $C_{12}$ via central differences. Young's modulus $E$ and Poisson's ratio $\nu$ will then be computed as:
 \begin{equation}
 	E = \frac{(C_{11} - C_{12})(C_{11} + 2C_{12})}{C_{11} + C_{12}}, \qquad \nu = \frac{C_{12}}{C_{11} + C_{12}}
 	\label{eq:elastic}
 \end{equation}
-Configurations yielding $\nu < 0$ are discarded as unphysical.
+Configurations yielding $\nu < 0$ will be discarded as unphysical.
 
 \textbf{Stage 3: DFT Reference Calculations.}
-For each element, Quantum Espresso \citep{giannozzi2009} is used via the Atomic Simulation Environment (ASE) to compute: (i) the equation of state from 7 strained unit cells fit to a Birch--Murnaghan equation, yielding the equilibrium lattice constant $a_0$, cohesive energy $E_\mathrm{coh}$, and bulk modulus $B$; (ii) elastic constants $C_{11}$ and $C_{12}$ from stress--strain calculations; and (iii) isolated atom energies for true cohesive energy determination. For each binary pair, formation energies are computed in reference crystal structures (L1$_2$ for FCC, B2 for BCC). Spin-polarized calculations (nspin = 2) are employed for magnetic elements (Fe, Cr, Mn). PAW-PBE pseudopotentials are used with plane-wave cutoffs of 40~Ry (wavefunction) and 320~Ry (charge density).
+For each element, Quantum Espresso \citep{giannozzi2009} will be used via the Atomic Simulation Environment (ASE) to compute: (i) the equation of state from 7 strained unit cells fit to a Birch--Murnaghan\citep{birch} equation, yielding the equilibrium lattice constant $a_0$, cohesive energy $E_\mathrm{coh}$, and bulk modulus $B$; (ii) elastic constants $C_{11}$ and $C_{12}$ from stress--strain calculations; and (iii) isolated atom energies for true cohesive energy determination. For each binary pair, formation energies will be computed in reference crystal structures (L1$_2$ for FCC, B2 for BCC). Spin-polarized calculations (nspin = 2) will be employed for magnetic elements (Fe, Cr, Mn). PAW-PBE pseudopotentials will be used.
 
 \textbf{Stage 4: MEAM Parameter Initialization and Merging.}
-DFT-computed properties are mapped onto MEAM parameters using established relations: the sublimation energy $E_\mathrm{sub} \leftarrow E_\mathrm{coh}$, the equilibrium lattice parameter $a_\mathrm{lat} \leftarrow a_0$, and the Rose equation shape parameter $\alpha = \sqrt{9B\Omega / E_\mathrm{coh}}$, where $\Omega$ is the atomic volume. Cross-interaction parameters $E_c(i,j)$ are derived from binary formation energies. Existing MEAM library files are automatically discovered, parsed, and merged; missing parameters are filled from DFT results.
+DFT-computed properties will be mapped onto MEAM parameters using established relations: the sublimation energy $E_\mathrm{sub} \leftarrow E_\mathrm{coh}$, the equilibrium lattice parameter $a_\mathrm{lat} \leftarrow a_0$, and the Rose equation shape parameter $\alpha = \sqrt{9B\Omega / E_\mathrm{coh}}$, where $\Omega$ is the atomic volume. Cross-interaction parameters $E_c(i,j)$ will be derived from binary formation energies. Existing MEAM library files will be automatically discovered, parsed, and merged; missing parameters will be filled from DFT results.
 
 \textbf{Stage 5: Neural Network Surrogate Optimization.}
-The DFT-initialized MEAM parameters are refined using a neural network surrogate model. Random perturbations of the parameter set are sampled, and each sample is evaluated in LAMMPS across all target compositions. A feedforward neural network (architecture: 20--20--10 hidden units) is trained to map MEAM parameters to predicted elastic properties ($E$, $\nu$). Gradient-based inverse optimization through the trained surrogate identifies the parameter set that minimizes the discrepancy between predicted and target elastic properties. The optimized parameters are validated by direct LAMMPS evaluation, with a pass criterion of average error below 10\%.
+The DFT-initialized MEAM parameters will be refined using a neural network surrogate model. Random perturbations of the parameter set will be sampled, and each sample will be evaluated in LAMMPS across all target compositions. A feedforward neural network will be trained to map MEAM parameters to predicted elastic properties ($E$, $\nu$). Gradient-based inverse optimization through the trained surrogate will identify the parameter set that minimizes the discrepancy between predicted and target elastic properties. The optimized parameters will be validated by direct LAMMPS evaluation.
 
 \expectedresults
-The primary expected outcome is a set of optimized multi-element MEAM potential files that reproduce the elastic properties (Young's modulus and Poisson's ratio) of metallic alloy compositions with an average error below 10\% relative to MD-computed targets initialized from DFT data. Specifically:
+The primary expected outcome is a set of optimized multi-element MEAM potential files that reproduce the elastic properties (Young's modulus and Poisson's ratio) of metallic alloy compositions. Specifically:
 
 \begin{enumerate}
-	\item \textbf{Unified MEAM potentials:} Complete library and parameter files covering all 12 elements (Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, Zn) with consistent cross-interaction terms, enabling simulations of arbitrary alloy compositions within this element set.
+	\item \textbf{Unified MEAM potentials:} Complete library and parameter files covering all selected elements (e.g. Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, Zn) with consistent cross-interaction terms, enabling simulations of arbitrary alloy compositions within this element set.
 
 	\item \textbf{DFT-quality initialization:} Per-element properties (lattice constants, cohesive energies, bulk moduli, elastic constants) and binary formation energies that agree with published DFT and experimental values, providing a physically grounded starting point for optimization.
 
@@ -93,7 +93,7 @@ The primary expected outcome is a set of optimized multi-element MEAM potential 
 \workpackage{DFT Reference Calculations}{2}{5}
 \workpackage{MEAM Initialization Pipeline}{4}{7}
 \workpackage{NN Surrogate Training}{6}{9}
-\workpackage{Inverse Optimization}{8}{11}
+\workpackage{Inverse Optimization}{8}{13}
 \workpackage{Validation \& Testing}{10}{13}
 \workpackage{Writing \& Documentation}{11}{15}
 \workpackage{Poster Preparation}{13}{15}
