@@ -1,0 +1,39 @@
+% --- Pipeline Overview ---
+\begin{frame}{Pipeline Overview}
+\centering
+\begin{tikzpicture}[
+    node distance=0.5cm and 0.35cm,
+    stage/.style={rectangle, rounded corners, draw=darkred, fill=darkred!10,
+                  text width=2.5cm, minimum height=1cm, align=center,
+                  font=\scriptsize\bfseries},
+    arrow/.style={-{Stealth[length=2.5mm]}, thick, darkred},
+    label/.style={font=\tiny, text=darkred!70!black, align=center},
+    fw/.style={font=\tiny\ttfamily, text=darkgray, align=center},
+  ]
+  \node[stage] (config) {Stage 1\\Config Generation};
+  \node[stage, right=of config] (md) {Stage 2\\MD Simulation};
+  \node[stage, right=of md] (dft) {Stage 3\\DFT Reference};
+  \node[stage, right=of dft] (nn) {Stage 4\\NN Surrogate\\Optimization};
+
+  \draw[arrow] (config) -- (md);
+  \draw[arrow] (md) -- (dft);
+  \draw[arrow] (dft) -- (nn);
+
+  \node[label, below=0.15cm of config] {Random alloy\\compositions};
+  \node[label, below=0.15cm of md] {$E$, $\nu$ per config\\$\to$ results.json};
+  \node[label, below=0.15cm of dft] {$a_0$, $E_\mathrm{coh}$, $B$, $C_{ij}$\\$\to$ MEAM init};
+  \node[label, below=0.15cm of nn] {Inverse optimize\\MEAM params};
+
+  % Frameworks
+  \node[fw, above=0.35cm of config] {Python};
+  \node[fw, above=0.35cm of md] {LAMMPS\\(Python API)};
+  \node[fw, above=0.35cm of dft] {Quantum Espresso\\+ ASE};
+  \node[fw, above=0.35cm of nn] {TensorFlow\\+ LAMMPS};
+
+  % Status markers
+  \node[font=\tiny, text=green!50!black, below=0.85cm of config] {\checkmark~Done};
+  \node[font=\tiny, text=green!50!black, below=0.85cm of md] {\checkmark~Done};
+  \node[font=\tiny, text=green!50!black, below=0.85cm of dft] {\checkmark~Done};
+  \node[font=\tiny, text=orange!80!black, below=0.85cm of nn] {In Progress};
+\end{tikzpicture}
+\end{frame}

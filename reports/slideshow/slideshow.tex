@@ -1,0 +1,65 @@
+\documentclass[aspectratio=169, 11pt]{beamer}
+
+% --- Theme ---
+\usetheme{Boadilla}
+\usecolortheme{beaver}
+
+% --- Packages ---
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\newcommand{\Ang}{\text{\AA}}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{natbib}
+\usepackage{appendixnumberbeamer}
+
+% --- Extra colors for TikZ diagrams ---
+\definecolor{darkgray}{RGB}{80,80,80}
+\definecolor{lightgray2}{RGB}{230,230,230}
+\definecolor{deepred}{RGB}{140,20,20}
+
+% --- Gray accents ---
+\setbeamercolor{section in head/foot}{bg=gray!30, fg=darkred}
+\setbeamercolor{subsection in head/foot}{bg=gray!15, fg=darkred}
+\setbeamercolor{block body}{bg=gray!10}
+
+% --- Top-right logo ---
+\addtobeamertemplate{frametitle}{}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=north east, yshift=-2pt, xshift=-4pt]
+      at (current page.north east) {\includegraphics[height=0.7cm]{metu.png}};
+  \end{tikzpicture}%
+}
+
+% --- Listings ---
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  backgroundcolor=\color{gray!10},
+  frame=single,
+  rulecolor=\color{gray!50},
+  breaklines=true,
+}
+
+% --- Title ---
+\title[Multi-Element MEAM Potentials]{Automated Construction of Multi-Element\\MEAM Interatomic Potentials}
+\subtitle{DFT-Informed Neural Network Optimization}
+\author{Can Durmaz }%\and Prof.\ Dr.\ Hande Toffoli
+\institute{METU}
+\date{PHYS\,400}
+\titlegraphic{\includegraphics[height=1.5cm]{metu.png}}
+
+\begin{document}
+
+\input{sections/introduction}
+\input{sections/pipeline}
+\input{sections/stage1_config}
+\input{sections/stage2_md}
+\input{sections/stage3_dft}
+\input{sections/stage4_nn}
+\input{sections/conclusion}
+
+\end{document}

@@ -27,3 +27,4 @@ GEMINI.md
 *.synctex.gz
 *.toc
 *.out
+reports/slideshow/tmp/

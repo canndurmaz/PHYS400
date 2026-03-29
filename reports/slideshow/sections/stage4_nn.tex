@@ -1,0 +1,31 @@
+% --- Stage 4: Neural Network Surrogate Optimization ---
+\begin{frame}{Stage 4: NN Surrogate Optimization \normalfont\small\textcolor{gray}{--- TensorFlow + LAMMPS}}
+\textbf{Status: In Progress}
+
+\vspace{0.5em}
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    box/.style={rectangle, rounded corners, draw=darkred, fill=darkred!8,
+                text width=2.8cm, minimum height=1cm, align=center, font=\small},
+    arrow/.style={-{Stealth[length=3mm]}, thick, darkred},
+  ]
+  \node[box] (params) {MEAM\\Parameters};
+  \node[box, right=of params] (nn) {Neural Network\\(Input$\to$32$\to$16$\to$2)};
+  \node[box, right=of nn] (props) {Predicted\\$E$, $\nu$};
+
+  \draw[arrow] (params) -- (nn);
+  \draw[arrow] (nn) -- (props);
+
+  \draw[arrow, dashed, orange!80!black] (props) to[bend left=30] node[above, font=\scriptsize, text=orange!80!black] {gradient descent} (params);
+\end{tikzpicture}
+
+\vspace{1em}
+\begin{enumerate}
+  \item \textbf{Sample:} Perturb DFT-initialized MEAM parameters
+  \item \textbf{Evaluate:} Run LAMMPS for each sample across target compositions
+  \item \textbf{Train:} NN learns mapping \texttt{MEAM\_params} $\to$ ($E$, $\nu$)
+  \item \textbf{Optimize:} Back-propagate through trained NN to find optimal parameters
+  \item \textbf{Validate:} Final LAMMPS evaluation with optimized parameters
+\end{enumerate}
+\end{frame}

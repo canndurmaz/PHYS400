@@ -1,0 +1,155 @@
+% --- Stage 3: DFT Reference Calculations ---
+\begin{frame}{Stage 3: DFT Reference Calculations \normalfont\small\textcolor{gray}{--- Quantum Espresso + ASE}}
+Quantum Espresso computes reference data for each element:
+
+\vspace{0.5em}
+\begin{columns}[T]
+\column{0.55\textwidth}
+\textbf{Per-element properties:}
+\begin{itemize}
+  \item Equation of state (7 strain points)
+  \item Birch--Murnaghan fit $\to$ $a_0$, $E_\mathrm{coh}$, $B$
+  \item Elastic constants $C_{11}$, $C_{12}$
+  \item Isolated atom energy for true $E_\mathrm{coh}$
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Binary pairs:}
+\begin{itemize}
+  \item Formation energy $E_\mathrm{form}$ for all $\binom{N}{2}$ pairs
+  \item 11 elements $\to$ 36 binary pairs computed
+\end{itemize}
+
+\column{0.4\textwidth}
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+ & $a_0$ (\Ang) & $E_\mathrm{coh}$ & $B$ \\
+\midrule
+Al & 4.05 & 3.61 & 77.5 \\
+Cu & 3.64 & 3.86 & 138.5 \\
+Fe & 2.81 & 6.88 & 420.2 \\
+Ti & 2.91 & 6.29 & 114.5 \\
+Cr & 2.85 & 8.67 & 209.4 \\
+\bottomrule
+\end{tabular}
+\vspace{0.3em}
+
+\scriptsize $E_\mathrm{coh}$ in eV, $B$ in GPa
+\end{columns}
+
+\vspace{0.5em}
+Pseudopotentials auto-downloaded from QE library if missing.
+\end{frame}
+
+% --- Stage 3: DFT to MEAM — Single-element ---
+\begin{frame}{Stage 3: DFT $\to$ MEAM --- Single-Element Parameters}
+\begin{block}{Direct mappings}
+\vspace{-0.5em}
+\begin{align*}
+  \texttt{esub}  &\leftarrow E_\mathrm{coh} & &\text{(cohesive / sublimation energy)} \\
+  \texttt{alat}  &\leftarrow a_0             & &\text{(equilibrium lattice constant)}
+\end{align*}
+\vspace{-1.2em}
+\end{block}
+
+\begin{block}{Rose equation shape parameter}
+\vspace{-0.3em}
+\[
+  \texttt{alpha} = \sqrt{\frac{9\,B\,\Omega}{E_\mathrm{coh}}}
+\]
+\vspace{-0.8em}
+
+where $B$ is the bulk modulus (converted to eV/\Ang$^3$) and $\Omega$ is the atomic volume:
+\vspace{-0.3em}
+
+\centering\small
+\begin{tabular}{ll}
+FCC: $\Omega = a^3/4$ \quad & BCC: $\Omega = a^3/2$ \\
+HCP: $\Omega \approx a^3\sqrt{2}$ \quad & Diamond: $\Omega = a^3/8$
+\end{tabular}
+\end{block}
+\end{frame}
+
+% --- Stage 3: DFT to MEAM — Cross-interactions ---
+\begin{frame}{Stage 3: DFT $\to$ MEAM --- Cross-Interaction Parameters}
+For each binary pair $(i,j)$, DFT formation energies set the cross-terms:
+
+\vspace{0.5em}
+\begin{block}{Binary pair parameters}
+\vspace{-0.5em}
+\begin{align*}
+  E_c(i,j) &= \frac{\texttt{esub}_i + \texttt{esub}_j}{2} + E_\mathrm{form}(i,j) \\[6pt]
+  r_e(i,j) &= \frac{d_\mathrm{nn}(i) + d_\mathrm{nn}(j)}{2} \\[6pt]
+  \alpha(i,j) &= \frac{\alpha_i + \alpha_j}{2}
+\end{align*}
+\vspace{-1em}
+
+where $d_\mathrm{nn}$ is the nearest-neighbor distance derived from DFT lattice constants.
+\end{block}
+
+\vspace{0.3em}
+\small 36 binary pairs computed from 11 elements --- covers all $\binom{11}{2} = 55$ combinations where DFT data is available.
+\end{frame}
+
+% --- Stage 3: Concrete Example — Aluminum ---
+\begin{frame}{Stage 3: Example --- Aluminum $\to$ MEAM}
+\centering
+\begin{tikzpicture}[
+    dft/.style={rectangle, rounded corners, draw=darkred, fill=darkred!8,
+                text width=3.5cm, minimum height=0.7cm, align=center, font=\small},
+    meam/.style={rectangle, rounded corners, draw=darkred!70!black, fill=darkred!3,
+                 text width=3.5cm, minimum height=0.7cm, align=center, font=\small},
+    arrow/.style={-{Stealth[length=2.5mm]}, thick, darkred},
+  ]
+  \node[dft] (a0) {$a_0 = 4.047$\,\Ang};
+  \node[dft, below=0.35cm of a0] (ecoh) {$E_\mathrm{coh} = 3.609$\,eV};
+  \node[dft, below=0.35cm of ecoh] (B) {$B = 77.5$\,GPa};
+
+  \node[meam, right=2cm of a0] (alat) {\texttt{alat} = 4.047};
+  \node[meam, right=2cm of ecoh] (esub) {\texttt{esub} = 3.609};
+  \node[meam, right=2cm of B] (alpha) {\texttt{alpha} = 4.61};
+
+  \draw[arrow] (a0) -- (alat);
+  \draw[arrow] (ecoh) -- (esub);
+  \draw[arrow] (B) -- (alpha);
+
+  \node[font=\small\bfseries, text=darkred, above=0.2cm of a0] {DFT Output};
+  \node[font=\small\bfseries, text=darkred!70!black, above=0.2cm of alat] {MEAM Parameter};
+\end{tikzpicture}
+
+\vspace{0.5em}
+\begin{block}{\texttt{alpha} derivation for Al (FCC)}
+\vspace{-0.3em}
+\small
+\begin{enumerate}\itemsep0pt
+  \item Unit conversion: $B = 77.5 \;\mathrm{GPa} \times 0.00624 = 0.4836 \;\mathrm{eV/\Ang^3}$
+  \item Atomic volume: $\Omega_\mathrm{FCC} = a_0^3/4 = 4.047^3/4 = 16.58 \;\text{\Ang}^3$
+  \item Rose equation: $\alpha = \sqrt{9 \times 0.4836 \times 16.58 \;/\; 3.609} = \sqrt{19.99} = 4.61$
+\end{enumerate}
+\vspace{-0.3em}
+\end{block}
+\end{frame}
+
+% --- Stage 3: MEAM File Merging ---
+\begin{frame}{Stage 3: MEAM File Merging \normalfont\small\textcolor{gray}{--- Python}}
+When no single library file covers all selected elements:
+
+\begin{enumerate}
+  \item \textbf{Scan} all \texttt{EAM/library\_*.meam} files
+  \item \textbf{Find} minimal covering set of files for the target elements
+  \item \textbf{Merge} single-element entries into a unified library file
+  \item \textbf{Fill} missing cross-interaction parameters from DFT results
+  \item \textbf{Write} merged \texttt{library\_<elements>.meam} + \texttt{<elements>.meam}
+\end{enumerate}
+
+\vspace{0.5em}
+\begin{block}{Example: Al--Cu--Zn--Mg--Fe--Cr--Ti}
+\begin{itemize}
+  \item Al, Cu, Fe, Cr, Ti from \texttt{FeMnNiTiCuCrCoAl}
+  \item Mg, Zn from \texttt{AlMgZn}
+  \item Cross-terms (e.g.\ Cr--Mg, Ti--Zn) computed from DFT formation energies
+\end{itemize}
+\end{block}
+\end{frame}

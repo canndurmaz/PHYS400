@@ -1,0 +1,49 @@
+% --- Title ---
+\begin{frame}[plain]
+\titlepage
+\end{frame}
+
+% --- Motivation ---
+\begin{frame}{Motivation}
+\begin{itemize}
+  \item Industrial alloys (steels, Al alloys) are selected by their \textbf{elastic properties}: stiffness vs.\ elongation.
+  \item Experimental measurement of elastic properties is \textbf{expensive and time-consuming}.
+  \item Molecular simulations can predict elastic properties computationally---but they require accurate \textbf{interatomic potentials}.
+  \item The Modified Embedded Atom Method (MEAM) is widely used for metals and alloys \cite{baskes1992, lee2001}.
+\end{itemize}
+
+\vspace{1em}
+\begin{block}{Goal}
+Build an automated pipeline to generate MEAM potentials for \emph{arbitrary} multi-element alloys.
+\end{block}
+\end{frame}
+
+% --- The Problem ---
+\begin{frame}{The Problem: Fragmented MEAM Libraries}
+Published MEAM files cover only \textbf{subsets} of elements. No single file spans all elements needed for industrial alloys (e.g.\ Al\,7075: Al, Zn, Mg, Cu, Cr, Mn, Fe, Si, Ti).
+
+\vspace{0.5em}
+\centering
+\small
+\begin{tabular}{l|cccccccccccc}
+\toprule
+\textbf{Library File} & Al & Co & Cr & Cu & Fe & Mg & Mn & Mo & Ni & Si & Ti & Zn \\
+\midrule
+AlMgZn           & \checkmark &   &   &   &   & \checkmark &   &   &   &   &   & \checkmark \\
+AlSiCuMgFe       & \checkmark &   &   & \checkmark & \checkmark & \checkmark &   &   &   & \checkmark &   &   \\
+CuMo             &   &   &   & \checkmark &   &   &   & \checkmark &   &   &   &   \\
+FeMnNiTiCuCrCoAl & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &   & \checkmark &   & \checkmark &   & \checkmark &   \\
+\bottomrule
+\end{tabular}
+
+\vspace{1em}
+Cross-interaction parameters between files are \textbf{undefined} $\Rightarrow$ cannot simulate combined compositions.
+\end{frame}
+
+% --- Research Question ---
+\begin{frame}{Research Question}
+\begin{block}{}
+\centering
+\emph{Can density functional theory reference calculations with neural-network surrogate optimization produce multi-element MEAM interatomic potentials that accurately predict the elastic properties of arbitrary metallic alloy compositions, even when the constituent elements do not share a common published MEAM parameterization?}
+\end{block}
+\end{frame}

@@ -1,0 +1,48 @@
+% --- Stage 2: MD Simulation ---
+\begin{frame}{Stage 2: MD Simulation \normalfont\small\textcolor{gray}{--- LAMMPS (Python API) + OVITO}}
+\textbf{Static deformation method} to compute elastic properties:
+
+\begin{enumerate}
+  \item \textbf{Relax} --- anisotropic pressure minimization (box + atoms)
+  \item \textbf{Baseline} --- record stress $\sigma_{xx}, \sigma_{yy}, \sigma_{zz}$
+  \item \textbf{Strain} --- apply $\pm\delta$ ($\delta = 0.001$) along $x$, $y$, $z$ with re-minimization
+  \item \textbf{Extract} --- $C_{11}$ from axial, $C_{12}$ from transverse stress derivatives
+  \item \textbf{Average} --- 3 $C_{11}$ and 6 $C_{12}$ samples across directions
+  \item \textbf{Compute:}
+\end{enumerate}
+
+\vspace{-0.3em}
+\begin{equation*}
+  E = \frac{(C_{11} - C_{12})(C_{11} + 2C_{12})}{C_{11} + C_{12}}, \qquad
+  \nu = \frac{C_{12}}{C_{11} + C_{12}}
+\end{equation*}
+
+\vspace{0.3em}
+Configs with $\nu < 0$ are discarded as unphysical.
+\end{frame}
+
+% --- Stage 2: Results ---
+\begin{frame}{Stage 2: MD Results}
+\textbf{402 simulations} completed across random and named alloy compositions.
+
+\vspace{0.5em}
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Alloy Config} & \textbf{$E$ (GPa)} & \textbf{$\nu$} \\
+\midrule
+AL\,2024 (Al--Cu--Mn)      & 66.7 & 0.354 \\
+AL\,2219 (Al--Cu)           & 74.0 & 0.351 \\
+AL\,5052 (Al--Mg)           & 73.1 & 0.343 \\
+AL\,7075 (Al--Mg--Zn)      & 67.1 & 0.346 \\
+\midrule
+\multicolumn{3}{l}{\small Random multi-component examples:} \\
+Al$_{50}$Mn$_{41}$Ni$_{9}$     & 77.6 & 0.329 \\
+Al$_{50}$Ni$_{21}$Mn$_{15}$Cu$_8$Cr$_6$ & 217.2 & 0.158 \\
+Al$_{50}$Ti$_{38}$Co$_{12}$   & 226.6 & 0.273 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.5em}
+\small Young's modulus range: $\sim$40--230\,GPa. Results stored in \texttt{results.json} for downstream NN training.
+\end{frame}

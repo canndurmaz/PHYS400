@@ -1,0 +1,31 @@
+% --- Stage 1: Configuration Generation ---
+\begin{frame}[fragile]{Stage 1: Configuration Generation \normalfont\small\textcolor{gray}{--- Python}}
+Random alloy compositions from 12 MEAM-available elements.
+
+\vspace{0.5em}
+\begin{columns}[T]
+\column{0.45\textwidth}
+\textbf{Properties:}
+\begin{itemize}
+  \item $10^{-4}$ composition precision
+  \item Al dominant when present
+  \item Fractions sum to exactly 1.0
+  \item 5800+ configs generated
+\end{itemize}
+
+\column{0.5\textwidth}
+\textbf{Example:} AL\,7075 simplified
+\begin{lstlisting}[language={}]
+{
+  "composition": {
+    "Al": 0.91,
+    "Mg": 0.029,
+    "Zn": 0.061
+  },
+  "box_size_m": 4e-09,
+  "temperature": 0.1,
+  "total_steps": 1000
+}
+\end{lstlisting}
+\end{columns}
+\end{frame}
