@@ -3,15 +3,17 @@
 
 \subsection{Pipeline Architecture}
 The project is implemented as several Python modules that will all be combined
-in a pipeline. Four sequential stages are in scope for this interim report; the
-fifth stage (neural-network parameter optimization) is deferred to the second
-half of the semester. Each stage is also exposed as a standalone module so that
-any subset of the workflow can be re-executed in isolation. The current state of
+in a pipeline of five sequential stages. Stages~1--4 are complete and described
+in this interim report; Stage~5 (the neural-network parameter optimization that
+closes the loop on top of Stage~4) is planned for the second half of the
+semester. Each stage is also exposed as a standalone module so that any subset
+of the workflow can be re-executed in isolation. The current state of
 completion of each stage is summarized in Table~\ref{tab:pipeline_status}.
 
 \begin{table}[h]
 	\centering
-	\caption{Pipeline stages and current implementation status.}
+	\caption{Pipeline stages and current implementation status. Stage~5
+	is detailed in Section~\ref{sec:future}.}
 	\label{tab:pipeline_status}
 	\renewcommand{\arraystretch}{1.2}
 	\begin{tabular}{|c|p{6.5cm}|c|c|}
@@ -21,6 +23,7 @@ completion of each stage is summarized in Table~\ref{tab:pipeline_status}.
 		2 & MD elastic-property evaluation             & LAMMPS Python API            & Complete \\ \hline
 		3 & DFT reference calculations                  & Quantum Espresso + ASE       & Complete \\ \hline
 		4 & MEAM initialization and library merging     & Python                       & Complete \\ \hline
+		5 & Neural-network surrogate optimization       & TensorFlow + LAMMPS          & Planned \\ \hline
 	\end{tabular}
 \end{table}
 
@@ -30,36 +33,45 @@ configuration; Stage~2 simulates that configuration in LAMMPS and writes the
 measured elastic moduli to a shared results database; Stage~3 produces DFT
 reference values for every selected element and binary pair and stores them in
 a reference-data database; Stage~4 reads both of these and emits a merged,
-DFT-initialized pair of MEAM files. A divergent composition-only neural-network
-branch (dashed in Figure~\ref{fig:pipeline}) consumes the Stage~2 elastic
-database as a sanity check but never feeds back into the potential-fitting
-flow; it is described in Section~\ref{sec:comp_nn}.
+DFT-initialized pair of MEAM files. Stage~5 (planned) will consume those
+files together with the LAMMPS-evaluated $(C_{11},C_{12})$ targets and
+produce a final, refitted MEAM parameter set. A divergent composition-only
+neural-network branch (dashed in Figure~\ref{fig:pipeline}) consumes the
+Stage~2 elastic database as a sanity check but never feeds back into the
+potential-fitting flow; it is described in Section~\ref{sec:comp_nn}.
 
 \begin{figure}[h]
 	\centering
 	\begin{tikzpicture}[
 		stage/.style={rectangle, rounded corners, draw=black, fill=gray!10,
 		              text width=2.6cm, minimum height=1.0cm, align=center, font=\small\bfseries},
+		planned/.style={rectangle, rounded corners, draw=black, dashed, fill=gray!2,
+		              text width=2.6cm, minimum height=1.0cm, align=center,
+		              font=\small\bfseries\itshape},
 		aux/.style={rectangle, rounded corners, draw=black, dashed, fill=blue!5,
 		              text width=2.6cm, minimum height=1.0cm, align=center, font=\small\bfseries},
 		arrow/.style={-Stealth, thick},
+		plannedarrow/.style={-Stealth, thick, dashed},
 		auxarrow/.style={-Stealth, thick, dashed},
 		label/.style={font=\scriptsize, align=center},
 		node distance=0.4cm and 0.4cm,
 	]
 		\node[stage] (s1) {Stage 1\\Configurations};
-		\node[stage, right=of s1] (s2) {Stage 2\\MD: $E,\nu$};
+		\node[stage, right=of s1] (s2) {Stage 2\\MD: $E,\nu,C_{ij}$};
 		\node[stage, right=of s2] (s3) {Stage 3\\DFT};
 		\node[stage, right=of s3] (s4) {Stage 4\\MEAM init};
+		\node[planned, right=of s4] (s5) {Stage 5\\NN optim\\(planned)};
 
 		\draw[arrow] (s1) -- (s2);
 		\draw[arrow] (s2) -- (s3);
 		\draw[arrow] (s3) -- (s4);
+		\draw[plannedarrow] (s4) -- (s5);
 
 		\node[label, below=0.1cm of s1] {composition\\records};
 		\node[label, below=0.1cm of s2] {elastic\\database};
 		\node[label, below=0.1cm of s3] {DFT\\reference};
 		\node[label, below=0.1cm of s4] {merged MEAM\\library};
+		\node[label, below=0.1cm of s5] {refitted MEAM\\parameters};
 
 		% Divergent ML sanity-check branch: consumes the elastic database
 		% from Stage 2 but does not feed back into the main pipeline.
@@ -67,14 +79,56 @@ flow; it is described in Section~\ref{sec:comp_nn}.
 		\draw[auxarrow] (s2.north) |- (ml.west);
 		\node[label, right=0.1cm of ml] {sanity check\\$(E,\nu)$ predictor};
 	\end{tikzpicture}
-	\caption{Four-stage pipeline architecture (solid arrows) plus the
-	divergent ML sanity-check branch (dashed) described in
-	Section~\ref{sec:comp_nn}. Each main stage is implemented as
-	an independent Python module and communicates with the next one
-	through JSON or MEAM-format files written to disk; the ML branch
-	consumes the Stage~2 elastic database but never feeds back into
-	the potential-fitting flow.}
+	\caption{Five-stage pipeline architecture: Stages~1--4 (solid arrows)
+	are complete, Stage~5 (dashed, italicised) is planned. The dashed ML
+	side-branch above Stage~3 is the composition surrogate of
+	Section~\ref{sec:comp_nn}, which consumes the Stage~2 elastic
+	database as a sanity check but never feeds back into the
+	potential-fitting flow.}
 	\label{fig:pipeline}
 \end{figure}
+
+\paragraph{What Stage~5 will do.}
+Stage~5 will refit the cross-interaction terms of the merged MEAM library
+emitted by Stage~4 to better reproduce the LAMMPS-evaluated elastic
+targets. The plan, prototyped during this semester and detailed in
+Section~\ref{sec:future}, has four steps:
+\begin{enumerate}
+	\item \textbf{Sample.} Draw $N$ perturbed parameter vectors
+	      $\mathbf{p}_k = \mathbf{p}_0 \cdot (1+\boldsymbol{\eta}_k)$
+	      around the Stage~4 baseline ($\eta_k\sim\mathcal{U}(-0.1,0.1)$
+	      on each binary $(\texttt{Ec},\texttt{re},\texttt{alpha})$) and
+	      run LAMMPS over every alloy in the elastic-property database
+	      to obtain $(C_{11},C_{12})_k$ per composition. Samples whose
+	      majority of compositions fail a $C_{11}>30$\,GPa physicality
+	      check are rejected.
+	\item \textbf{Train a surrogate.} Fit a feed-forward network
+	      $\mathbf{p}\!\mapsto\!(C_{11,k},C_{12,k})_{k=1}^{N_\mathrm{entries}}$
+	      with a Huber loss. Predicting the elastic constants directly
+	      (rather than $\nu$, whose ratio form is ill-conditioned in
+	      composition space) and using a robust loss are the two
+	      lessons carried over from the composition surrogate of
+	      Section~\ref{sec:comp_nn}.
+	\item \textbf{Inverse optimization.} Find
+	      $\hat{\mathbf{p}} = \arg\min_{\mathbf{p}} \lVert
+	      f_\theta(\mathbf{p}) - \mathbf{y}^\star \rVert^2$ by Adam
+	      descent on the normalised parameter vector, clipped to
+	      $\pm 2.5\sigma$ around the training mean to keep the
+	      optimization within the surrogate's domain of validity. A
+	      physical-stability penalty
+	      ($C_{11}+C_{12}>0$, $C_{11}\geq C_{12}$, $\nu<0.48$) will be
+	      added to keep the inverse optimizer inside the
+	      mechanically-stable region.
+	\item \textbf{Validate.} Re-evaluate $\hat{\mathbf{p}}$ in LAMMPS,
+	      derive $(E_\mathrm{opt},\nu_\mathrm{opt})$ analytically from
+	      the predicted $(C_{11},C_{12})$, and compare against a
+	      held-out set of named industrial alloys
+	      (Al~2024, 2219, 5052, 7075 plus extensions) and at least two
+	      non-aluminium alloys.
+\end{enumerate}
+The supporting infrastructure (parallel LAMMPS sampling, MPI
+distribution, MEAM file I/O, $C_{11}/C_{12}$ persistence in
+\texttt{results.json}) is already in place from the Stage~2 work
+described in Section~\ref{sec:stage2}.
 
 \newpage
