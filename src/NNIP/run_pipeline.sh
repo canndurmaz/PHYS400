@@ -10,6 +10,7 @@
 #   --skip-dft       Use existing dft_results.json instead of running QE
 #   --skip-optimize  Skip NN optimization stage
 #   --skip-verify    Skip verification stage
+#   --resume         Auto-detect completed stages and skip them
 #   --samples N      Number of NN parameter samples (default: 30)
 #   --parallel N     Max parallel DFT workers (default: 4)
 
@@ -87,7 +88,7 @@ ELEMENTS=()
 
 for arg in "$@"; do
     case "$arg" in
-        --skip-dft|--skip-optimize|--skip-verify)
+        --skip-dft|--skip-optimize|--skip-verify|--resume)
             FLAGS+=("$arg")
             ;;
         --samples|--parallel)

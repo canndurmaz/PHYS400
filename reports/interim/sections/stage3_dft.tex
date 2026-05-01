@@ -1,0 +1,79 @@
+\subsection{Stage 3 --- DFT Reference Calculations}
+\label{sec:stage3}
+
+The DFT reference stage uses Quantum Espresso \citep{giannozzi2009}
+(version~7.5, compiled locally with gfortran~13.3, OpenMPI~4.1 and
+FFTW3~3.3) driven through the Atomic Simulation Environment
+\citep{ase2017}. Before any production calculations were carried out, the
+QE--ASE coupling was validated on bulk FCC aluminium with a three-point
+sanity check (single-point SCF energy in the expected $-540$ to
+$-530$\,eV window, residual atomic forces below $0.01$\,eV/\AA, and
+diagonal-only stress tensor), all of which pass at the chosen plane-wave
+cut-offs. For each requested element the following quantities are then
+computed:
+
+\begin{enumerate}
+	\item the equilibrium lattice constant $a_0$, cohesive energy
+	      $E_\mathrm{coh}$ and bulk modulus $B$ from a seven-point
+	      equation-of-state scan fit to a Birch--Murnaghan equation
+	      \citep{birch};
+	\item an isolated-atom reference energy in a large empty box, used
+	      to convert the bulk total energy into a true cohesive energy;
+	\item the cubic elastic constants $C_{11}$ and $C_{12}$ from a
+	      stress--strain calculation analogous to the LAMMPS protocol
+	      of Section~\ref{sec:stage2}.
+\end{enumerate}
+For each unordered binary pair $(i,j)$ a single SCF calculation is run on
+the L1$_2$ or B2 reference structure (chosen based on the lattice types of
+the two elements) to obtain the formation energy
+$E_\mathrm{form}(i,j)$.
+
+The plane-wave cut-off is set to $E_\mathrm{cut}=40$\,Ry with a charge
+density cut-off of 320\,Ry, Marzari--Vanderbilt smearing of width
+0.02\,Ry, and a $6\!\times\!6\!\times\!6$ Monkhorst--Pack mesh.
+Spin-polarised calculations are activated automatically for the magnetic
+elements Fe, Cr and Mn. Pseudopotentials are downloaded from the official
+Quantum Espresso pseudopotential library on demand; the EOS strain points
+and the binary-pair SCF calculations are dispatched to a process pool,
+which made it possible to obtain the full reference set on a single
+workstation.
+
+The current DFT reference dataset covers ten elements (Al, Cu, Si, Ti, Zn,
+Cr, Fe, Mg, Mn and Mo) and 40 binary pairs. The fitted
+elemental properties for a representative subset are listed in
+Table~\ref{tab:dft_elements}. The Mn entry was retained at its tabulated
+value because the EOS scan failed to converge for the simplified
+$\alpha$-Mn approximation, and the corresponding cross-terms therefore
+inherit a higher uncertainty. The fitted EOS curves are shown in
+Figure~\ref{fig:eos}.
+
+\input{sections/_auto_dft_elements}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.85\textwidth]{figures/eos_curves.png}
+	\caption{Birch--Murnaghan fits to the seven-point DFT equation-of-state
+	scans for the elements computed by Stage~3. The fitted minimum
+	determines $a_0$ and $E_\mathrm{coh}$; the curvature determines $B$.}
+	\label{fig:eos}
+\end{figure}
+
+The 40 binary formation energies $E_\mathrm{form}(i,j)$ obtained from
+the L1$_2$/B2 SCF references are summarised as a symmetric heatmap in
+Figure~\ref{fig:formation}. Negative values (blue) indicate exothermic
+mixing, expected for compatible $sd$/$sp$ pairs such as Al--Ti or
+Cu--Ti, while strongly positive values (red) flag elements with low
+mutual solubility (notably the Mg/Zn pair against most transition
+metals). These signed values feed Eq.~(2) of Stage~4 directly and
+therefore propagate, unmodified, to the cross-term $E_c(i,j)$ entries
+of the merged MEAM library.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.92\textwidth]{figures/formation_energy_heatmap.png}
+	\caption{DFT binary formation energy $E_\mathrm{form}(i,j)$ in
+	eV/atom for the ten elements with a converged elemental reference.
+	The matrix is symmetric by construction. Cells corresponding to
+	(self,self) entries are not computed and are left blank.}
+	\label{fig:formation}
+\end{figure}

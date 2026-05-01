@@ -1,0 +1,84 @@
+\subsection{Auxiliary Composition Surrogate (MD sanity-check branch)}
+\label{sec:comp_nn}
+
+This subsection describes the divergent ML branch shown as the dashed
+side-arrow in Figure~\ref{fig:pipeline}. Unlike Stages~3--4, which seed
+the main pipeline that will eventually be closed by neural-network
+parameter optimization, the present branch consumes the Stage~2 MD
+output directly and never feeds back into the potential-fitting flow.
+Its sole purpose is to act as a fast sanity check on the consistency
+of the LAMMPS-generated dataset --- if a composition-only network
+cannot recover even an approximate trend in $(E,\nu)$ from the
+dataset, the MD output itself is suspect --- and to provide a
+ready-to-use predictor for novel compositions.
+
+Each input vector has 10 entries (one mass fraction per element in
+$\{$Al, Co, Cr, Cu, Fe, Mg, Mn, Ni, Ti, Zn$\}$); the network has the
+architecture $10\to32\to20\to2$ with ReLU activations and is trained
+under a 70/30 train/validation split with the Adam optimizer.
+
+\paragraph{Targets and Huber loss.}
+The regression targets are the LAMMPS-evaluated $(E,\nu)$ pairs
+produced by the Stage~2 strain protocol described in
+Section~\ref{sec:stage2}. Records with $\nu\!\geq\!0.48$ are dropped to
+remove configurations that lie close to the mechanical-stability bound
+and that destabilise the regression in composition space. The training
+loss is \textbf{Huber} ($\delta=1$ in scaled units) rather than MSE,
+which bounds the gradient contribution of outlier samples (Mg/Zn-rich
+compositions whose LAMMPS runs occasionally yield extreme moduli).
+
+\paragraph{Stopping gate.}
+Training stops as soon as the \emph{mean} relative error on the
+derived $(E,\nu)$ over the held-out 30\,\% validation set falls within
+$\mathtt{MAX\_ERROR\_PCT}=15\,\%$ for both quantities, i.e.\
+$\overline{|\Delta E|/E}\le 15\,\%$ \emph{and}
+$\overline{|\Delta \nu|/\nu}\le 15\,\%$. This replaces an earlier
+per-sample gate that required \emph{every} validation alloy to be
+within 15\,\%; that criterion was dominated by a small number of
+Mg/Zn-rich outliers and tended to drive the optimiser into spurious
+restarts just to satisfy the worst sample. The mean-based gate
+targets the bulk behaviour of the surrogate while still leaving the
+individual residuals visible in
+Figures~\ref{fig:aux_parity_val}--\ref{fig:aux_err}; per-sample
+pass/fail counts at the same 15\,\% threshold are still emitted as
+diagnostics.
+
+\input{sections/_auto_ml_metrics}
+
+\begin{figure}[h]
+	\centering
+	\begin{minipage}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/parity_train.png}
+		\caption{Training-set parity for the predicted $E$ and $\nu$.}
+		\label{fig:aux_parity}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/training_history.png}
+		\caption{Training history of the surrogate: Huber loss and MAE
+		on the scaled $(E,\nu)$ targets.}
+		\label{fig:aux_history}
+	\end{minipage}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\begin{minipage}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/parity_validation.png}
+		\caption{Held-out validation parity for $(E,\nu)$.}
+		\label{fig:aux_parity_val}
+	\end{minipage}
+	\hfill
+	\begin{minipage}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/error_dist_validation.png}
+		\caption{Validation error distributions for $E$ and $\nu$. Both
+		distributions are approximately zero-centred, indicating no
+		systematic bias; residual tails are dominated by Mg/Zn-rich
+		compositions.}
+		\label{fig:aux_err}
+	\end{minipage}
+\end{figure}

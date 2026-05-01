@@ -41,13 +41,19 @@ PHYS400/
 │   ├── dft_initialized/  # MEAM init output
 │   └── optimized/        # NN-optimized output
 ├── pseudopotentials/   # QE pseudopotential files (*.UPF, auto-downloaded)
+├── reports/interim/    # LaTeX interim report (compile.sh auto-refreshes
+│                       # tables/figures via src/stats/run_all.sh)
 ├── src/
 │   ├── configs/        # Alloy composition configs (.json) + generator
 │   ├── MD/             # Molecular Dynamics module (LAMMPS + OVITO)
 │   ├── ML/             # Machine Learning module (TensorFlow)
+│   ├── NNIP/           # Full pipeline orchestrator (DFT + NN optimisation)
 │   ├── QE/             # Quantum Espresso tests
-│   └── NNIP/           # Full pipeline orchestrator
+│   └── stats/          # Report-asset generators (figures + LaTeX tables
+│                       # via tabulate; consumed by reports/interim/compile.sh)
 ├── phys/               # Python virtual environment
+├── clean.sh            # Wipe build artefacts (preserves results.json
+│                       # + dft_results.json + sources)
 └── README.md
 ```
 
@@ -140,12 +146,33 @@ cd src/NNIP
 See [src/NNIP/README.md](src/NNIP/README.md) for full pipeline documentation.
 
 ### E. ML Training & Prediction (Standalone)
-Train a neural network directly on MD results, or predict for new compositions.
+Train a neural network directly on MD results, or predict for new compositions. The composition surrogate predicts $(C_{11}, C_{12})$ and derives $(E, \nu)$ analytically (Huber loss). Re-running `run_nn.sh` automatically refreshes the corresponding figures and metrics table in the interim report.
 
 ```bash
 ./src/ML/run_nn.sh
 ./phys/bin/python3 src/ML/predict_from_model.py path/to/composition.json
 ```
+
+### F. Interim Report
+
+Compile the LaTeX interim report. `compile.sh` runs `src/stats/run_all.sh` first, which regenerates every auto-derived figure (element coverage, $E$–$\nu$ scatter coloured by dominant element, DFT formation-energy heatmap, Stage 5 verification bars, …) and every auto-derived LaTeX table (dataset stats, DFT elements, MEAM init, NN validation, pipeline timings, …) from the canonical project data files.
+
+```bash
+cd reports/interim && bash compile.sh   # regenerates assets, then 4 pdflatex passes
+```
+
+### G. Maintenance
+
+```bash
+./clean.sh --dry-run           # preview every artefact that would be removed
+./clean.sh                     # interactive (asks Y/N)
+./clean.sh -y                  # silent
+
+python3 src/MD/fill_results_cij.py   # one-shot: add C11,C12 to legacy results.json entries
+python3 src/NNIP/fill_elastic_constants.py --force   # one-shot: fill missing/unphysical C_ij in dft_results.json
+```
+
+`clean.sh` preserves `src/ML/results.json`, `src/ML/predict.json`, and `src/NNIP/dft_results.json`; everything else (PDFs, plots, model checkpoints, scratch dirs, `__pycache__`) is regenerable.
 
 ---
 
@@ -171,7 +198,8 @@ Currently available across all library files:
 ---
 
 ## 6. Modules Documentation
-- [**NNIP Pipeline**](src/NNIP/README.md): Full Config→MD→DFT→NN pipeline, auto-merge, verification
-- [**MD Module**](src/MD/README.md): LAMMPS simulation, elastic property calculation, OVITO visualization
-- [**ML Module**](src/ML/README.md): Neural network training, prediction, data structures
+- [**NNIP Pipeline**](src/NNIP/README.md): Full Config→MD→DFT→NN pipeline, auto-merge, verification, $C_{ij}$+Huber surrogate
+- [**MD Module**](src/MD/README.md): LAMMPS simulation, parallel elastic property calculation, OVITO visualization, physicality filter
+- [**ML Module**](src/ML/README.md): Composition surrogate ($C_{ij}$ targets, Huber loss), prediction, auto-sync to report
 - [**QE Module**](src/QE/README.md): Quantum Espresso build, configuration, validation tests
+- [**Stats / Report Assets**](src/stats/README.md): Figure + LaTeX-table generators consumed by `reports/interim/compile.sh`

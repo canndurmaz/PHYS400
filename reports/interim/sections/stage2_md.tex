@@ -1,0 +1,117 @@
+\subsection{Stage 2 --- MD Elastic Evaluation}
+\label{sec:stage2}
+
+Each configuration is loaded into LAMMPS \citep{thompson2022} through its
+Python API and its elastic response is computed with a six-point
+central-difference strain protocol.
+
+\paragraph{Multi-element MEAM build of LAMMPS:}
+The default LAMMPS distribution hard-codes the maximum number of MEAM
+species to five, which is too small for the twelve-element library
+generated in Stage~4. To enable the multi-element simulations required by
+this project, LAMMPS was rebuilt from source after raising the species
+ceiling in the MEAM headers to 20, and the resulting shared library
+was installed into the user's environment so that the Python API picks
+it up automatically. Without this step the entire
+pipeline would be blocked on the first composition that contains more
+than five distinct elements.
+
+\paragraph{Elastic-property protocol:}
+The procedure is:
+\begin{enumerate}
+	\item \textbf{Box construction} --- a cubic supercell with edge of
+	      $\sim$4\,nm is built using the dominant element's lattice
+	      structure and the composition-weighted lattice parameter. Atom
+	      types are then re-assigned by \texttt{set type/fraction} to
+	      match the requested composition.
+	\item \textbf{Relaxation} --- an anisotropic pressure minimisation
+	      simultaneously relaxes both the cell shape and the atomic
+	      positions until the residual stress is below a fixed
+	      tolerance.
+	\item \textbf{Baseline stress recording} --- the diagonal stress
+	      components $\sigma_{xx}$, $\sigma_{yy}$ and $\sigma_{zz}$ are
+	      recorded after a \texttt{run~0}.
+	\item \textbf{Strain protocol} --- a strain $\delta=10^{-3}$ is
+	      applied along each of $x,y,z$ in turn, both positive and
+	      negative; the structure is re-minimized at each strain and the
+	      stress tensor is recorded.
+	\item \textbf{Elastic constant extraction} --- $C_{11}$ is computed
+	      from the axial-stress response and $C_{12}$ from the transverse
+	      response by central differences, yielding three independent
+	      $C_{11}$ samples and six independent $C_{12}$ samples per
+	      simulation. The Voigt average \citep{voigt} is used as the
+	      final estimate.
+	\item \textbf{Engineering moduli} --- Young's modulus and Poisson's
+	      ratio are obtained from
+	      \begin{equation}
+	      	E = \frac{(C_{11}-C_{12})(C_{11}+2C_{12})}{C_{11}+C_{12}},
+	      	\qquad
+	      	\nu = \frac{C_{12}}{C_{11}+C_{12}}.
+	      	\label{eq:elastic}
+	      \end{equation}
+\end{enumerate}
+\paragraph{Physicality filter.} Configurations are discarded
+\emph{and} removed from the configuration set if any of the following
+hold:
+\begin{itemize}
+	\item $E < 0$ (negative Young's modulus);
+	\item $\nu < 0$ (negative Poisson's ratio);
+	\item $\nu \geq 0.48$ (close to the $(1-2\nu)=0$ singularity);
+	\item $C_{11} < C_{12}$ (Cauchy/mechanical-stability violation).
+\end{itemize}
+The ``nearly 8000'' figure quoted throughout this report therefore
+refers to the size of the dataset that has survived this quality
+filter, not to the number of configurations originally drawn.
+
+\paragraph{Output and storage.} All four quantities ($E$, $\nu$,
+$C_{11}$, $C_{12}$) are persisted for every accepted configuration,
+so the composition surrogate of Section~\ref{sec:comp_nn} (and the
+future Stage~5 parameter optimizer) can read them directly from the
+LAMMPS strain protocol described above.
+
+\paragraph{Parallel evaluation.} The elastic-only batch path
+dispatches configurations across worker processes, with one LAMMPS
+instance per physical core and OpenMP threading disabled to avoid
+hyperthread oversubscription. The sequential code path is preserved
+for the visualization and full-MD modes, where OVITO rendering and MD
+trajectories are inherently per-process. On a 4-physical-core /
+8-logical-core host this gives roughly a 3--4$\times$ speedup over
+the sequential path.
+
+The protocol has been executed on nearly 8000 randomly generated
+configurations; the resulting $(E,\nu)$ pairs are stored together with the
+composition in a shared elastic-property database.
+
+Across the full sample set, $E$ ranges from a few GPa for Mg/Zn-rich
+compositions to nearly 400\,GPa for refractory-rich compositions. The
+dataset-level statistics, computed over the $7815$ configurations that
+pass the physicality filter ($0<E<400$\,GPa, $0<\nu<0.5$), are
+summarised in Table~\ref{tab:md_stats}, and the corresponding
+distributions are shown in Figure~\ref{fig:md_dist}.
+Figure~\ref{fig:md_scatter} colours the $E$--$\nu$ scatter by the
+dominant element of each composition. These values constitute the
+elastic-property database consumed by the composition surrogate of
+Section~\ref{sec:comp_nn}.
+
+\input{sections/_auto_md_stats}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.95\textwidth]{figures/dataset_distributions.png}
+	\caption{Histograms of $E$ (left) and $\nu$ (right) across the
+	LAMMPS-evaluated dataset. The shaded green band on the left panel
+	marks the experimentally expected 60--75\,GPa range for aluminium
+	alloys, which contains $14.0\,\%$ of the physical sample.}
+	\label{fig:md_dist}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.78\textwidth]{figures/E_nu_scatter.png}
+	\caption{$E$--$\nu$ scatter of the LAMMPS-evaluated dataset,
+	coloured by the dominant element of each composition. The
+	Al-dominant cloud occupies the experimentally expected
+	60--75\,GPa band; refractory-rich (Mo, Cr, Fe) compositions
+	populate the high-$E$ wing.}
+	\label{fig:md_scatter}
+\end{figure}

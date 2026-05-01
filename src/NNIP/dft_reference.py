@@ -70,7 +70,7 @@ _BINARY_LATTICE = {
 }
 
 
-def _make_calculator(pseudopotentials, directory, magnetic=False):
+def _make_calculator(pseudopotentials, directory, magnetic=False, kpts=(6, 6, 6)):
     """Create an Espresso calculator for SCF."""
     profile = EspressoProfile(command=QE_BIN, pseudo_dir=PSEUDO_DIR)
     input_data = {
@@ -90,7 +90,7 @@ def _make_calculator(pseudopotentials, directory, magnetic=False):
         profile=profile,
         pseudopotentials=pseudopotentials,
         input_data=input_data,
-        kpts=(6, 6, 6),
+        kpts=kpts,
         directory=directory,
     )
 
@@ -120,8 +120,8 @@ def _isolated_atom_energy(symbol, pseudo, calc_dir, magnetic):
 def _run_eos_point(symbol, pseudo, ase_lat, a, calc_dir, magnetic, strain_idx):
     """Run a single EOS strain point. Returns (strain_idx, volume, energy) or (strain_idx, None, None)."""
     try:
-        atoms = bulk(symbol, ase_lat, a=a)
-        atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic)
+        atoms = bulk(symbol, ase_lat, a=a) * (2, 2, 2)
+        atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic, kpts=(3, 3, 3))
         t0 = time.time()
         e = atoms.get_potential_energy()
         v = atoms.get_volume()
@@ -196,22 +196,22 @@ def _eos_fit(symbol, work_dir, n_workers=4):
     v0, e0, B = eos.fit()
     logger.debug(f"  [EOS]   V0={v0:.3f} A^3, E0={e0:.4f} eV, B_raw={B:.6f} eV/A^3")
 
-    # ASE bulk() creates primitive cells:
-    #   FCC: 1 atom, V_prim = a^3/4  →  a = (4V)^(1/3)
-    #   BCC: 1 atom, V_prim = a^3/2  →  a = (2V)^(1/3)
-    #   Diamond: 2 atoms, V_prim = a^3/4  →  a = (4V)^(1/3)
+    # 2×2×2 supercell of primitive cells:
+    #   FCC: 1×8 = 8 atoms, V_super = 8 × a^3/4 = 2a^3  →  a = (V/2)^(1/3)
+    #   BCC: 1×8 = 8 atoms, V_super = 8 × a^3/2 = 4a^3  →  a = (V/4)^(1/3)
+    #   Diamond: 2×8 = 16 atoms, V_super = 8 × a^3/4 = 2a^3  →  a = (V/2)^(1/3)
     if ase_lat == "fcc":
-        n_atoms = 1
-        a0 = (4.0 * v0) ** (1.0 / 3.0)
+        n_atoms = 8
+        a0 = (v0 / 2.0) ** (1.0 / 3.0)
     elif ase_lat == "bcc":
-        n_atoms = 1
-        a0 = (2.0 * v0) ** (1.0 / 3.0)
+        n_atoms = 8
+        a0 = (v0 / 4.0) ** (1.0 / 3.0)
     elif ase_lat == "diamond":
-        n_atoms = 2
-        a0 = (4.0 * v0) ** (1.0 / 3.0)
+        n_atoms = 16
+        a0 = (v0 / 2.0) ** (1.0 / 3.0)
     else:
-        n_atoms = 1
-        a0 = v0 ** (1.0 / 3.0)
+        n_atoms = 8
+        a0 = (v0 / 8.0) ** (1.0 / 3.0)
 
     if lat in ("hcp", "hex"):
         a0 = a0 / math.sqrt(2)
@@ -249,10 +249,11 @@ def _elastic_constants(symbol, a0, work_dir):
     logger.info(f"  [ELASTIC] Computing C11, C12 for {symbol} ({lat}, a0={a0:.4f} A)")
 
     # Baseline stress — use cubic conventional cell so Cartesian strain maps to C11/C12
+    # FCC conventional: 4 atoms × (1,1,2) = 8; BCC conventional: 2 atoms × (2,2,2) = 16 → use (1,1,2) for FCC, (2,2,2) for BCC
     logger.info(f"  [ELASTIC] Step 1/2: Baseline stress...")
-    atoms = bulk(symbol, lat, a=a0, cubic=True)
+    atoms = bulk(symbol, lat, a=a0, cubic=True) * (2, 2, 2)
     calc_dir = os.path.join(work_dir, "elastic_base")
-    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic)
+    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic, kpts=(3, 3, 3))
 
     try:
         t0 = time.time()
@@ -270,7 +271,7 @@ def _elastic_constants(symbol, a0, work_dir):
     atoms_strained = atoms.copy()
     atoms_strained.set_cell(cell, scale_atoms=True)
     calc_dir_s = os.path.join(work_dir, "elastic_strain")
-    atoms_strained.calc = _make_calculator({symbol: pseudo}, calc_dir_s, magnetic=magnetic)
+    atoms_strained.calc = _make_calculator({symbol: pseudo}, calc_dir_s, magnetic=magnetic, kpts=(3, 3, 3))
 
     try:
         t0 = time.time()
@@ -405,14 +406,33 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
     logger.info(f"  Binary pairs parallelized ({min(n_workers, n_binary)} at a time)")
     logger.info(f"{'='*60}\n")
 
+    # ── Load existing partial results for resume ─────────────────────────
     results = {"elements": {}, "binary_pairs": {}}
+    if os.path.exists(output_path):
+        try:
+            with open(output_path) as f:
+                results = json.load(f)
+            logger.info(f"  Loaded existing results: {len(results.get('elements', {}))} elements, "
+                        f"{len(results.get('binary_pairs', {}))} pairs")
+        except (json.JSONDecodeError, ValueError):
+            results = {"elements": {}, "binary_pairs": {}}
+
     e_per_atom = {}
+    # Recover e_per_atom from previously computed elements
+    for sym, data in results.get("elements", {}).items():
+        if "e_bulk_per_atom" in data:
+            e_per_atom[sym] = data["e_bulk_per_atom"]
+
     t_total_start = time.time()
 
     # ── Stage 1: Single-element EOS + elastic constants ──────────────────
     # Elements run sequentially (elastic depends on EOS a0),
     # but EOS strain points within each element run in parallel.
     for idx, sym in enumerate(valid, 1):
+        if sym in results.get("elements", {}):
+            logger.info(f"\n  ELEMENT {idx}/{len(valid)}: {sym} — [RESUME] already computed, skipping")
+            continue
+
         logger.info(f"\n{'─'*60}")
         logger.info(f"  ELEMENT {idx}/{len(valid)}: {sym}")
         logger.info(f"{'─'*60}")
@@ -428,6 +448,7 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
             "B_GPa": round(B, 1),
             "lattice": ELEMENT_DATA[sym][0],
             "eos_data": eos_data,
+            "e_bulk_per_atom": e_bulk,
         }
 
         C11, C12 = _elastic_constants(sym, a0, elem_dir)
@@ -447,16 +468,24 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
 
     # ── Stage 2: Binary pairs — ALL in parallel ──────────────────────────
     pairs = [(valid[i], valid[j]) for i in range(len(valid)) for j in range(i+1, len(valid))]
+    # Filter out already-computed pairs
+    existing_pairs = set(results.get("binary_pairs", {}).keys())
+    remaining_pairs = [(a, b) for a, b in pairs if f"{a}-{b}" not in existing_pairs]
 
-    if pairs:
+    if existing_pairs & {f"{a}-{b}" for a, b in pairs}:
+        skipped = len(pairs) - len(remaining_pairs)
+        logger.info(f"\n  [RESUME] {skipped} binary pair(s) already computed, skipping them")
+
+    if remaining_pairs:
         logger.info(f"\n{'─'*60}")
-        logger.info(f"  BINARY PAIRS: {len(pairs)} total, running {min(n_workers, len(pairs))} in parallel")
+        logger.info(f"  BINARY PAIRS: {len(remaining_pairs)} remaining (of {len(pairs)} total), "
+                     f"running {min(n_workers, len(remaining_pairs))} in parallel")
         logger.info(f"{'─'*60}")
 
         t_pairs_start = time.time()
         with ProcessPoolExecutor(max_workers=n_workers) as pool:
             futures = {}
-            for sym_i, sym_j in pairs:
+            for sym_i, sym_j in remaining_pairs:
                 fut = pool.submit(_run_binary_pair, sym_i, sym_j, work_dir, e_per_atom)
                 futures[fut] = (sym_i, sym_j)
 
@@ -466,14 +495,16 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
                 done_count += 1
                 if e_form is not None:
                     results["binary_pairs"][pair_key] = {"E_form": round(e_form, 4)}
-                logger.info(f"  [{done_count}/{len(pairs)}] {pair_key}: {'OK' if e_form is not None else 'FAILED'}")
+                logger.info(f"  [{done_count}/{len(remaining_pairs)}] {pair_key}: {'OK' if e_form is not None else 'FAILED'}")
 
                 # Save after each completion
                 with open(output_path, "w") as f:
                     json.dump(results, f, indent=2)
 
         t_pairs = time.time() - t_pairs_start
-        logger.info(f"  All {len(pairs)} pairs done in {t_pairs:.1f}s ({t_pairs/60:.1f} min)")
+        logger.info(f"  All {len(remaining_pairs)} pairs done in {t_pairs:.1f}s ({t_pairs/60:.1f} min)")
+    elif pairs:
+        logger.info(f"\n  [RESUME] All {len(pairs)} binary pairs already computed")
 
     # ── Final summary ────────────────────────────────────────────────────
     t_total = time.time() - t_total_start

@@ -64,10 +64,12 @@ Provides a modern, browser-based interface to configure simulations without edit
 Constructs and executes the simulation using the dynamic potential info:
 - **`pair_coeff`**: Auto-generated using the specific library and parameter files detected by `config.py`.
 - **Composition Mapping**: Handles the mapping between LAMMPS atom types and MEAM library indices for any supported potential.
-- **Elastic Estimation**: Includes `get_elastic_moduli(L)` which calculates:
-    - **Young's Modulus (E)**: Axial stiffness.
-    - **Poisson's Ratio (ν)**: Ratio of transverse to axial strain.
-  This is performed via axial strain perturbations in all 3 directions after the initial relaxation but before the NVT production run. Configs producing negative ν are automatically discarded and their JSON files deleted.
+- **Elastic Estimation**: Includes `get_elastic_moduli(L)` which calculates and returns the cubic elastic constants `C11`, `C12` together with their derived `(E, ν)` via axial strain perturbations in all 3 directions. The C_ij are persisted alongside `(E, ν)` in `results.json` so the downstream surrogates can read them directly without algebraic reconstruction.
+- **Physicality filter**: a config is discarded (and its JSON file deleted) if any of the following hold, matching the filter used by `src/ML/nn_alloy.py` and `src/NNIP/nn_optimizer.py`:
+    - `E < 0` (negative Young's modulus)
+    - `ν < 0` (negative Poisson's ratio)
+    - `ν ≥ 0.48` (close to the `(1−2ν)=0` singularity in the cubic-isotropic algebra)
+    - `C11 < C12` (mechanical instability — Cauchy violation)
 
 #### Elastic Property Calculation Method
 
@@ -80,8 +82,8 @@ The simulation employs a **static deformation method** to estimate mechanical pr
 5. **Analytical Derivation**: Using standard relations for cubic crystals:
    - **Young's Modulus ($E$)**: $E = \frac{(C_{11} - C_{12})(C_{11} + 2C_{12})}{C_{11} + C_{12}}$
    - **Poisson's Ratio ($\nu$)**: $\nu = \frac{C_{12}}{C_{11} + C_{12}}$
-6. **Quality Filter**: If $\nu < 0$ (physically unreasonable for metallic alloys), the result is discarded and the config file is deleted.
-7. **Automatic Integration**: Valid results are appended to `src/ML/results.json` for downstream tasks.
+6. **Quality Filter**: If $E < 0$, $\nu < 0$, $\nu \geq 0.48$, or $C_{11} < C_{12}$, the result is discarded and the config file is deleted. The $\nu \geq 0.48$ bound matches the singularity guard used by both downstream surrogates so `results.json` only ever contains entries the surrogates can use.
+7. **Automatic Integration**: Valid results are appended to `src/ML/results.json` with all four quantities (`E_GPa`, `nu`, `C11_GPa`, `C12_GPa`).
 
 #### Element Mapping and Indices
 
@@ -125,17 +127,33 @@ In the full pipeline workflow:
 
 ### Running all configs in a directory
 ```bash
-# Run every .json in the configs folder
+# Run every .json in the configs folder, in parallel by default
 ./src/MD/run.sh --all ../configs/
 
-# With visualization
+# Force the sequential code path (e.g. for one-off debugging)
+./src/MD/run.sh --all ../configs/ --jobs 1
+
+# Cap the worker pool explicitly
+./src/MD/run.sh --all ../configs/ --jobs 4
+
+# With visualization (forces sequential — OVITO render is per-process)
 ./src/MD/run.sh --viz --all ../configs/
 
-# With NVT molecular dynamics
+# With NVT molecular dynamics (forces sequential)
 ./src/MD/run.sh --simMD --all ../configs/
 ```
 
-Progress is printed as `[1/N]`, `[2/N]`, etc. Results are appended to `src/ML/results.json` automatically.
+By default the elastic-only batch path runs in parallel via `ProcessPoolExecutor` (`max_workers = cpu_count // 2`, `OMP_NUM_THREADS = 1`). All `results.json` writes happen in the main process so there is no race. Progress is printed as `[i/N]` with elapsed time and ETA. Results are appended to `src/ML/results.json` automatically.
+
+### One-shot fill of `results.json` (`fill_results_cij.py`)
+For datasets that pre-date the `C_ij` storage change, run once to add `C11_GPa`/`C12_GPa` to every entry that has `(E, ν)` but no $C_{ij}$ yet:
+
+```bash
+python3 src/MD/fill_results_cij.py --dry-run   # preview
+python3 src/MD/fill_results_cij.py             # write
+```
+
+The fill is idempotent — entries that already have `C_ij` are skipped, and unphysical entries (`ν ≥ 0.49`, mechanically unstable) are left alone.
 
 ### Using the GUI
 ```bash

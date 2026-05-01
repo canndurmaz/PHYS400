@@ -1,0 +1,80 @@
+\projectprogress
+\label{sec:progress}
+
+\subsection{Pipeline Architecture}
+The project is implemented as several Python modules that will all be combined
+in a pipeline. Four sequential stages are in scope for this interim report; the
+fifth stage (neural-network parameter optimization) is deferred to the second
+half of the semester. Each stage is also exposed as a standalone module so that
+any subset of the workflow can be re-executed in isolation. The current state of
+completion of each stage is summarized in Table~\ref{tab:pipeline_status}.
+
+\begin{table}[h]
+	\centering
+	\caption{Pipeline stages and current implementation status.}
+	\label{tab:pipeline_status}
+	\renewcommand{\arraystretch}{1.2}
+	\begin{tabular}{|c|p{6.5cm}|c|c|}
+		\hline
+		\textbf{Stage} & \textbf{Description} & \textbf{Framework} & \textbf{Status} \\ \hline
+		1 & Random alloy configuration generation     & Python                       & Complete \\ \hline
+		2 & MD elastic-property evaluation             & LAMMPS Python API            & Complete \\ \hline
+		3 & DFT reference calculations                  & Quantum Espresso + ASE       & Complete \\ \hline
+		4 & MEAM initialization and library merging     & Python                       & Complete \\ \hline
+	\end{tabular}
+\end{table}
+
+The data flow between stages is shown schematically in
+Figure~\ref{fig:pipeline}. Stage~1 emits a JSON description of an alloy
+configuration; Stage~2 simulates that configuration in LAMMPS and writes the
+measured elastic moduli to a shared results database; Stage~3 produces DFT
+reference values for every selected element and binary pair and stores them in
+a reference-data database; Stage~4 reads both of these and emits a merged,
+DFT-initialized pair of MEAM files. A divergent composition-only neural-network
+branch (dashed in Figure~\ref{fig:pipeline}) consumes the Stage~2 elastic
+database as a sanity check but never feeds back into the potential-fitting
+flow; it is described in Section~\ref{sec:comp_nn}.
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[
+		stage/.style={rectangle, rounded corners, draw=black, fill=gray!10,
+		              text width=2.6cm, minimum height=1.0cm, align=center, font=\small\bfseries},
+		aux/.style={rectangle, rounded corners, draw=black, dashed, fill=blue!5,
+		              text width=2.6cm, minimum height=1.0cm, align=center, font=\small\bfseries},
+		arrow/.style={-Stealth, thick},
+		auxarrow/.style={-Stealth, thick, dashed},
+		label/.style={font=\scriptsize, align=center},
+		node distance=0.4cm and 0.4cm,
+	]
+		\node[stage] (s1) {Stage 1\\Configurations};
+		\node[stage, right=of s1] (s2) {Stage 2\\MD: $E,\nu$};
+		\node[stage, right=of s2] (s3) {Stage 3\\DFT};
+		\node[stage, right=of s3] (s4) {Stage 4\\MEAM init};
+
+		\draw[arrow] (s1) -- (s2);
+		\draw[arrow] (s2) -- (s3);
+		\draw[arrow] (s3) -- (s4);
+
+		\node[label, below=0.1cm of s1] {composition\\records};
+		\node[label, below=0.1cm of s2] {elastic\\database};
+		\node[label, below=0.1cm of s3] {DFT\\reference};
+		\node[label, below=0.1cm of s4] {merged MEAM\\library};
+
+		% Divergent ML sanity-check branch: consumes the elastic database
+		% from Stage 2 but does not feed back into the main pipeline.
+		\node[aux, above=0.9cm of s3] (ml) {ML branch\\(\S\ref{sec:comp_nn})};
+		\draw[auxarrow] (s2.north) |- (ml.west);
+		\node[label, right=0.1cm of ml] {sanity check\\$(E,\nu)$ predictor};
+	\end{tikzpicture}
+	\caption{Four-stage pipeline architecture (solid arrows) plus the
+	divergent ML sanity-check branch (dashed) described in
+	Section~\ref{sec:comp_nn}. Each main stage is implemented as
+	an independent Python module and communicates with the next one
+	through JSON or MEAM-format files written to disk; the ML branch
+	consumes the Stage~2 elastic database but never feeds back into
+	the potential-fitting flow.}
+	\label{fig:pipeline}
+\end{figure}
+
+\newpage

@@ -1,0 +1,114 @@
+\futureoutlook
+\label{sec:future}
+
+\subsection{Outstanding Tasks}
+
+The pipeline architecture, the DFT reference, the MEAM merge logic, and a
+composition-only sanity-check surrogate are all in place. The remaining
+work concentrates on closing the loop with a parameter-level
+neural-network optimization stage and on formal validation:
+
+\begin{enumerate}
+	\item \textbf{Implement the Stage~5 parameter optimization.} The
+	      neural-network surrogate that maps MEAM parameters to alloy
+	      elastic properties --- and the inverse-optimization step
+	      that uses it to refit the Stage~4 library against
+	      LAMMPS-evaluated targets --- is the headline remaining
+	      task. The supporting infrastructure (parallel LAMMPS
+	      sampling, MPI distribution, MEAM file I/O) is already in
+	      place; what remains is to design a stable surrogate
+	      architecture, choose a robust loss, and add an explicit
+	      physical-stability penalty
+	      ($C_{11}+C_{12}>0$, $C_{11}\geq C_{12}$, $\nu<0.48$) that
+	      keeps the inverse optimizer inside the surrogate's domain
+	      of validity.
+
+	\item \textbf{Improve the DFT reference for Mn.} The
+	      $\alpha$-Mn EOS scan does not converge and the Mn entry is
+	      a tabulated fallback. As an interim measure a helper
+	      backfills any missing or unphysical $C_{ij}$ from the
+	      recorded $B$ and a per-element Poisson-ratio default, so
+	      Stage~4 receives a complete and self-consistent set; this
+	      also rescues Si, Ti, Zn and Mg whose non-cubic lattices skip
+	      the elastic-constant computation entirely. A proper Mn
+	      calculation (simpler reference structure or different
+	      smearing scheme) is still planned.
+
+	\item \textbf{Build a validation set of named alloys.} A formal
+	      benchmark against industrial aluminium alloys (Al~2024,
+	      Al~2219, Al~5052, Al~7075, Al~6061, Al~6063, Al~5083) and
+	      at least two non-aluminium alloys (a steel and a
+	      Ti~alloy) will be assembled once the Stage~5 optimizer
+	      starts producing physical results. Both LAMMPS-with-merged-MEAM
+	      baselines and final-optimized predictions will be reported.
+
+	\item \textbf{Write the final report and prepare the poster.}
+	      Sections from the present interim report will be carried over
+	      to the final report, with the Stage~5 results and the formal
+	      validation added. The report tooling has been automated:
+	      every figure and LaTeX table in the present document is
+	      regenerated automatically from the pipeline outputs, so
+	      refreshed LAMMPS or DFT data flow through to the report on
+	      the next compile.
+\end{enumerate}
+
+The infrastructure required to execute these tasks at scale is already in
+place. The pipeline has built-in checkpoint/resume support: each of the
+DFT and MEAM-initialization stages writes its output to a deterministic
+location and the orchestrator detects which of those outputs already
+exist, so a re-run after a failure or a parameter change skips work
+that has already been completed.
+
+\subsection{Updated Semester Plan}
+
+The Gantt chart of Figure~\ref{fig:gantt} reflects the work that has
+already been completed and the schedule of the remaining tasks. The first
+five work packages from the proposal (literature review, DFT reference
+calculations, MEAM initialization, NN surrogate training, and the first
+pass at inverse optimization) are now complete; validation, scaling, and
+report/poster preparation occupy the rest of the semester.
+
+\begin{figure}[h]
+	\centering
+	\begin{semestergantt}
+		\workpackage{Literature Review}{1}{3}
+		\workpackage{DFT Reference Calculations}{2}{5}
+		\workpackage{MEAM Initialization Pipeline}{4}{7}
+		\workpackage{NN Surrogate Training}{6}{9}
+		\workpackage{Inverse Optimization}{8}{13}
+		\workpackage{Validation \& Testing}{10}{13}
+		\workpackage{Writing \& Documentation}{11}{15}
+		\workpackage{Poster Preparation}{13}{15}
+	\end{semestergantt}
+	\caption{Semester plan with the actual progress to date. Items 1--4
+	are complete; items 5--8 are the focus of the second half of the
+	semester.}
+	\label{fig:gantt}
+\end{figure}
+
+\subsection{Description of Work Packages}
+\begin{itemize}
+	\item \textbf{Literature Review (W1--W3).} Survey of MEAM, EAM and
+	      neural-network potential literature. Completed.
+	\item \textbf{DFT Reference Calculations (W2--W5).} Build of
+	      Quantum~Espresso, pseudopotential management and the
+	      EOS/elastic-constant/binary-pair pipeline. Completed.
+	\item \textbf{MEAM Initialization Pipeline (W4--W7).} Auto-discovery
+	      and merging of available MEAM library files, DFT-to-MEAM
+	      analytic mapping, generation of the unified twelve-element
+	      library. Completed.
+	\item \textbf{NN Surrogate Training (W6--W9).} Sampling of the MEAM
+	      parameter space, parallel LAMMPS evaluation and training of
+	      the parameter--property surrogate. First pass complete; will
+	      be re-run with a larger sample set.
+	\item \textbf{Inverse Optimization (W8--W13).} Gradient-based
+	      back-propagation through the surrogate to fit elastic
+	      targets. First pass complete with the limitations described
+	      above; ongoing.
+	\item \textbf{Validation \& Testing (W10--W13).} Comparison against
+	      named industrial alloys and external validation sets. Begun.
+	\item \textbf{Writing \& Documentation (W11--W15).} Final report
+	      and code documentation.
+	\item \textbf{Poster Preparation (W13--W15).} Final poster for the
+	      end-of-semester presentation.
+\end{itemize}

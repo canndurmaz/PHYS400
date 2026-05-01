@@ -3,7 +3,6 @@
 CLAUDE.md
 GEMINI.md
 *.mp4
-*.png
 *.lammpstrj
 /src/__pycache__
 /.vscode

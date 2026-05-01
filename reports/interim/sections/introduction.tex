@@ -1,0 +1,58 @@
+\introduction
+
+\subsection{Motivation}
+Industrial alloys, in particular steels and aluminium alloys, are selected for
+mechanical components on the basis of their elastic properties: the Young's
+modulus $E$ controls stiffness while the Poisson's ratio $\nu$ controls the
+transverse response under load. Today these properties are obtained almost
+exclusively from experiment, which is both expensive and time-consuming. If a
+sufficiently accurate and inexpensive computational alternative existed, it
+would dramatically accelerate the development of new alloy compositions for
+specific mechanical demands.
+
+Molecular dynamics (MD) simulations are the natural candidate. The reliability
+of an MD prediction is, however, set entirely by the interatomic potential it
+utilizes. Among the available functional forms, the Modified Embedded Atom Method
+\citep{baskes1992,lee2001} is the de-facto standard for metallic and covalent
+systems: it is computationally cheap relative to machine-learned potentials,
+analytic, and physically interpretable.
+
+\subsection{The Cross-Interaction Problem}
+The fundamental obstacle to applying MEAM to industrial alloys is that
+published MEAM parameter sets are fragmented. A typical paper provides a
+3-4 element set, for example the Al--Mg--Zn potential of
+\citet{Dickel_2018} or the Al--Si--Mg--Cu--Fe set of \citet{jelinek2012}, and
+is silent on cross-interactions with elements that lie outside its scope.
+A practically relevant alloy such as Al~7075 contains Al, Zn, Mg, Cu, Cr, Mn,
+Fe, Si and Ti, and no single published MEAM file spans this composition.
+Naively concatenating parameters from different libraries leaves the binary
+cross-terms undefined and produces unphysical or unstable simulations.
+
+Two routes around this problem have been pursued in the literature. The
+first is manual fitting of new MEAM parameters against experimental and
+\textit{ab initio} reference databases \citep{jelinek2012}, which is slow and
+does not generalize to new element sets. The second is to abandon MEAM in
+favour of fully data-driven machine-learning interatomic potentials
+\citep{behler2007,shapeev2016,mishin2021}; these are flexible but require
+large training sets and lose the analytic readability that makes MEAM useful
+in industry.
+
+\subsection{Approach Adopted in This Project}
+The strategy adopted here is hybrid. Rather than replacing MEAM, neural
+networks will eventually be used as \emph{surrogates} that optimize the MEAM
+parameters themselves, starting from values seeded by DFT calculations. This
+preserves the computational efficiency and transparency of the MEAM formalism
+while exploiting DFT accuracy to fill the missing cross-interaction terms.
+The four stages of the pipeline that are in scope for this interim
+report---configuration generation, MD evaluation as baseline, DFT reference
+calculations, and MEAM initialization---are described in detail in
+Section~\ref{sec:progress}; a divergent composition-only neural-network
+surrogate, used as a sanity check on the LAMMPS dataset, is described in
+Section~\ref{sec:comp_nn}. The neural-network parameter optimization that
+closes the loop is deferred to the second half of the semester.
+
+\subsection{Research Question}
+\textit{Can DFT reference calculations combined with neural-network surrogate
+optimization produce multi-element MEAM interatomic potentials that accurately
+reproduce the elastic properties of arbitrary metallic alloys, even when the
+constituent elements do not share a common published MEAM parameterization?}

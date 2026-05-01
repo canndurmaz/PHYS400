@@ -33,9 +33,62 @@ from src.NNIP.logging_config import setup_logger
 logger = setup_logger("pipeline")
 
 
+# ── Checkpoint detection helpers ───────────────────────────────────────────
+
+def _stage1_complete(dft_results_path, elements):
+    """Check if DFT results exist for all requested elements and pairs."""
+    if not os.path.exists(dft_results_path):
+        return False
+    try:
+        with open(dft_results_path) as f:
+            data = json.load(f)
+        computed = set(data.get("elements", {}).keys())
+        if not set(elements).issubset(computed):
+            return False
+        # Check all binary pairs present
+        expected_pairs = set()
+        elems_sorted = sorted(elements)
+        for i in range(len(elems_sorted)):
+            for j in range(i + 1, len(elems_sorted)):
+                expected_pairs.add(f"{elems_sorted[i]}-{elems_sorted[j]}")
+        computed_pairs = set(data.get("binary_pairs", {}).keys())
+        return expected_pairs.issubset(computed_pairs)
+    except (json.JSONDecodeError, KeyError):
+        return False
+
+
+def _stage2_complete(init_dir, elements):
+    """Check if DFT-initialized MEAM files exist."""
+    prefix = "".join(elements)
+    lib = os.path.join(init_dir, f"library_{prefix}.meam")
+    par = os.path.join(init_dir, f"{prefix}.meam")
+    return os.path.exists(lib) and os.path.exists(par)
+
+
+def _stage3_complete(eam_dir, elements):
+    """Check if optimized MEAM files exist."""
+    prefix = "".join(elements)
+    opt_dir = os.path.join(eam_dir, "optimized")
+    lib = os.path.join(opt_dir, f"optimized_library_{prefix}.meam")
+    par = os.path.join(opt_dir, f"optimized_{prefix}.meam")
+    return os.path.exists(lib) and os.path.exists(par)
+
+
+def _stage4_complete(summary_path):
+    """Check if pipeline summary contains verification results."""
+    if not os.path.exists(summary_path):
+        return False
+    try:
+        with open(summary_path) as f:
+            data = json.load(f)
+        return "verification" in data
+    except (json.JSONDecodeError, KeyError):
+        return False
+
+
 def run_pipeline(elements=None, skip_dft=False, n_samples=50,
                  skip_optimize=False, skip_verify=False, n_parallel=4,
-                 no_plots=False):
+                 no_plots=False, resume=False):
     """Run the full MEAM potential pipeline.
 
     Args:
@@ -46,6 +99,7 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=50,
         skip_verify: skip verification stage
         n_parallel: max parallel DFT workers (default: 4)
         no_plots: skip visualization generation
+        resume: auto-detect completed stages and skip them
     """
     eam_dir = os.path.join(project_root, "EAM")
     meam_opt_dir = os.path.dirname(__file__)
@@ -82,7 +136,13 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=50,
     logger.info(f"\n[Stage 1] DFT Reference Calculations")
     logger.info(f"  dft_results.json path: {dft_results_path}")
 
-    if not skip_dft:
+    if resume and _stage1_complete(dft_results_path, elements):
+        logger.info(f"  [RESUME] DFT results found, skipping Stage 1")
+        with open(dft_results_path) as f:
+            dft_results = json.load(f)
+        logger.info(f"  Elements in file: {list(dft_results.get('elements', {}).keys())}")
+        logger.info(f"  Pairs in file: {list(dft_results.get('binary_pairs', {}).keys())}")
+    elif not skip_dft:
         logger.info(f"  Mode: RUNNING DFT (skip_dft=False)")
         logger.info("-" * 40)
 
@@ -119,40 +179,46 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=50,
 
     # ── Stage 2: DFT-to-MEAM Initialization ────────────────────────────────
     t0 = time.time()
-    logger.info(f"\n[Stage 2] MEAM Initialization from DFT")
-    logger.info("-" * 40)
-    logger.info(f"  DFT results to apply:")
-    for sym, data in dft_results.get("elements", {}).items():
-        logger.info(f"    {sym}: a_lat={data.get('a_lat','?')}, E_coh={data.get('E_coh','?')}, B={data.get('B_GPa','?')} GPa")
-    for pair, data in dft_results.get("binary_pairs", {}).items():
-        logger.info(f"    {pair}: E_form={data.get('E_form','?')} eV/atom")
-
-    from src.NNIP.dft_to_meam import initialize_meam_from_dft
-
     init_dir = os.path.join(eam_dir, "dft_initialized")
+    prefix = "".join(elements)
+    logger.info(f"\n[Stage 2] MEAM Initialization from DFT")
 
-    # Auto-discover merge config if available, otherwise proceed without
-    merge_config = None
-    configs_dir = os.path.join(project_root, "src", "configs")
-    if os.path.isdir(configs_dir):
-        for f in os.listdir(configs_dir):
-            if f.startswith("meam_merge") and f.endswith(".json"):
-                merge_config = os.path.join(configs_dir, f)
-                break
+    if resume and _stage2_complete(init_dir, elements):
+        logger.info(f"  [RESUME] DFT-initialized MEAM files found, skipping Stage 2")
+        lib_init = os.path.join(init_dir, f"library_{prefix}.meam")
+        par_init = os.path.join(init_dir, f"{prefix}.meam")
+    else:
+        logger.info("-" * 40)
+        logger.info(f"  DFT results to apply:")
+        for sym, data in dft_results.get("elements", {}).items():
+            logger.info(f"    {sym}: a_lat={data.get('a_lat','?')}, E_coh={data.get('E_coh','?')}, B={data.get('B_GPa','?')} GPa")
+        for pair, data in dft_results.get("binary_pairs", {}).items():
+            logger.info(f"    {pair}: E_form={data.get('E_form','?')} eV/atom")
 
-    logger.info(f"  Output directory: {init_dir}")
-    logger.info(f"  EAM base directory: {eam_dir}")
-    logger.info(f"  Merge config: {merge_config or '(auto-discover base files)'}")
-    try:
-        lib_init, par_init = initialize_meam_from_dft(
-            dft_results, elements, eam_dir,
-            merge_config_path=merge_config, output_dir=init_dir,
-        )
-        logger.info(f"  DFT-initialized MEAM files created successfully.")
-    except FileNotFoundError as exc:
-        logger.error(f"  FATAL: {exc}")
-        logger.info(f"  Ensure library_*.meam files in {eam_dir} cover all selected elements.")
-        return
+        from src.NNIP.dft_to_meam import initialize_meam_from_dft
+
+        # Auto-discover merge config if available, otherwise proceed without
+        merge_config = None
+        configs_dir = os.path.join(project_root, "src", "configs")
+        if os.path.isdir(configs_dir):
+            for f in os.listdir(configs_dir):
+                if f.startswith("meam_merge") and f.endswith(".json"):
+                    merge_config = os.path.join(configs_dir, f)
+                    break
+
+        logger.info(f"  Output directory: {init_dir}")
+        logger.info(f"  EAM base directory: {eam_dir}")
+        logger.info(f"  Merge config: {merge_config or '(auto-discover base files)'}")
+        try:
+            lib_init, par_init = initialize_meam_from_dft(
+                dft_results, elements, eam_dir,
+                merge_config_path=merge_config, output_dir=init_dir,
+            )
+            logger.info(f"  DFT-initialized MEAM files created successfully.")
+        except FileNotFoundError as exc:
+            logger.error(f"  FATAL: {exc}")
+            logger.info(f"  Ensure library_*.meam files in {eam_dir} cover all selected elements.")
+            return
 
     logger.info(f"  Library: {lib_init}  (exists: {os.path.exists(lib_init)})")
     logger.info(f"  Params:  {par_init}  (exists: {os.path.exists(par_init)})")
@@ -160,7 +226,12 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=50,
 
     # ── Stage 3: NN Optimization ───────────────────────────────────────────
     t0 = time.time()
-    if not skip_optimize:
+    if resume and _stage3_complete(eam_dir, elements):
+        logger.info("\n[Stage 3] [RESUME] Optimized MEAM files found, skipping Stage 3")
+        opt_dir = os.path.join(eam_dir, "optimized")
+        lib_opt = os.path.join(opt_dir, f"optimized_library_{prefix}.meam")
+        par_opt = os.path.join(opt_dir, f"optimized_{prefix}.meam")
+    elif not skip_optimize:
         logger.info("\n[Stage 3] NN Surrogate Optimization")
         logger.info("-" * 40)
         from src.NNIP.nn_optimizer import optimize_nn
@@ -177,7 +248,12 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=50,
     # ── Stage 4: Verification ──────────────────────────────────────────────
     t0 = time.time()
     verification_results = None
-    if not skip_verify:
+    summary_path = os.path.join(meam_opt_dir, "pipeline_summary.json")
+    if resume and _stage4_complete(summary_path):
+        logger.info("\n[Stage 4] [RESUME] Verification results found, skipping Stage 4")
+        with open(summary_path) as f:
+            verification_results = json.load(f).get("verification")
+    elif not skip_verify:
         logger.info("\n[Stage 4] Verification")
         logger.info("-" * 40)
         verification_results = _verify_against_targets(lib_opt, par_opt)
@@ -203,7 +279,6 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=50,
     }
     if verification_results:
         summary["verification"] = verification_results
-    summary_path = os.path.join(meam_opt_dir, "pipeline_summary.json")
     with open(summary_path, "w") as f:
         json.dump(summary, f, indent=2)
     logger.info(f"\nPipeline summary saved to {summary_path}")
@@ -297,6 +372,10 @@ def main():
         "--no-plots", action="store_true",
         help="Skip visualization/plot generation"
     )
+    parser.add_argument(
+        "--resume", action="store_true",
+        help="Auto-detect completed stages and resume from where the pipeline left off"
+    )
     args = parser.parse_args()
 
     os.environ["TK_SILENT"] = "1"
@@ -309,6 +388,7 @@ def main():
         skip_verify=args.skip_verify,
         n_parallel=args.parallel,
         no_plots=args.no_plots,
+        resume=args.resume,
     )
 
 
