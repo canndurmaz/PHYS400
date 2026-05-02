@@ -28,14 +28,14 @@ completion of each stage is summarized in Table~\ref{tab:pipeline_status}.
 \end{table}
 
 The data flow between stages is shown schematically in
-Figure~\ref{fig:pipeline}. Stage~1 emits a JSON description of an alloy
-configuration; Stage~2 simulates that configuration in LAMMPS and writes the
-measured elastic moduli to a shared results database; Stage~3 produces DFT
+Figure~\ref{fig:pipeline}. Stage~1 emits JSON descriptions of alloy
+configurations; Stage~2 simulates those configurations in LAMMPS and writes the
+measured elastic moduli to a shared results database. Stage~3 produces DFT
 reference values for every selected element and binary pair and stores them in
-a reference-data database; Stage~4 reads both of these and emits a merged,
+a reference-data database. Stage~4 reads both of these and emits a merged,
 DFT-initialized pair of MEAM files. Stage~5 (planned) will consume those
 files together with the LAMMPS-evaluated $(C_{11},C_{12})$ targets and
-produce a final, refitted MEAM parameter set. A divergent composition-only
+produce a final, refitted MEAM parameter set. A divergent, composition-only
 neural-network branch (dashed in Figure~\ref{fig:pipeline}) consumes the
 Stage~2 elastic database as a sanity check but never feeds back into the
 potential-fitting flow; it is described in Section~\ref{sec:comp_nn}.
@@ -128,7 +128,7 @@ Section~\ref{sec:future}, has four steps:
 \end{enumerate}
 The supporting infrastructure (parallel LAMMPS sampling, MPI
 distribution, MEAM file I/O, $C_{11}/C_{12}$ persistence in
-\texttt{results.json}) is already in place from the Stage~2 work
+\texttt{results database}) is already in place from the Stage~2 work
 described in Section~\ref{sec:stage2}.
 
 \newpage

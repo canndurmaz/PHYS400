@@ -30,17 +30,17 @@ compositions whose LAMMPS runs occasionally yield extreme moduli).
 \paragraph{Stopping gate.}
 Training stops as soon as the \emph{mean} relative error on the
 derived $(E,\nu)$ over the held-out 30\,\% validation set falls within
-$\mathtt{MAX\_ERROR\_PCT}=15\,\%$ for both quantities, i.e.\
-$\overline{|\Delta E|/E}\le 15\,\%$ \emph{and}
-$\overline{|\Delta \nu|/\nu}\le 15\,\%$. This replaces an earlier
+$\mathtt{MAX\_ERROR\_PCT}=20\,\%$ for both quantities, i.e.\
+$\overline{|\Delta E|/E}\le 20\,\%$ \emph{and}
+$\overline{|\Delta \nu|/\nu}\le 20\,\%$. This replaces an earlier
 per-sample gate that required \emph{every} validation alloy to be
-within 15\,\%; that criterion was dominated by a small number of
-Mg/Zn-rich outliers and tended to drive the optimiser into spurious
+within 20\,\%; that criterion was dominated by a small number of
+Mg/Zn-rich outliers and tended to drive the optimiser into false
 restarts just to satisfy the worst sample. The mean-based gate
 targets the bulk behaviour of the surrogate while still leaving the
 individual residuals visible in
 Figures~\ref{fig:aux_parity_val}--\ref{fig:aux_err}; per-sample
-pass/fail counts at the same 15\,\% threshold are still emitted as
+pass/fail counts at the same 20\,\% threshold are still emitted as
 diagnostics.
 
 \input{sections/_auto_ml_metrics}

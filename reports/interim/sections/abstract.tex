@@ -4,23 +4,17 @@ Molecular dynamics (MD) simulations of metallic alloys require interatomic
 potentials that describe the interactions between every constituent element pair.
 The Modified Embedded Atom Method (MEAM) provides such a framework, but
 published MEAM parameter sets typically cover only narrow subsets of the periodic
-table; when the elements of an alloy are split across two or more libraries the
-cross-interaction terms are undefined and a simulation cannot be executed. This
-project develops an automated pipeline that generates a unified MEAM parameter
-file for an arbitrary list of elements by the following steps: (i) randomized alloy
-configurations, (ii) LAMMPS evaluation of Young's modulus and Poisson's ratio,
-(iii) density functional theory (DFT) reference data computed in Quantum Espresso
+table. When the elements of an alloy are not present in a single potential file simulation cannot be executed. This
+project develops an automated pipeline that generates a MEAM parameter
+file for a selebtable list of elements by the following steps: (i) randomized alloy
+configurations from the readily available configuration files, (ii) LAMMPS evaluation of Young's modulus and Poisson's ratio,
+(iii) density functional theory (DFT) reference data computation in Quantum Espresso
 through the Atomic Simulation Environment, and (iv) DFT-driven MEAM parameter
-initialization with automatic merging of existing libraries. All four stages of
-the pipeline are implemented: nearly 8000 random compositions have been generated
-and simulated in LAMMPS to provide elastic targets, DFT reference data have been
-obtained for ten elements and forty binary pairs, and the resulting parameters
-have been mapped onto a merged twelve-element MEAM library covering Al, Co, Cr,
-Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti and Zn. A divergent composition-only neural-network
+initialization with automatic merging of existing libraries. A divergent, composition-only neural-network
 surrogate (mapping element fractions directly to $E$ and $\nu$) has also been
 trained as a fast sanity check on the consistency of the LAMMPS dataset. The
 neural-network parameter optimization that closes the loop on top of Stage~4 and
-its formal validation against industrial alloys are scheduled for the second
+its formal validation against industrial alloys are planned for the second
 half of the semester.
 \vspace{0.5em}
 \end{boxedabstract}
