@@ -38,6 +38,13 @@ const CAL = (() => {
 })();
 const VAL_STATS = (CAL && CAL.val) || {};
 
+// (E, ν) ground-truth cloud rendered as the Ashby backdrop. Decimated and
+// emitted by Flask alongside the calibration block.
+const CLOUD = (() => {
+  try { return JSON.parse(document.getElementById('cloud-data').textContent || '[]'); }
+  catch { return []; }
+})();
+
 // ─── DOM bootstrap ─────────────────────────────────────────────────
 const form        = document.getElementById('predict-form');
 const btn         = document.getElementById('btn-predict');
@@ -60,6 +67,45 @@ document.querySelectorAll('.cell').forEach(cell => {
 });
 
 const inputs = Array.from(form.querySelectorAll('.cell__input'));
+
+// ─── Color helpers (theme-aware family blending) ────────────────────
+function readFamilyRgb() {
+  const cs = getComputedStyle(document.documentElement);
+  const out = {};
+  for (const fam of ['ae', 'pt', 'tm']) {
+    const hex = cs.getPropertyValue(`--fam-${fam}`).trim();
+    out[fam] = hexToRgb(hex);
+  }
+  return out;
+}
+function hexToRgb(hex) {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgbToHex([r, g, b]) {
+  const c = (n) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0');
+  return '#' + c(r) + c(g) + c(b);
+}
+function blendComposition(comp) {
+  const rgb = readFamilyRgb();
+  let R = 0, G = 0, B = 0, total = 0;
+  for (const [el, frac] of Object.entries(comp)) {
+    const fam = FAMILY[el];
+    if (!fam || !(frac > 0)) continue;
+    const [fr, fg, fb] = rgb[fam];
+    R += fr * frac; G += fg * frac; B += fb * frac; total += frac;
+  }
+  if (total === 0) return null;
+  return [R / total, G / total, B / total];
+}
+function lighten([r, g, b], amt) {
+  return [r + (255 - r) * amt, g + (255 - g) * amt, b + (255 - b) * amt];
+}
+function darken([r, g, b], amt) {
+  return [r * (1 - amt), g * (1 - amt), b * (1 - amt)];
+}
 
 // ─── Composition meter (per-cell fill + stacked bar) ────────────────
 function recomputeSum() {
@@ -110,6 +156,67 @@ function recomputeSum() {
   else if (Math.abs(delta) <= 1e-3)     sumWrap.classList.add('is-ok');
   else if (total >= 0.5 && total <= 1.5) sumWrap.classList.add('is-warn');
   else                                   sumWrap.classList.add('is-err');
+
+  // Live alloy preview keeps the unit cell + legend in sync as the user types.
+  const compNorm = total > 0
+    ? Object.fromEntries(active.map(({el, frac}) => [el, frac / total]))
+    : {};
+  updateAlloyPreview(compNorm);
+}
+
+// ─── Alloy preview (composition panel) ──────────────────────────────
+const previewWrap     = document.getElementById('alloy-preview');
+const previewFormula  = document.getElementById('alloy-formula');
+const previewLegend   = document.getElementById('alloy-legend');
+const previewStop0    = document.getElementById('atom-blend-0');
+const previewStop1    = document.getElementById('atom-blend-1');
+const previewStop2    = document.getElementById('atom-blend-2');
+
+function formatFormula(comp) {
+  // Render entries in descending fraction with subscript fractions, e.g.
+  // "Al₀.₉₀ Mg₀.₁₀" — capped to top 4 elements with an ellipsis tail.
+  const sub = (s) => s.replace(/\d/g, d => '₀₁₂₃₄₅₆₇₈₉'[+d]).replace(/\./g, '.');
+  const sorted = Object.entries(comp).sort((a, b) => b[1] - a[1]);
+  const top = sorted.slice(0, 4)
+    .map(([el, f]) => `${el}${sub(f.toFixed(f >= 0.1 ? 2 : 3))}`)
+    .join(' ');
+  return sorted.length > 4 ? `${top} …` : top;
+}
+
+function updateAlloyPreview(comp) {
+  const entries = Object.entries(comp).filter(([, f]) => f > 0);
+  if (entries.length === 0) {
+    previewWrap.classList.add('is-empty');
+    previewFormula.textContent = 'awaiting input';
+    previewLegend.innerHTML = '';
+    // Reset gradient stops to a neutral grey so the unit cell still reads.
+    if (previewStop0) {
+      previewStop0.setAttribute('stop-color', getComputedStyle(document.documentElement).getPropertyValue('--ink-fade').trim());
+      previewStop1.setAttribute('stop-color', getComputedStyle(document.documentElement).getPropertyValue('--ink-ghost').trim());
+      previewStop2.setAttribute('stop-color', getComputedStyle(document.documentElement).getPropertyValue('--bg-deep').trim());
+    }
+    return;
+  }
+  previewWrap.classList.remove('is-empty');
+  previewFormula.textContent = formatFormula(comp);
+
+  // Compute the average atom color via family-weighted RGB blend, then derive
+  // a 3-stop radial gradient (highlight → mid → shadow) for the SVG atoms.
+  const mid = blendComposition(comp);
+  if (mid && previewStop0) {
+    previewStop0.setAttribute('stop-color', rgbToHex(lighten(mid, 0.35)));
+    previewStop1.setAttribute('stop-color', rgbToHex(mid));
+    previewStop2.setAttribute('stop-color', rgbToHex(darken(mid, 0.65)));
+  }
+
+  // Legend: top 5 by fraction, family-color swatch + percent.
+  const cs = getComputedStyle(document.documentElement);
+  const famColor = (fam) => cs.getPropertyValue(`--fam-${fam}`).trim();
+  const top = entries.sort((a, b) => b[1] - a[1]).slice(0, 5);
+  previewLegend.innerHTML = top.map(([el, f]) => {
+    const fam = FAMILY[el] || 'tm';
+    return `<li><span class="swatch" style="--swatch:${famColor(fam)}"></span>${el}<span class="pct">&nbsp;${(f * 100).toFixed(f >= 0.1 ? 1 : 2)}%</span></li>`;
+  }).join('');
 }
 inputs.forEach(inp => inp.addEventListener('input', recomputeSum));
 recomputeSum();
@@ -222,7 +329,7 @@ function renderResult(data) {
   readout.hidden = false;
 
   // Re-trigger the staggered animations on each update.
-  readout.querySelectorAll('.stat').forEach(el => {
+  readout.querySelectorAll('.stat, .tornado__row').forEach(el => {
     el.style.animation = 'none';
     void el.offsetWidth;          // force reflow
     el.style.animation = '';
@@ -232,6 +339,9 @@ function renderResult(data) {
   setStat('nu',  data.nu,      3);
   setStat('C11', data.C11_GPa, 2);
   setStat('C12', data.C12_GPa, 2);
+
+  renderAshby(data.E_GPa, data.nu);
+  renderTornado(data.sensitivity || []);
 
   rawJsonEl.textContent = JSON.stringify(data, null, 2);
 
@@ -246,6 +356,156 @@ function renderResult(data) {
   if (issues.length) showNotice(issues.join('  '), 'warn');
 }
 
+// ─── Ashby (ν, E) plot ──────────────────────────────────────────────
+const ASHBY = {
+  vb: { w: 520, h: 280 },
+  pad: { l: 44, r: 14, t: 14, b: 30 },
+  // Domain ranges chosen to enclose the cloud with a little headroom.
+  dom: { nuMin: 0.10, nuMax: 0.45, eMin: 0, eMax: 320 },
+};
+function ashbyX(nu) {
+  const { l, r } = ASHBY.pad, w = ASHBY.vb.w;
+  const { nuMin, nuMax } = ASHBY.dom;
+  return l + (Math.max(nuMin, Math.min(nuMax, nu)) - nuMin) / (nuMax - nuMin) * (w - l - r);
+}
+function ashbyY(e) {
+  const { t, b } = ASHBY.pad, h = ASHBY.vb.h;
+  const { eMin, eMax } = ASHBY.dom;
+  return h - b - (Math.max(eMin, Math.min(eMax, e)) - eMin) / (eMax - eMin) * (h - t - b);
+}
+function svgEl(name, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', name);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+let _ashbyDrawn = false;
+function drawAshbyAxes() {
+  if (_ashbyDrawn) return;
+  const grid = document.getElementById('ashby-grid');
+  const axes = document.getElementById('ashby-axes');
+  const cloud = document.getElementById('ashby-cloud');
+  if (!grid || !axes || !cloud) return;
+
+  // Vertical gridlines at ν = 0.15, 0.20, ..., 0.45
+  for (let nu = 0.15; nu <= 0.45 + 1e-9; nu += 0.05) {
+    const x = ashbyX(nu);
+    const major = Math.abs(nu - 0.30) < 1e-6;
+    grid.appendChild(svgEl('line', {
+      x1: x, x2: x, y1: ASHBY.pad.t, y2: ASHBY.vb.h - ASHBY.pad.b,
+      class: major ? 'major' : '',
+    }));
+    axes.appendChild(svgEl('text', {
+      x: x, y: ASHBY.vb.h - ASHBY.pad.b + 14, 'text-anchor': 'middle',
+    })).textContent = nu.toFixed(2);
+  }
+  // Horizontal gridlines at E = 0, 50, 100, ..., 300
+  for (let e = 0; e <= 300; e += 50) {
+    const y = ashbyY(e);
+    grid.appendChild(svgEl('line', {
+      x1: ASHBY.pad.l, x2: ASHBY.vb.w - ASHBY.pad.r, y1: y, y2: y,
+      class: e === 100 ? 'major' : '',
+    }));
+    axes.appendChild(svgEl('text', {
+      x: ASHBY.pad.l - 6, y: y + 3, 'text-anchor': 'end',
+    })).textContent = e;
+  }
+  // Axis labels
+  const xl = svgEl('text', {
+    x: (ASHBY.pad.l + ASHBY.vb.w - ASHBY.pad.r) / 2,
+    y: ASHBY.vb.h - 4, 'text-anchor': 'middle', class: 'axis-label',
+  });
+  xl.textContent = 'ν';
+  axes.appendChild(xl);
+  const yl = svgEl('text', {
+    x: 12, y: (ASHBY.pad.t + ASHBY.vb.h - ASHBY.pad.b) / 2,
+    'text-anchor': 'middle', class: 'axis-label',
+    transform: `rotate(-90, 12, ${(ASHBY.pad.t + ASHBY.vb.h - ASHBY.pad.b) / 2})`,
+  });
+  yl.textContent = 'E (GPa)';
+  axes.appendChild(yl);
+
+  // Cloud — drawn once, doesn't change between predictions.
+  const frag = document.createDocumentFragment();
+  for (const p of CLOUD) {
+    frag.appendChild(svgEl('circle', { cx: ashbyX(p.nu), cy: ashbyY(p.E), r: 1.3 }));
+  }
+  cloud.appendChild(frag);
+  const nLbl = document.getElementById('ashby-n');
+  if (nLbl) nLbl.textContent = CLOUD.length;
+  _ashbyDrawn = true;
+}
+function renderAshby(E, nu) {
+  drawAshbyAxes();
+  const m = document.getElementById('ashby-marker');
+  if (!m) return;
+  const x = ashbyX(nu), y = ashbyY(E);
+  // A ±1σ confidence ellipse around the marker, derived from validation Std.
+  const stdE  = (VAL_STATS.E  && VAL_STATS.E.Std)  || 0;
+  const stdNu = (VAL_STATS.nu && VAL_STATS.nu.Std) || 0;
+  const rx = Math.abs(ashbyX(nu + stdNu) - x);
+  const ry = Math.abs(y - ashbyY(E + stdE));
+  m.innerHTML = '';
+  if (rx > 0 && ry > 0) {
+    m.appendChild(svgEl('ellipse', { cx: x, cy: y, rx, ry, class: 'ashby-band' }));
+  }
+  // Crosshair lines stretching across the panel for instant readability.
+  m.appendChild(svgEl('line', {
+    x1: ASHBY.pad.l, x2: ASHBY.vb.w - ASHBY.pad.r, y1: y, y2: y,
+    class: 'ashby-cross', 'stroke-dasharray': '2 4',
+  }));
+  m.appendChild(svgEl('line', {
+    x1: x, x2: x, y1: ASHBY.pad.t, y2: ASHBY.vb.h - ASHBY.pad.b,
+    class: 'ashby-cross', 'stroke-dasharray': '2 4',
+  }));
+  m.appendChild(svgEl('circle', { cx: x, cy: y, r: 4, class: 'ashby-dot' }));
+  const lbl = svgEl('text', {
+    x: x + 8, y: y - 8,
+  });
+  lbl.textContent = `E ${E.toFixed(0)} · ν ${nu.toFixed(3)}`;
+  m.appendChild(lbl);
+}
+
+// ─── Sensitivity tornado ────────────────────────────────────────────
+function renderTornado(rows) {
+  const t = document.getElementById('tornado');
+  if (!t) return;
+  if (!rows.length) {
+    t.innerHTML = '<div class="tornado__empty">composition needs at least 2 elements for sensitivity analysis.</div>';
+    return;
+  }
+  // Symmetric scale: pick the largest |ΔE| across all rows so bars are
+  // comparable. A small floor avoids a divide-by-zero on flat sensitivity.
+  const maxAbs = Math.max(0.5, ...rows.map(r => Math.max(Math.abs(r.dE_plus), Math.abs(r.dE_minus))));
+  const cs = getComputedStyle(document.documentElement);
+  const famColor = (fam) => cs.getPropertyValue(`--fam-${fam}`).trim();
+
+  // For each element we draw a single horizontal range bar from min(ΔE) to
+  // max(ΔE), centered on the zero-axis. If both perturbations push E in the
+  // same direction, the bar sits entirely on one side; opposing pushes
+  // produce a bar that straddles zero. Endpoint labels call out each
+  // perturbation's signed ΔE.
+  t.innerHTML = rows.map(r => {
+    const fam = FAMILY[r.element] || 'tm';
+    const seg = famColor(fam);
+    const lo = Math.min(r.dE_plus, r.dE_minus);
+    const hi = Math.max(r.dE_plus, r.dE_minus);
+    const halfPct = 50;                                        // 50% = full half-width
+    const left  = halfPct + (lo / maxAbs) * halfPct;           // % from container left
+    const width = ((hi - lo) / maxAbs) * halfPct;
+    const sign = (n) => (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(2);
+    return `
+      <div class="tornado__row">
+        <span class="tornado__el">${r.element}<span class="frac">${(r.frac*100).toFixed(1)}%</span></span>
+        <span class="tornado__bar">
+          <span class="tornado__seg" style="left:${left.toFixed(2)}%; width:${width.toFixed(2)}%; --seg:${seg}"></span>
+          <span class="tornado__cap" style="left:${left.toFixed(2)}%; --seg:${seg}"></span>
+          <span class="tornado__cap" style="left:${(left + width).toFixed(2)}%; --seg:${seg}"></span>
+        </span>
+        <span class="tornado__delta">${sign(hi)}<span class="pm">${sign(lo)}&nbsp;GPa</span></span>
+      </div>`;
+  }).join('');
+}
+
 // Convenience: ⌘/Ctrl+Enter from any input submits the form.
 form.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -253,3 +513,16 @@ form.addEventListener('keydown', (e) => {
     form.requestSubmit();
   }
 });
+
+// ─── Theme toggle ───────────────────────────────────────────────────
+// The initial data-theme attribute is set by an inline <head> script to
+// avoid a flash. This handler just flips and persists.
+const themeBtn = document.getElementById('theme-toggle');
+if (themeBtn) {
+  themeBtn.addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const next = cur === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+}

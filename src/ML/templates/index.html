@@ -17,9 +17,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alloy Elastic Surrogate — Composition Predictor</title>
+  <script>
+    /* Set theme before stylesheet loads to avoid a dark-flash on light-theme
+       reloads. Reads localStorage first, then prefers-color-scheme. */
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='3' fill='%23ffb347'/></svg>">
   <script id="cal-data" type="application/json">{{ cal|tojson if cal else '{}' }}</script>
+  <script id="cloud-data" type="application/json">{{ cloud|tojson if cloud else '[]' }}</script>
 </head>
 <body>
 
@@ -37,6 +53,27 @@
     <div class="topbar__meta">
       <span class="meta__pill"><span class="dot"></span>MODEL READY</span>
       <span class="meta__build">build&nbsp;·&nbsp;10&rarr;32&rarr;20&rarr;2 &middot; huber</span>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Toggle colour theme" title="Toggle theme">
+        <span class="theme-toggle__opt" data-th="dark" aria-hidden="true">
+          <svg viewBox="0 0 12 12" width="11" height="11"><path d="M9.5 7.5A4 4 0 0 1 4.5 2.5 4 4 0 1 0 9.5 7.5z" fill="currentColor"/></svg>
+        </span>
+        <span class="theme-toggle__opt" data-th="light" aria-hidden="true">
+          <svg viewBox="0 0 12 12" width="11" height="11">
+            <circle cx="6" cy="6" r="2.2" fill="currentColor"/>
+            <g stroke="currentColor" stroke-width="1" stroke-linecap="round">
+              <line x1="6" y1="1.2" x2="6" y2="2.6"/>
+              <line x1="6" y1="9.4" x2="6" y2="10.8"/>
+              <line x1="1.2" y1="6" x2="2.6" y2="6"/>
+              <line x1="9.4" y1="6" x2="10.8" y2="6"/>
+              <line x1="2.5" y1="2.5" x2="3.5" y2="3.5"/>
+              <line x1="8.5" y1="8.5" x2="9.5" y2="9.5"/>
+              <line x1="2.5" y1="9.5" x2="3.5" y2="8.5"/>
+              <line x1="8.5" y1="3.5" x2="9.5" y2="2.5"/>
+            </g>
+          </svg>
+        </span>
+        <span class="theme-toggle__thumb" aria-hidden="true"></span>
+      </button>
     </div>
   </header>
 
@@ -90,6 +127,54 @@
             <span>0</span>
             <span class="stack__caption-mid">composition &middot; target &Sigma;&thinsp;=&thinsp;1.0</span>
             <span>1.0</span>
+          </div>
+        </div>
+
+        <!-- ── Alloy preview: live unit cell coloured by composition blend ── -->
+        <div class="alloy-preview" id="alloy-preview">
+          <div class="alloy-preview__head">
+            <span class="alloy-preview__lbl">alloy preview</span>
+            <span class="alloy-preview__formula" id="alloy-formula">—</span>
+          </div>
+          <div class="alloy-preview__body">
+            <svg class="alloy-cell" viewBox="-55 -45 110 100" aria-hidden="true">
+              <defs>
+                <radialGradient id="atom-blend" cx="35%" cy="30%" r="65%">
+                  <stop offset="0"    id="atom-blend-0"/>
+                  <stop offset="0.55" id="atom-blend-1"/>
+                  <stop offset="1"    id="atom-blend-2"/>
+                </radialGradient>
+              </defs>
+              <g class="acell__back">
+                <line x1="-25" y1="-15" x2="25" y2="-15"/>
+                <line x1="-25" y1="35"  x2="25" y2="35"/>
+                <line x1="-25" y1="-15" x2="-25" y2="35"/>
+                <line x1="25"  y1="-15" x2="25"  y2="35"/>
+              </g>
+              <g class="acell__edge">
+                <line x1="-25" y1="-15" x2="-40" y2="0"/>
+                <line x1="25"  y1="-15" x2="10"  y2="0"/>
+                <line x1="-25" y1="35"  x2="-40" y2="50"/>
+                <line x1="25"  y1="35"  x2="10"  y2="50"/>
+              </g>
+              <g class="acell__front">
+                <line x1="-40" y1="0"  x2="10"  y2="0"/>
+                <line x1="-40" y1="50" x2="10"  y2="50"/>
+                <line x1="-40" y1="0"  x2="-40" y2="50"/>
+                <line x1="10"  y1="0"  x2="10"  y2="50"/>
+              </g>
+              <g class="acell__atoms" id="acell-atoms">
+                <circle cx="-25" cy="-15" r="4"/>
+                <circle cx="25"  cy="-15" r="4"/>
+                <circle cx="-25" cy="35"  r="4"/>
+                <circle cx="25"  cy="35"  r="4"/>
+                <circle cx="-40" cy="0"   r="5"/>
+                <circle cx="10"  cy="0"   r="5"/>
+                <circle cx="-40" cy="50"  r="5"/>
+                <circle cx="10"  cy="50"  r="5"/>
+              </g>
+            </svg>
+            <ul class="alloy-preview__legend" id="alloy-legend"></ul>
           </div>
         </div>
 
@@ -340,6 +425,42 @@
             </article>
 
           </div>
+
+          <!-- ── Ashby (ν, E) plot ─────────────────────────────────── -->
+          <section class="viz viz--ashby" aria-labelledby="viz-ashby-h">
+            <header class="viz__head">
+              <span class="viz__index">A</span>
+              <h3 id="viz-ashby-h" class="viz__title"><em>Ashby map</em> &middot; (&nu;,&thinsp;E)</h3>
+              <span class="viz__hint">prediction in the trained alloy universe</span>
+            </header>
+            <div class="viz__body">
+              <svg class="ashby" viewBox="0 0 520 280" preserveAspectRatio="none" aria-hidden="true">
+                <!-- gridlines, ticks, axes drawn by JS -->
+                <g class="ashby__grid"   id="ashby-grid"></g>
+                <g class="ashby__cloud"  id="ashby-cloud"></g>
+                <g class="ashby__axes"   id="ashby-axes"></g>
+                <g class="ashby__marker" id="ashby-marker"></g>
+              </svg>
+              <div class="viz__caption">
+                <span><span class="dot dot--cloud"></span>training samples (n=<span id="ashby-n">0</span>)</span>
+                <span><span class="dot dot--mark"></span>this prediction</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Sensitivity tornado ────────────────────────────────── -->
+          <section class="viz viz--tornado" aria-labelledby="viz-tor-h">
+            <header class="viz__head">
+              <span class="viz__index">B</span>
+              <h3 id="viz-tor-h" class="viz__title"><em>Sensitivity</em> &middot; &Delta;E per &plusmn;10% perturbation</h3>
+              <span class="viz__hint">centred finite difference</span>
+            </header>
+            <div class="viz__body">
+              <div class="tornado" id="tornado">
+                <div class="tornado__empty">composition needs at least 2 elements for sensitivity analysis.</div>
+              </div>
+            </div>
+          </section>
 
           <details class="rawout">
             <summary>raw response &amp; normalised composition</summary>

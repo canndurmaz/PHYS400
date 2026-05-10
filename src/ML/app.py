@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 from datetime import datetime, timezone
 
 from flask import Flask, jsonify, render_template, request
@@ -28,7 +29,36 @@ app = Flask(__name__)
 # just add latency for no benefit.
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 _METRICS_PATH = os.path.join(_THIS_DIR, "nn_metrics.json")
-_MODEL_PATH = os.path.join(_THIS_DIR, "alloy_model.keras")
+_MODEL_PATH   = os.path.join(_THIS_DIR, "alloy_model.keras")
+_RESULTS_PATH = os.path.join(_THIS_DIR, "results.json")
+_CLOUD_MAX    = 800        # rendered SVG dots; ~800 reads dense without lagging
+
+
+def _load_cloud(max_n: int = _CLOUD_MAX) -> list[dict]:
+    """Load (E, ν) ground-truth points for the Ashby-style backdrop.
+
+    Decimates with a fixed seed so the cloud is stable across reloads.
+    """
+    if not os.path.exists(_RESULTS_PATH):
+        return []
+    with open(_RESULTS_PATH) as f:
+        data = json.load(f)
+    pts: list[dict] = []
+    for _name, rec in data.items():
+        E = rec.get("E_GPa")
+        nu = rec.get("nu")
+        if not (isinstance(E, (int, float)) and isinstance(nu, (int, float))):
+            continue
+        if E <= 0 or not (0 < nu < 0.5):
+            continue
+        pts.append({"E": round(float(E), 3), "nu": round(float(nu), 4)})
+    if len(pts) > max_n:
+        rng = random.Random(42)        # deterministic so the visual context
+        pts = rng.sample(pts, max_n)   # doesn't shuffle on every refresh
+    return pts
+
+
+_CLOUD = _load_cloud()
 
 
 def _load_calibration() -> dict:
@@ -119,7 +149,50 @@ _SUM_TOLERANCE = 1e-3
 
 @app.route("/")
 def index():
-    return render_template("index.html", elements=ALL_ELEMENTS, cal=_CAL)
+    return render_template(
+        "index.html",
+        elements=ALL_ELEMENTS,
+        cal=_CAL,
+        cloud=_CLOUD,
+    )
+
+
+def _sensitivity(comp_norm: dict[str, float]) -> list[dict]:
+    """Per-element ±10 % perturbation sensitivity of (E, ν).
+
+    For each element with a positive fraction, scale it by (1 ± 0.10) and
+    rebalance the *other* elements proportionally so the composition still
+    sums to 1.0. Run inference for both signs and report the deltas relative
+    to the unperturbed prediction. Two extra forward passes per element ─
+    cheap (~5 ms each post-warmup).
+    """
+    items = [(el, f) for el, f in comp_norm.items() if f > 0]
+    if len(items) < 2:
+        return []     # single-element compositions have no meaningful tornado
+
+    base = predict_properties(comp_norm)
+    base_E, base_nu = base["E_GPa"], base["nu"]
+    delta = 0.10
+    rows: list[dict] = []
+    for el, x in items:
+        sum_others = 1.0 - x
+        if sum_others <= 1e-9:
+            continue        # this element is essentially the whole alloy
+        deltas = {}
+        for sign, key in ((+1, "plus"), (-1, "minus")):
+            new_x = x * (1.0 + sign * delta)
+            new_x = max(1e-6, min(0.999999, new_x))
+            scale = (1.0 - new_x) / sum_others
+            new_comp = {e: f * scale for e, f in comp_norm.items() if e != el}
+            new_comp[el] = new_x
+            out = predict_properties(new_comp)
+            deltas[f"dE_{key}"]  = out["E_GPa"] - base_E
+            deltas[f"dnu_{key}"] = out["nu"]    - base_nu
+        rows.append({"element": el, "frac": x, **deltas})
+
+    # Sort by max absolute ΔE descending — the engineer's "what matters most".
+    rows.sort(key=lambda r: max(abs(r["dE_plus"]), abs(r["dE_minus"])), reverse=True)
+    return rows
 
 
 @app.post("/api/predict")
@@ -157,6 +230,7 @@ def api_predict():
 
     try:
         out = predict_properties(normalised)
+        out["sensitivity"] = _sensitivity(normalised)
     except FileNotFoundError as e:
         return jsonify(error=str(e)), 503
 
