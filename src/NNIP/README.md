@@ -66,7 +66,7 @@ Elements are auto-discovered from `EAM/library_*.meam` files when `--elements` i
 ./run_pipeline.sh                              # Auto-discover elements from EAM/
 ./run_pipeline.sh Al Cu Zn Mg                  # Specify elements explicitly
 ./run_pipeline.sh --skip-dft Al Cu Zn Mg       # Reuse existing DFT results
-./run_pipeline.sh --samples 50 Al Cu Zn Mg     # More NN training samples
+./run_pipeline.sh --samples 150 Al Cu Zn Mg    # More NN training samples
 ```
 
 ### CLI Options
@@ -77,7 +77,7 @@ Elements are auto-discovered from `EAM/library_*.meam` files when `--elements` i
 | `--skip-dft`       | Use existing `dft_results.json`                  |
 | `--skip-optimize`  | Stop after MEAM initialization                   |
 | `--skip-verify`    | Skip verification stage                          |
-| `--samples N`      | NN parameter samples (default: 30)               |
+| `--samples N`      | NN parameter samples (default: 150)              |
 | `--parallel N`     | Max parallel DFT workers (default: 4)            |
 | `--no-plots`       | Skip visualization generation                    |
 

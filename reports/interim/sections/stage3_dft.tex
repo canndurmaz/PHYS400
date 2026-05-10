@@ -2,8 +2,7 @@
 \label{sec:stage3}
 
 The DFT reference stage uses Quantum Espresso \citep{giannozzi2009}
-(version~7.5, compiled locally with gfortran~13.3, OpenMPI~4.1 and
-FFTW3~3.3) driven through the Atomic Simulation Environment
+(version~7.5) driven through the Atomic Simulation Environment
 \citep{ase2017}. Before any production calculations were carried out, the
 QE--ASE coupling was validated on bulk FCC aluminium with a three-point
 sanity check (single-point SCF energy in the expected $-540$ to
@@ -33,7 +32,7 @@ density cut-off of 320\,Ry, Marzari--Vanderbilt smearing of width
 0.02\,Ry, and a $6\!\times\!6\!\times\!6$ Monkhorst--Pack mesh.
 Spin-polarised calculations are activated automatically for the magnetic
 elements Fe, Cr and Mn. Pseudopotentials are downloaded from the official
-Quantum Espresso pseudopotential library on demand; the EOS strain points
+Quantum Espresso pseudopotential library on demand. The EOS strain points
 and the binary-pair SCF calculations are dispatched to a process pool,
 which made it possible to obtain the full reference set on a single
 workstation.

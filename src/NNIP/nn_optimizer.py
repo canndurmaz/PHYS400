@@ -286,7 +286,7 @@ def load_training_targets(results_path=None):
 
 # ── NN Surrogate Optimization ────────────────────────────────────────────────
 
-def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=50,
+def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
                 results_path=None, n_parallel=None):
     """Multi-target NN optimization using results.json training data.
 
@@ -428,10 +428,11 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=50,
                 (vec, names, base_lib, base_params, entries, worker_dir, omp_threads)
             )
             valid = sum(1 for k in range(0, len(y), 2) if y[k] > C_REJECT_MIN)
-            status = "accepted" if valid >= n_entries // 2 else "rejected"
-            logger.info(f"  Rank {_MPI_RANK}: [{i+1}/{len(my_candidates)}] {status} (valid={valid}/{n_entries})")
             if valid >= n_entries // 2:
                 my_results.append((vec, y))
+            status = "accepted" if valid >= n_entries // 2 else "rejected"
+            logger.info(f"  Rank {_MPI_RANK}: [{i+1}/{len(my_candidates)}] {status} "
+                        f"(OK {len(my_results)}/{n_samples} on this rank, valid={valid}/{n_entries})")
         # Gather to rank 0
         all_results = _MPI_COMM.gather(my_results, root=0)
         if _MPI_RANK == 0:
@@ -478,7 +479,8 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=50,
                     y = future.result()
                 except Exception as e:
                     n_rejected += 1
-                    logger.info(f"  [{n_evaluated}/{n_candidates}] Worker failed ({elapsed:.0f}s elapsed): {e}")
+                    logger.info(f"  [{n_evaluated}/{n_candidates}] Worker failed "
+                                f"(OK {len(X_samples)}/{n_samples}, {elapsed:.0f}s elapsed): {e}")
                     continue
                 vec = futures[future]
                 valid = sum(1 for k in range(0, len(y), 2) if y[k] > C_REJECT_MIN)
@@ -486,22 +488,22 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=50,
                 if timed_out:
                     n_timed_out += 1
                     n_rejected += 1
-                    logger.info(f"  [{n_evaluated}/{n_candidates}] TIMED OUT ({elapsed:.0f}s elapsed, "
+                    logger.info(f"  [{n_evaluated}/{n_candidates}] TIMED OUT "
+                                f"(OK {len(X_samples)}/{n_samples}, {elapsed:.0f}s elapsed, "
                                 f"{n_timed_out} timeouts so far)")
                 elif valid >= n_entries // 2:
                     X_samples.append(vec)
                     y_samples.append(y)
                     rate = len(X_samples) / elapsed if elapsed > 0 else 0
                     eta = (n_samples - len(X_samples)) / rate if rate > 0 else float('inf')
-                    logger.info(f"  [{n_evaluated}/{n_candidates}] Sample {len(X_samples)}/{n_samples} "
+                    logger.info(f"  [{n_evaluated}/{n_candidates}] OK {len(X_samples)}/{n_samples} "
                                 f"accepted (valid={valid}/{n_entries}, {elapsed:.0f}s elapsed, "
                                 f"rate={rate:.2f}/s, ETA={eta:.0f}s)")
                 else:
                     n_rejected += 1
-                    if n_evaluated % 10 == 0 or n_evaluated <= 5:
-                        logger.info(f"  [{n_evaluated}/{n_candidates}] Rejected (valid={valid}/{n_entries}, "
-                                    f"{elapsed:.0f}s elapsed, accepted={len(X_samples)}/{n_samples}, "
-                                    f"rejected={n_rejected})")
+                    logger.info(f"  [{n_evaluated}/{n_candidates}] Rejected "
+                                f"(OK {len(X_samples)}/{n_samples}, valid={valid}/{n_entries}, "
+                                f"{elapsed:.0f}s elapsed, rejected={n_rejected})")
         elapsed = time.time() - t_sampling
         logger.info(f"  Parallel sampling done in {elapsed:.1f}s ({elapsed/60:.1f}min): "
                      f"{n_evaluated} evaluated, {n_rejected} rejected, {n_timed_out} timed out")
@@ -521,13 +523,13 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=50,
                 X_samples.append(vec)
                 y_samples.append(y)
                 rate = len(X_samples) / elapsed if elapsed > 0 else 0
-                logger.info(f"  [{idx+1}/{n_candidates}] Sample {len(X_samples)}/{n_samples} accepted "
+                logger.info(f"  [{idx+1}/{n_candidates}] OK {len(X_samples)}/{n_samples} accepted "
                             f"(valid={valid}/{n_entries}, {dt_sample:.1f}s, {elapsed:.0f}s elapsed)")
             else:
                 n_rejected_seq += 1
-                if idx < 5 or idx % 10 == 0:
-                    logger.info(f"  [{idx+1}/{n_candidates}] Rejected (valid={valid}/{n_entries}, "
-                                f"{dt_sample:.1f}s, rejected={n_rejected_seq}, {elapsed:.0f}s elapsed)")
+                logger.info(f"  [{idx+1}/{n_candidates}] Rejected "
+                            f"(OK {len(X_samples)}/{n_samples}, valid={valid}/{n_entries}, "
+                            f"{dt_sample:.1f}s, rejected={n_rejected_seq}, {elapsed:.0f}s elapsed)")
 
     # Clean up worker tmp dirs
     for d in os.listdir(tmp_dir):
@@ -725,7 +727,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Multi-Target NN MEAM Optimizer")
     parser.add_argument("--library", required=True, help="Path to MEAM library file")
     parser.add_argument("--params", required=True, help="Path to MEAM params file")
-    parser.add_argument("--samples", type=int, default=30, help="Number of initial samples")
+    parser.add_argument("--samples", type=int, default=150, help="Number of initial samples")
     parser.add_argument("--parallel", type=int, default=None,
                         help="Number of parallel workers (default: auto = cpu_count/2)")
     parser.add_argument("--results", default=None, help="Path to results.json")

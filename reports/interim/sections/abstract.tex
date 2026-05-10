@@ -1,12 +1,12 @@
 \begin{boxedabstract}
 \small
 Molecular dynamics (MD) simulations of metallic alloys require interatomic
-potentials that describe the interactions between every constituent element pair.
+potentials that describe the atomic interactions between every constituent element pair.
 The Modified Embedded Atom Method (MEAM) provides such a framework, but
 published MEAM parameter sets typically cover only narrow subsets of the periodic
 table. When the elements of an alloy are not present in a single potential file simulation cannot be executed. This
 project develops an automated pipeline that generates a MEAM parameter
-file for a selebtable list of elements by the following steps: (i) randomized alloy
+file for a selectable list of elements by the following steps: (i) randomized alloy
 configurations from the readily available configuration files, (ii) LAMMPS evaluation of Young's modulus and Poisson's ratio,
 (iii) density functional theory (DFT) reference data computation in Quantum Espresso
 through the Atomic Simulation Environment, and (iv) DFT-driven MEAM parameter

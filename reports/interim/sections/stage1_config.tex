@@ -6,8 +6,7 @@ twelve elements covered by at least one of the MEAM library files currently
 available to the project: Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti and Zn. Each generated configuration is a JSON object containing the
 species composition (mass fractions summing to exactly unity at $10^{-4}$
 precision), the simulation box edge in metres, the target temperature and
-the requested number of MD steps. A representative example, corresponding
-to a simplified Al~7075 composition, is shown below:
+the requested number of MD steps. A representative example is shown below:
 
 \begin{verbatim}
 {
@@ -20,9 +19,7 @@ to a simplified Al~7075 composition, is shown below:
 
 To bias the dataset towards practically interesting alloys, aluminium is
 forced to be the dominant species whenever it is present in the random
-draw. Configurations corresponding to commercial alloys (Al~2024, Al~2219,
-Al~5052, Al~7075) are included as named reference entries in addition to
-the random ones. At the time of this report, $7924$ configuration
+draw. At the time of this report, $7924$ configuration
 records have been generated, providing a wide population from which
 Stage~2 selects samples for MD simulation. The element-occurrence
 counts across this set are summarised in

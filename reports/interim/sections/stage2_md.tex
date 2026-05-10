@@ -7,7 +7,7 @@ central-difference strain protocol.
 
 \paragraph{Multi-element MEAM build of LAMMPS:}
 The default LAMMPS distribution hard-codes the maximum number of MEAM
-species to five, which is too small for the twelve-element library
+species to five, which is too small for the twelve-element library that will be
 generated in Stage~4. To enable the multi-element simulations required by
 this project, LAMMPS was rebuilt from source after raising the species
 ceiling in the MEAM headers to 20, and the resulting shared library
@@ -71,19 +71,15 @@ LAMMPS strain protocol described above.
 
 \paragraph{Parallel evaluation.} The elastic-only batch path
 dispatches configurations across worker processes, with one LAMMPS
-instance per physical core and OpenMP threading disabled to avoid
-hyperthread oversubscription. The sequential code path is preserved
-for the visualization and full-MD modes, where OVITO rendering and MD
-trajectories are inherently per-process. On a 4-physical-core /
+instance per physical core. On a 4-physical-core /
 8-logical-core host this gives roughly a 3--4$\times$ speedup over
 the sequential path.
 
 The protocol has been executed on nearly 8000 randomly generated
-configurations; the resulting $(E,\nu)$ pairs are stored together with the
+configurations; the resulting $(E,\nu) \text{and} (C_{11},C_{12})$ pairs are stored together with the
 composition in a shared elastic-property database.
 
-Across the full sample set, $E$ ranges from a few GPa for Mg/Zn-rich
-compositions to nearly 400\,GPa for refractory-rich compositions. The
+Across the full sample set, $E$ ranges from a few GPa to nearly 400\,GPa. The
 dataset-level statistics, computed over the $7815$ configurations that
 pass the physicality filter ($0<E<400$\,GPa, $0<\nu<0.5$), are
 summarised in Table~\ref{tab:md_stats}, and the corresponding

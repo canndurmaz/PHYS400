@@ -12,7 +12,7 @@ Usage:
     python pipeline.py                          # Auto-discover elements from EAM/
     python pipeline.py --elements Al Cu Zn Mg   # Specify elements explicitly
     python pipeline.py --skip-dft --elements Al Cu Zn Mg  # Skip DFT stage
-    python pipeline.py --samples 50             # More NN samples
+    python pipeline.py --samples 150            # More NN samples
 """
 
 import argparse
@@ -86,7 +86,7 @@ def _stage4_complete(summary_path):
         return False
 
 
-def run_pipeline(elements=None, skip_dft=False, n_samples=50,
+def run_pipeline(elements=None, skip_dft=False, n_samples=150,
                  skip_optimize=False, skip_verify=False, n_parallel=4,
                  no_plots=False, resume=False):
     """Run the full MEAM potential pipeline.
@@ -361,8 +361,8 @@ def main():
         help="Skip verification stage"
     )
     parser.add_argument(
-        "--samples", type=int, default=50,
-        help="Number of NN parameter samples (default: 50)"
+        "--samples", type=int, default=150,
+        help="Number of NN parameter samples (default: 150)"
     )
     parser.add_argument(
         "--parallel", type=int, default=4,

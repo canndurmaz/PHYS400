@@ -42,8 +42,16 @@ A TensorFlow neural network that maps the 10-element composition vector to the c
 **Run**: `./run_nn.sh` (or `python nn_alloy.py`).
 
 ### 2. Standalone Predictor (`predict_from_model.py`)
-Loads the saved `.keras` model to instantly predict properties for any composition JSON.
-- **Run**: `python predict_from_model.py path/to/composition.json`
+Loads the saved `.keras` model to instantly predict properties for any composition JSON. The model outputs *scaled* $(C_{11}, C_{12})$; this script undoes the `C_SCALE = 200` normalisation and recovers $(E, \nu)$ via the cubic-isotropy identity. The reusable entry point is `predict_properties(composition_dict) -> {"E_GPa", "nu", "C11_GPa", "C12_GPa", "unknown_elements"}`.
+- **Run (CLI)**: `python predict_from_model.py path/to/composition.json` — accepts a single `{"composition": {...}}` blob, a bare `{...}` dict, or a `predict.json`-style batch.
+- **Run (library)**: `from predict_from_model import predict_properties` (the model is lazy-loaded on first call).
+
+### 3. Web UI (`app.py`)
+Flask single-page app that wraps the predictor behind a form: enter mole fractions for any subset of the 10 trained elements and the predicted $(E, \nu, C_{11}, C_{12})$ are returned via `POST /api/predict`. The composition is re-normalised on the server, so non-unit sums are accepted (with a visible warning). Lazy model load — first prediction takes ~2 s, subsequent calls are <100 ms.
+- **Run**: `python app.py` &nbsp;→&nbsp; <http://127.0.0.1:5000>
+- **Routes**: `GET /` (form) · `POST /api/predict` (JSON in/out)
+- **Files**: `templates/index.html`, `static/styles.css`, `static/app.js`
+- **Dependency**: Flask (`pip install flask` — already in the project venv).
 
 ## Data Files
 
@@ -62,5 +70,6 @@ Compositions are converted into 10-dimensional feature vectors using this order:
 ## Dependencies
 - TensorFlow
 - NumPy
+- Flask (for the web UI in `app.py`)
 - Matplotlib (optional, for plots)
 - `tabulate` (for the auto-generated LaTeX metrics table)

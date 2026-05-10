@@ -1,0 +1,379 @@
+{# ── Reusable: a 6-cell mono stats grid for one validation block. ──── #}
+{%- macro stats_grid(s, unit='') -%}
+  {%- if s and s.MAE is not none -%}
+  <dl class="stat__stats">
+    <div><dt>MAE</dt><dd>{{ '%.3g'|format(s.MAE) }}{{ unit }}</dd></div>
+    <div><dt>RMSE</dt><dd>{{ '%.3g'|format(s.RMSE) }}{{ unit }}</dd></div>
+    <div><dt>R&sup2;</dt><dd>{{ '%.3f'|format(s.R2) }}</dd></div>
+    <div><dt>r&nbsp;<span class="hint">(Pearson)</span></dt><dd>{{ '%.3f'|format(s.Pearson) }}</dd></div>
+    <div><dt>bias</dt><dd>{{ '%+.3g'|format(s.Bias) }}{{ unit }}</dd></div>
+    <div><dt>P95&middot;|err|</dt><dd>{{ '%.3g'|format(s.P95AE) }}{{ unit }}</dd></div>
+  </dl>
+  {%- endif -%}
+{%- endmacro -%}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alloy Elastic Surrogate — Composition Predictor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='3' fill='%23ffb347'/></svg>">
+  <script id="cal-data" type="application/json">{{ cal|tojson if cal else '{}' }}</script>
+</head>
+<body>
+
+  <div class="grain" aria-hidden="true"></div>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div class="brand__text">
+        <span class="brand__name">PHYS&middot;400 / Alloy Elastic Surrogate</span>
+        <span class="brand__sub">Composition &rarr; (E, &nu;, C<sub>11</sub>, C<sub>12</sub>)</span>
+      </div>
+    </div>
+    <div class="topbar__meta">
+      <span class="meta__pill"><span class="dot"></span>MODEL READY</span>
+      <span class="meta__build">build&nbsp;·&nbsp;10&rarr;32&rarr;20&rarr;2 &middot; huber</span>
+    </div>
+  </header>
+
+  <main class="stage">
+
+    <!-- ─── COMPOSITION PANEL ─────────────────────────────────────────── -->
+    <section class="panel panel--input" aria-labelledby="comp-h">
+      <div class="panel__head">
+        <span class="panel__index">01</span>
+        <h2 id="comp-h" class="panel__title"><em>Composition</em></h2>
+        <span class="panel__hint">mole fractions &middot; normalised on submit</span>
+      </div>
+
+      <form id="predict-form" class="panel__body" autocomplete="off" novalidate>
+
+        <div class="ptable" role="group" aria-label="Element fractions">
+          {% for el in elements %}
+          <label class="cell" data-el="{{ el }}" style="--i: {{ loop.index0 }}">
+            <span class="cell__stripe" aria-hidden="true"></span>
+            <span class="cell__num" data-an></span>
+            <span class="cell__family" data-family></span>
+            <span class="cell__sym">{{ el }}</span>
+            <input
+              class="cell__input"
+              type="number"
+              name="{{ el }}"
+              min="0"
+              max="1"
+              step="0.01"
+              inputmode="decimal"
+              placeholder="0.00"
+              aria-label="Fraction of {{ el }}"
+            >
+            <span class="cell__fill" aria-hidden="true"></span>
+          </label>
+          {% endfor %}
+        </div>
+
+        <div class="sum">
+          <div class="sum__row">
+            <span class="sum__label">&Sigma;&nbsp;f<sub>i</sub></span>
+            <span class="sum__value" id="sum-value">0.0000</span>
+            <span class="sum__delta" id="sum-delta">&Delta; &minus;1.0000</span>
+          </div>
+          <div class="stack" aria-hidden="true" id="stack-bar">
+            <div class="stack__track"></div>
+            <div class="stack__segments" id="stack-segments"></div>
+            <div class="stack__tick" title="target = 1.0"></div>
+          </div>
+          <div class="stack__caption">
+            <span>0</span>
+            <span class="stack__caption-mid">composition &middot; target &Sigma;&thinsp;=&thinsp;1.0</span>
+            <span>1.0</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <div class="preset">
+            <label for="preset-select" class="preset__lbl">preset</label>
+            <select id="preset-select" class="preset__sel">
+              <option value="">— choose —</option>
+              <option value="pure_al">Pure Al</option>
+              <option value="aa7075">AA7075-like (Al-Zn-Mg-Cu-Cr)</option>
+              <option value="al_cu">Al–Cu binary</option>
+              <option value="hea5">Equimolar 5-element (Al,Cr,Fe,Ni,Ti)</option>
+            </select>
+          </div>
+          <button class="btn-predict" id="btn-predict" type="submit">
+            <span class="btn-predict__spin" aria-hidden="true"></span>
+            <span class="btn-predict__label">Predict properties</span>
+            <span class="btn-predict__kbd">&#9166;</span>
+          </button>
+          <button class="btn-clear" id="btn-clear" type="button">clear</button>
+        </div>
+
+        <div class="notice" id="notice" hidden></div>
+
+      </form>
+    </section>
+
+    <!-- ─── RESULTS PANEL ─────────────────────────────────────────────── -->
+    <section class="panel panel--out" aria-labelledby="res-h">
+      <div class="panel__head">
+        <span class="panel__index">02</span>
+        <h2 id="res-h" class="panel__title"><em>Predicted&nbsp;properties</em></h2>
+        <span class="panel__hint">
+          {% if cal and cal.n_total %}
+            <span class="cal-chip" title="Validation R²(E) / R²(ν) on n={{ cal.n_val }} held-out samples">
+              <span class="cal-chip__lbl">CAL</span>
+              <span class="cal-chip__sep"></span>
+              n={{ cal.n_total }} &middot;
+              R&sup2;<sub>E</sub>={{ '%.2f'|format(cal.r2.E) if cal.r2.E is not none else '—' }} &middot;
+              R&sup2;<sub>&nu;</sub>={{ '%.2f'|format(cal.r2.nu) if cal.r2.nu is not none else '—' }}
+            </span>
+          {% else %}
+            cubic-isotropic surrogate
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="panel__body">
+
+        {% if cal and cal.epochs is not none %}
+        <div class="meta-strip" aria-label="Training meta">
+          <div class="meta-strip__cell">
+            <span class="meta-strip__lbl">epochs</span>
+            <span class="meta-strip__val">{{ cal.epochs }}</span>
+          </div>
+          <div class="meta-strip__cell">
+            <span class="meta-strip__lbl">attempts</span>
+            <span class="meta-strip__val">{{ cal.attempts }}</span>
+          </div>
+          <div class="meta-strip__cell">
+            <span class="meta-strip__lbl">gate&nbsp;&le;{{ cal.max_error_pct }}%</span>
+            <span class="meta-strip__val {% if cal.gate_passed %}is-pass{% else %}is-fail{% endif %}">
+              {{ 'PASS' if cal.gate_passed else 'FAIL' }}
+            </span>
+          </div>
+          <div class="meta-strip__cell">
+            <span class="meta-strip__lbl">samples / val</span>
+            <span class="meta-strip__val">{{ cal.val_pass }}<span class="meta-strip__sub">&nbsp;/&nbsp;{{ cal.val_pass + cal.val_fail }}</span>
+              {% if cal.val_pass_pct is not none %}
+              <span class="meta-strip__pct">&nbsp;({{ '%.1f'|format(cal.val_pass_pct) }}%)</span>
+              {% endif %}
+            </span>
+          </div>
+          <div class="meta-strip__cell">
+            <span class="meta-strip__lbl">huber&nbsp;&delta;</span>
+            <span class="meta-strip__val">{{ cal.huber_delta }}</span>
+          </div>
+          <div class="meta-strip__cell">
+            <span class="meta-strip__lbl">&nu;-filter</span>
+            <span class="meta-strip__val">&lt;&thinsp;{{ cal.nu_filter_max }}</span>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Empty state: 3 cubic unit cells in perspective + crystal axes. -->
+        <div class="empty" id="empty-state">
+          <svg class="lattice-stage" viewBox="-110 -90 220 200" aria-hidden="true">
+            <defs>
+              <radialGradient id="atom" cx="35%" cy="30%" r="65%">
+                <stop offset="0" stop-color="#ffd99a"/>
+                <stop offset="0.55" stop-color="#ffb347"/>
+                <stop offset="1" stop-color="#5a3a10"/>
+              </radialGradient>
+              <radialGradient id="atom-dim" cx="35%" cy="30%" r="65%">
+                <stop offset="0" stop-color="#9aa2aa"/>
+                <stop offset="0.55" stop-color="#5a6168"/>
+                <stop offset="1" stop-color="#22272d"/>
+              </radialGradient>
+              <symbol id="cube" viewBox="-50 -40 100 100">
+                <g class="cube__back">
+                  <line x1="-25" y1="-15" x2="25" y2="-15"/>
+                  <line x1="-25" y1="35"  x2="25" y2="35"/>
+                  <line x1="-25" y1="-15" x2="-25" y2="35"/>
+                  <line x1="25"  y1="-15" x2="25"  y2="35"/>
+                </g>
+                <g class="cube__edge">
+                  <line x1="-25" y1="-15" x2="-40" y2="0"/>
+                  <line x1="25"  y1="-15" x2="10"  y2="0"/>
+                  <line x1="-25" y1="35"  x2="-40" y2="50"/>
+                  <line x1="25"  y1="35"  x2="10"  y2="50"/>
+                </g>
+                <g class="cube__front">
+                  <line x1="-40" y1="0"  x2="10"  y2="0"/>
+                  <line x1="-40" y1="50" x2="10"  y2="50"/>
+                  <line x1="-40" y1="0"  x2="-40" y2="50"/>
+                  <line x1="10"  y1="0"  x2="10"  y2="50"/>
+                </g>
+              </symbol>
+            </defs>
+
+            <!-- ghost cells, behind/offset -->
+            <g class="ghost ghost--a"><use href="#cube" x="-95" y="-45" width="80" height="80"/></g>
+            <g class="ghost ghost--b"><use href="#cube" x="40"  y="-15" width="70" height="70"/></g>
+
+            <!-- main cell -->
+            <g class="primary">
+              <use href="#cube" x="-45" y="-30" width="100" height="100"/>
+              <g class="primary__atoms">
+                <circle cx="-25" cy="-15" r="4.5"/>
+                <circle cx="25"  cy="-15" r="4.5"/>
+                <circle cx="-25" cy="35"  r="4.5"/>
+                <circle cx="25"  cy="35"  r="4.5"/>
+                <circle cx="-40" cy="0"   r="5.5"/>
+                <circle cx="10"  cy="0"   r="5.5"/>
+                <circle cx="-40" cy="50"  r="5.5"/>
+                <circle cx="10"  cy="50"  r="5.5"/>
+              </g>
+              <!-- crystal axes a, b, c at the front-bottom-left vertex -->
+              <g class="axes">
+                <line x1="-40" y1="50" x2="-15" y2="50"/>
+                <text x="-12" y="53">a</text>
+                <line x1="-40" y1="50" x2="-40" y2="25"/>
+                <text x="-44" y="22">c</text>
+                <line x1="-40" y1="50" x2="-30" y2="60"/>
+                <text x="-30" y="68">b</text>
+              </g>
+            </g>
+          </svg>
+          <p class="empty__line1"><em>Awaiting composition.</em></p>
+          <p class="empty__line2">enter mole fractions &middot; press <kbd>&#9166;</kbd> or <kbd>&#8984;&#9166;</kbd></p>
+        </div>
+
+        <!-- Results grid -->
+        <div class="readout" id="readout" hidden>
+
+          <div class="cards">
+
+            <article class="stat" data-key="E">
+              <header class="stat__hdr">
+                <span class="stat__sym">E</span>
+                <span class="stat__name">Young&rsquo;s modulus</span>
+                {% if cal and cal.mape and cal.mape.E is not none %}
+                <span class="stat__band" title="validation MAPE">&plusmn;&thinsp;{{ '%.1f'|format(cal.mape.E) }}%</span>
+                {% endif %}
+              </header>
+              <div class="stat__val">
+                <span class="stat__num" id="val-E">—</span>
+                <span class="stat__unit">GPa</span>
+              </div>
+              <div class="stat__axis" data-min="40" data-max="180" data-val="0">
+                <span class="stat__axis-bar"></span>
+                <span class="stat__axis-band"></span>
+                <span class="stat__axis-tick"></span>
+                <span class="stat__axis-marker"></span>
+                <span class="stat__axis-min">40</span>
+                <span class="stat__axis-max">180</span>
+              </div>
+              {{ stats_grid(cal.val.E if cal else None, '&nbsp;GPa'|safe) }}
+            </article>
+
+            <article class="stat" data-key="nu">
+              <header class="stat__hdr">
+                <span class="stat__sym">&nu;</span>
+                <span class="stat__name">Poisson&rsquo;s ratio</span>
+                {% if cal and cal.mape and cal.mape.nu is not none %}
+                <span class="stat__band" title="validation MAPE">&plusmn;&thinsp;{{ '%.1f'|format(cal.mape.nu) }}%</span>
+                {% endif %}
+              </header>
+              <div class="stat__val">
+                <span class="stat__num" id="val-nu">—</span>
+                <span class="stat__unit">&mdash;</span>
+              </div>
+              <div class="stat__axis" data-min="0.0" data-max="0.5" data-val="0">
+                <span class="stat__axis-bar"></span>
+                <span class="stat__axis-band"></span>
+                <span class="stat__axis-tick"></span>
+                <span class="stat__axis-marker"></span>
+                <span class="stat__axis-min">0.00</span>
+                <span class="stat__axis-max">0.50</span>
+              </div>
+              {{ stats_grid(cal.val.nu if cal else None) }}
+            </article>
+
+            <article class="stat stat--sub" data-key="C11">
+              <header class="stat__hdr">
+                <span class="stat__sym">C<sub>11</sub></span>
+                <span class="stat__name">elastic constant</span>
+                {% if cal and cal.mape and cal.mape.C11 is not none %}
+                <span class="stat__band" title="validation MAPE">&plusmn;&thinsp;{{ '%.1f'|format(cal.mape.C11) }}%</span>
+                {% endif %}
+              </header>
+              <div class="stat__val">
+                <span class="stat__num" id="val-C11">—</span>
+                <span class="stat__unit">GPa</span>
+              </div>
+              <div class="stat__axis" data-min="30" data-max="400" data-val="0">
+                <span class="stat__axis-bar"></span>
+                <span class="stat__axis-band"></span>
+                <span class="stat__axis-tick"></span>
+                <span class="stat__axis-marker"></span>
+                <span class="stat__axis-min">30</span>
+                <span class="stat__axis-max">400</span>
+              </div>
+              {{ stats_grid(cal.val.C11 if cal else None, '&nbsp;GPa'|safe) }}
+            </article>
+
+            <article class="stat stat--sub" data-key="C12">
+              <header class="stat__hdr">
+                <span class="stat__sym">C<sub>12</sub></span>
+                <span class="stat__name">elastic constant</span>
+                {% if cal and cal.mape and cal.mape.C12 is not none %}
+                <span class="stat__band" title="validation MAPE">&plusmn;&thinsp;{{ '%.1f'|format(cal.mape.C12) }}%</span>
+                {% endif %}
+              </header>
+              <div class="stat__val">
+                <span class="stat__num" id="val-C12">—</span>
+                <span class="stat__unit">GPa</span>
+              </div>
+              <div class="stat__axis" data-min="0" data-max="250" data-val="0">
+                <span class="stat__axis-bar"></span>
+                <span class="stat__axis-band"></span>
+                <span class="stat__axis-tick"></span>
+                <span class="stat__axis-marker"></span>
+                <span class="stat__axis-min">0</span>
+                <span class="stat__axis-max">250</span>
+              </div>
+              {{ stats_grid(cal.val.C12 if cal else None, '&nbsp;GPa'|safe) }}
+            </article>
+
+          </div>
+
+          <details class="rawout">
+            <summary>raw response &amp; normalised composition</summary>
+            <pre id="raw-json"></pre>
+          </details>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer__row footer__row--top">
+      <span><code>E = (C<sub>11</sub>&minus;C<sub>12</sub>)(C<sub>11</sub>+2C<sub>12</sub>) / (C<sub>11</sub>+C<sub>12</sub>)</code></span>
+      <span><code>&nu; = C<sub>12</sub> / (C<sub>11</sub>+C<sub>12</sub>)</code></span>
+      <span class="footer__r">PHYS&middot;400 &middot; Durmaz</span>
+    </div>
+    {% if cal and cal.n_total %}
+    <div class="footer__row footer__row--cal">
+      <span class="cal-label">CALIBRATION&nbsp;LEDGER</span>
+      <span>n<sub>total</sub>&nbsp;=&nbsp;{{ cal.n_total }}</span>
+      <span>n<sub>train</sub>&nbsp;=&nbsp;{{ cal.n_train }}</span>
+      <span>n<sub>val</sub>&nbsp;=&nbsp;{{ cal.n_val }}</span>
+      {% if cal.mape.E   is not none %}<span>MAPE&nbsp;E&nbsp;=&nbsp;{{ '%.2f'|format(cal.mape.E) }}%</span>{% endif %}
+      {% if cal.mape.nu  is not none %}<span>MAPE&nbsp;&nu;&nbsp;=&nbsp;{{ '%.2f'|format(cal.mape.nu) }}%</span>{% endif %}
+      {% if cal.mape.C11 is not none %}<span>MAPE&nbsp;C<sub>11</sub>&nbsp;=&nbsp;{{ '%.2f'|format(cal.mape.C11) }}%</span>{% endif %}
+      {% if cal.mape.C12 is not none %}<span>MAPE&nbsp;C<sub>12</sub>&nbsp;=&nbsp;{{ '%.2f'|format(cal.mape.C12) }}%</span>{% endif %}
+      {% if cal.trained %}<span class="footer__r">trained&nbsp;{{ cal.trained }}</span>{% endif %}
+    </div>
+    {% endif %}
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

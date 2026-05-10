@@ -11,7 +11,7 @@
 #   --skip-optimize  Skip NN optimization stage
 #   --skip-verify    Skip verification stage
 #   --resume         Auto-detect completed stages and skip them
-#   --samples N      Number of NN parameter samples (default: 30)
+#   --samples N      Number of NN parameter samples (default: 150)
 #   --parallel N     Max parallel DFT workers (default: 4)
 
 set -euo pipefail
