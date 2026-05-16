@@ -44,11 +44,13 @@ This pipeline combines four stages into an automated workflow:
           |  → EAM/dft_initialized/
           v
   Stage 3: NN Surrogate Optimization
-          |  Sample → Train NN on MD results → Inverse optimize
-          |  → EAM/optimized/
+          |  k-means medoid select (k=100) → 70/30 train/val split
+          |  Sample (checkpointed) → Train NN on train set → Inverse optimize
+          |  → EAM/optimized/, nn_checkpoint.json, nn_diagnostics.json
           v
   Stage 4: Verification
-          |  Compare against MD-computed alloy data
+          |  Held-out 30% val sweep (always)
+          |  Full results.json sweep (opt-in via --full-set-validation)
           v
   Stage 5: Visualization (optional)
 ```
@@ -63,23 +65,33 @@ Elements are auto-discovered from `EAM/library_*.meam` files when `--elements` i
 
 ```bash
 # From src/NNIP/:
-./run_pipeline.sh                              # Auto-discover elements from EAM/
-./run_pipeline.sh Al Cu Zn Mg                  # Specify elements explicitly
-./run_pipeline.sh --skip-dft Al Cu Zn Mg       # Reuse existing DFT results
-./run_pipeline.sh --samples 150 Al Cu Zn Mg    # More NN training samples
+./run_pipeline.sh                                       # Auto-discover elements from EAM/
+./run_pipeline.sh Al Cu Zn Mg                           # Specify elements explicitly
+./run_pipeline.sh --skip-dft Al Cu Zn Mg                # Reuse existing DFT results
+./run_pipeline.sh --skip-dft --parallel 6 \
+    --perturbations 200 --k-representatives 50          # Tune sampling + representative count
+./run_pipeline.sh --skip-dft --full-set-validation \    # Add post-optimization sweep over
+    Al Cu Zn Mg                                         #   every entry in results.json
+./run_pipeline.sh --clean                               # Remove pipeline outputs (preserves DFT)
 ```
 
 ### CLI Options
 
-| Flag               | Effect                                          |
-|--------------------|--------------------------------------------------|
-| `--elements X Y Z` | Specify elements (auto-discovered from EAM/ if omitted) |
-| `--skip-dft`       | Use existing `dft_results.json`                  |
-| `--skip-optimize`  | Stop after MEAM initialization                   |
-| `--skip-verify`    | Skip verification stage                          |
-| `--samples N`      | NN parameter samples (default: 150)              |
-| `--parallel N`     | Max parallel DFT workers (default: 4)            |
-| `--no-plots`       | Skip visualization generation                    |
+| Flag                       | Effect                                                                       |
+|----------------------------|------------------------------------------------------------------------------|
+| `--elements X Y Z`         | Specify elements (auto-discovered from EAM/ if omitted)                      |
+| `--skip-dft`               | Use existing `dft_results.json`                                              |
+| `--skip-optimize`          | Stop after MEAM initialization                                               |
+| `--skip-verify`            | Skip verification stage                                                      |
+| `--resume`                 | Auto-detect completed stages and skip them                                   |
+| `--no-plots`               | Skip visualization generation                                                |
+| `--perturbations N`        | MEAM parameter perturbations sampled in Phase 1 (default: 150)               |
+| `--parallel N`             | Max parallel workers for DFT / NN sampling / full-set validation (default: 4)|
+| `--k-representatives N`    | k-means medoids picked from `results.json` before train/val split (default: 100) |
+| `--val-frac F`             | Fraction of representatives held out for validation (default: 0.3)           |
+| `--split-seed N`           | Seed for k-means + train/val split (default: 0)                              |
+| `--full-set-validation`    | After the val-set check, sweep every entry in `results.json` (slow)          |
+| `--clean`                  | Remove NNIP-generated content and exit. **DFT artifacts always preserved.**  |
 
 ---
 
@@ -109,16 +121,36 @@ DFT values are mapped onto the MEAM parameter space. Base MEAM files are auto-di
 
 ### Stage 3: NN Optimization
 
-1. **Sample**: Perturb initial MEAM parameters by $\pm 10\%$, evaluate each with LAMMPS across all target compositions, flatten the per-alloy `(E, ν)` to $(C_{11}, C_{12})$ via the cubic-isotropic algebra. Samples whose $C_{11}$ falls below `C_REJECT_MIN = 30 GPa` for too many compositions are rejected.
-2. **Train**: Feed-forward NN (`20 → 20 → 10 → 2N_entries` architecture) learns the params-to-$C_{ij}$ mapping using **Huber loss** (delta=1.0 in normalised units). The training targets are read from `src/ML/results.json`, preferring the stored `C11_GPa`/`C12_GPa` when present and falling back to algebraic conversion only for legacy entries that pre-date the C_ij storage change.
-3. **Optimize**: Gradient descent through the trained NN toward the $C_{ij}$ target vector, with the parameter vector clipped to $\pm 2.5\sigma$ around the training mean.
-4. **Validate**: Final LAMMPS evaluation with the optimized parameters; reportable $(E, \nu)$ are derived analytically from the predicted $(C_{11}, C_{12})$ for direct comparison with the original `(E, ν)` targets.
+The pipeline first calls `select_representatives.py` to reduce the full
+~7800-entry `results.json` to `k` (default 100) **k-means medoid alloys** in
+element-fraction composition space. Each medoid is a *real* entry from
+`results.json` nearest to its k-means cluster centre, so the original
+DFT-computed `(C11, C12, E, ν)` targets carry over verbatim. The medoids are
+then split 70/30 into `results_train.json` and `results_val.json` (configurable
+via `--val-frac` / `--split-seed`). At full scale this cuts Phase 1 LAMMPS cost
+by ~100× while keeping composition-space coverage broad.
 
-The diagnostics file `nn_diagnostics.json` carries both views (`target_vec_cij`, `target_vec_enu`, `final_predictions[*].C11_opt`/`C12_opt`/`E_opt`/`nu_opt`).
+`optimize_nn` then runs four phases:
+
+1. **Sample**: Perturb initial MEAM parameters by $\pm 10\%$, evaluate each with LAMMPS across the **training-set alloys**, flatten the per-alloy `(E, ν)` to $(C_{11}, C_{12})$ via the cubic-isotropic algebra. Samples whose $C_{11}$ falls below `C_REJECT_MIN = 30 GPa` for too many compositions are rejected. **Each accepted sample is atomically appended to `nn_checkpoint.json`** — killing the process and re-running picks up exactly where it left off, gated by a hash over `(lib, params, opt_spec, train_entries)`.
+2. **Train**: Feed-forward NN (`20 → 20 → 10 → 2·N_train` architecture) learns the params-to-$C_{ij}$ mapping using **Huber loss** (delta=1.0 in normalised units). Targets prefer the stored `C11_GPa`/`C12_GPa`, falling back to algebraic conversion only for legacy entries that pre-date the C_ij storage change.
+3. **Optimize**: Gradient descent through the trained NN toward the train $C_{ij}$ target vector, with the parameter vector clipped to $\pm 2.5\sigma$ around the training mean.
+4. **Held-out validation**: Final LAMMPS evaluation against the **30% validation alloys the surrogate never saw**. Reports per-entry $(C_{11}, C_{12}, E, \nu)$ — target vs optimized — plus aggregate mean and RMSE on $E$ and $\nu$. This replaces the prior train-set self-evaluation, which understated generalisation error.
+
+The diagnostics file `nn_diagnostics.json` carries `train_target_vec_cij`,
+`train_target_vec_enu`, the `train_path` / `val_path`, the full
+`val_predictions[*]` table, and `val_metrics` (rmse_E_pct / rmse_nu_pct /
+mean_E_pct / mean_nu_pct / n_valid / n_val).
 
 ### Stage 4: Verification
 
-Compares optimized potential against all target compositions. Reports per-entry and average percentage errors for Young's modulus and Poisson's ratio. Pass criterion: average error < 10%.
+Reuses the optimized potential against the held-out 30% validation set, then
+optionally — under `--full-set-validation` — sweeps every entry in
+`results.json` (parallelised across `--parallel` workers, progress reported
+every 100 alloys). Per-entry errors and aggregate mean/RMSE for $E$ and $\nu$
+are written to `pipeline_summary.json` under `verification` (val-set) and
+`full_set_verification` (full sweep, when requested). Pass criterion: average
+error < 10%.
 
 ### Stage 5: Visualization
 
@@ -131,15 +163,19 @@ Generates diagnostic plots from NN training and verification results.
 ```
 src/NNIP/
   pipeline.py                  Main entry point (orchestrator)
-  run_pipeline.sh              Shell wrapper
+  run_pipeline.sh              Shell wrapper (generic --* flag passthrough)
   download_pseudopotentials.py Auto-download missing QE pseudopotentials
   dft_reference.py             DFT calculations via QE + ASE
   fill_elastic_constants.py    One-shot fill of missing/unphysical C11,C12
                                in dft_results.json (uses B + assumed ν per
                                element); idempotent
   dft_to_meam.py               DFT → MEAM parameter mapping
+  select_representatives.py    k-means medoid selection + 70/30 train/val
+                               split from results.json (numpy-only k-means++)
   nn_optimizer.py              NN surrogate training + inverse optimization
-                               (C_ij targets, Huber loss)
+                               (C_ij targets, Huber loss). Phase-1 sample
+                               checkpointing via nn_checkpoint.json; held-out
+                               val-set validation in Phase 4.
   meam_io.py                   MEAM library/params file I/O
   merge_potentials.py          Multi-source MEAM potential merger
   visualize.py                 Diagnostic plotting
@@ -164,12 +200,16 @@ python3 fill_elastic_constants.py --force       # also fix unphysical entries
 - `src/ML/results.json` -- MD-computed training targets (composition, E, ν)
 
 **Generated outputs:**
-- `src/NNIP/dft_results.json` -- DFT reference data
-- `src/NNIP/dft_scratch/` -- QE working files
+- `src/NNIP/dft_results.json` -- DFT reference data (**preserved by `--clean`**)
+- `src/NNIP/dft_scratch/` -- QE working files (**preserved by `--clean`**)
+- `src/NNIP/nn_checkpoint.json` -- Phase-1 sample checkpoint for resume after kill
+- `src/NNIP/nn_diagnostics.json` -- Loss history + val predictions + val metrics
+- `src/NNIP/pipeline_summary.json` -- Timing, verification, and (opt.) full-set verification
+- `src/NNIP/logs/` -- Timestamped pipeline logs
+- `src/ML/results_train.json` -- k-means medoid training subset (regenerated each run)
+- `src/ML/results_val.json` -- 30% held-out validation subset
 - `EAM/dft_initialized/` -- DFT-initialized MEAM potentials
 - `EAM/optimized/` -- Final optimized MEAM potentials
-- `src/NNIP/pipeline_summary.json` -- Timing and results summary
-- `src/NNIP/logs/` -- Timestamped pipeline logs
 
 ---
 
@@ -190,5 +230,6 @@ python3 fill_elastic_constants.py --force       # also fix unphysical entries
 |---------|----------|
 | "Too many elements" from LAMMPS | Rebuild LAMMPS with `maxelt=20`; set `LD_LIBRARY_PATH=$HOME/.local/lib` |
 | DFT hangs or fails | Check `which pw.x`; pseudopotentials are auto-downloaded; partial results are saved |
-| NN won't converge | Increase `--samples`; check that `results.json` targets are physically reasonable |
+| NN won't converge | Increase `--perturbations`; bump `--k-representatives` for broader composition coverage; check that `results.json` targets are physically reasonable |
+| Phase 1 killed midway | Just re-run — `nn_checkpoint.json` resumes from the last accepted sample. Pass `--no-resume` (via `nn_optimizer.py` directly) to ignore the checkpoint and start fresh |
 | Missing pseudopotential | Run `python download_pseudopotentials.py Al Cu Fe` to fetch manually |

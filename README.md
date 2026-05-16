@@ -139,8 +139,8 @@ cd src/NNIP
 # Full pipeline (DFT + NN optimization + verification)
 ./run_pipeline.sh Al Cu Zn Mg Fe Cr Mn Si Ti
 
-# Skip DFT (reuse existing results), tune samples and parallelism
-./run_pipeline.sh --skip-dft --samples 50 --parallel 6 Al Cu Zn Mg
+# Skip DFT (reuse existing results), tune perturbations and parallelism
+./run_pipeline.sh --skip-dft --perturbations 50 --parallel 6 Al Cu Zn Mg
 ```
 
 See [src/NNIP/README.md](src/NNIP/README.md) for full pipeline documentation.
