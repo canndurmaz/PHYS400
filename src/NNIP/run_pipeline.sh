@@ -17,6 +17,8 @@
 #   --k-representatives N    k-means medoids picked from results.json before split (default: 100)
 #   --val-frac F             Fraction of representatives held out for validation (default: 0.3)
 #   --split-seed N           Seed for k-means + train/val split (default: 0)
+#   --full-set-validation    Also sweep every entry in results.json after the
+#                            val-set check (slow — hours of parallel LAMMPS).
 #   --clean                  Remove NNIP-generated content and exit (no pipeline run).
 #                            DFT artifacts (dft_results.json, dft_scratch/) are always preserved.
 #

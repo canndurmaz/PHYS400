@@ -89,7 +89,8 @@ def _stage4_complete(summary_path):
 def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
                  skip_optimize=False, skip_verify=False, n_parallel=4,
                  no_plots=False, resume=False,
-                 k_representatives=100, val_frac=0.3, split_seed=0):
+                 k_representatives=100, val_frac=0.3, split_seed=0,
+                 full_set_validation=False):
     """Run the full MEAM potential pipeline.
 
     Args:
@@ -107,6 +108,11 @@ def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
                           before train/val split (default 100)
         val_frac: fraction of representatives held out for validation (default 0.3)
         split_seed: random seed for k-means + train/val split (default 0)
+        full_set_validation: after the held-out val-set check, also sweep the
+                             entire results.json (thousands of alloys, hours of
+                             LAMMPS) so you can measure generalisation beyond
+                             the 30% representative sample. Parallelised across
+                             ``n_parallel`` workers. Default False.
     """
     eam_dir = os.path.join(project_root, "EAM")
     meam_opt_dir = os.path.dirname(__file__)
@@ -278,15 +284,29 @@ def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
     # ── Stage 4: Verification ──────────────────────────────────────────────
     t0 = time.time()
     verification_results = None
+    full_set_results = None
     summary_path = os.path.join(meam_opt_dir, "pipeline_summary.json")
-    if resume and _stage4_complete(summary_path):
+    # Resume only short-circuits when --full-set-validation is not requested —
+    # a full-set sweep is opt-in and worth re-running on demand.
+    if resume and _stage4_complete(summary_path) and not full_set_validation:
         logger.info("\n[Stage 4] [RESUME] Verification results found, skipping Stage 4")
         with open(summary_path) as f:
-            verification_results = json.load(f).get("verification")
+            prior = json.load(f)
+        verification_results = prior.get("verification")
+        full_set_results = prior.get("full_set_verification")
     elif not skip_verify:
         logger.info("\n[Stage 4] Verification (held-out validation set)")
         logger.info("-" * 40)
         verification_results = _verify_against_targets(lib_opt, par_opt, val_path)
+        if full_set_validation:
+            full_results_path = os.path.join(ml_dir, "results.json")
+            logger.info(f"\n[Stage 4] Full-set verification — all entries in {full_results_path}")
+            logger.info(f"  WARNING: this is a slow sweep (~hours of LAMMPS).")
+            logger.info("-" * 40)
+            full_set_results = _verify_against_targets(
+                lib_opt, par_opt, full_results_path,
+                n_parallel=n_parallel, label="full-set", verbose=False,
+            )
     stage_timings["verification"] = round(time.time() - t0, 2)
 
     # ── Stage 5: Visualization ─────────────────────────────────────────────
@@ -309,6 +329,8 @@ def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
     }
     if verification_results:
         summary["verification"] = verification_results
+    if full_set_results:
+        summary["full_set_verification"] = full_set_results
     with open(summary_path, "w") as f:
         json.dump(summary, f, indent=2)
     logger.info(f"\nPipeline summary saved to {summary_path}")
@@ -322,48 +344,80 @@ def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
     logger.info("=" * 60)
 
 
-def _verify_against_targets(lib_path, params_path, targets_path):
-    """Verify the optimized potential against the held-out validation set.
+def _verify_against_targets(lib_path, params_path, targets_path,
+                            n_parallel=1, label="validation", verbose=True):
+    """Verify the optimized potential against an alloy-targets JSON.
+
+    Each composition is an independent LAMMPS evaluation, so the sweep
+    parallelises trivially across worker processes. Use ``verbose=False``
+    for large sweeps (thousands of alloys) where per-entry logging would
+    drown the log — a periodic progress line is emitted instead.
 
     Returns:
         dict: {name: {E_opt, E_target, E_err_pct, nu_opt, nu_target, nu_err_pct}}
     """
+    from concurrent.futures import ProcessPoolExecutor, as_completed
     from src.NNIP.nn_optimizer import load_targets, _run_lammps_composition
 
     entries = load_targets(targets_path)
-    total_E_err = 0
-    total_nu_err = 0
-    n = 0
+    n = len(entries)
     results = {}
+    t_start = time.time()
+    logger.info(f"  [{label}] Evaluating {n} alloys (n_parallel={n_parallel})")
 
-    for name, data in entries.items():
-        E, nu = _run_lammps_composition(lib_path, params_path, data["composition"])
+    def _record(name, data, E, nu):
         E_target = data["E_GPa"]
         nu_target = data["nu"]
-
         E_err = abs(E - E_target) / max(abs(E_target), 1e-6) * 100
         nu_err = abs(nu - nu_target) / max(abs(nu_target), 1e-6) * 100
-
-        logger.info(f"  {name}:")
-        logger.info(f"    E:  {E:.2f} vs {E_target:.2f} GPa ({E_err:.1f}% error)")
-        logger.info(f"    nu: {nu:.3f} vs {nu_target:.3f} ({nu_err:.1f}% error)")
-
         results[name] = {
             "E_opt": E, "E_target": E_target, "E_err_pct": round(E_err, 2),
             "nu_opt": nu, "nu_target": nu_target, "nu_err_pct": round(nu_err, 2),
         }
+        if verbose:
+            logger.info(f"  {name}:")
+            logger.info(f"    E:  {E:.2f} vs {E_target:.2f} GPa ({E_err:.1f}% error)")
+            logger.info(f"    nu: {nu:.3f} vs {nu_target:.3f} ({nu_err:.1f}% error)")
 
-        if E != 0:
-            total_E_err += E_err
-            total_nu_err += nu_err
-            n += 1
+    if n_parallel <= 1:
+        for name, data in entries.items():
+            E, nu = _run_lammps_composition(lib_path, params_path, data["composition"])
+            _record(name, data, E, nu)
+    else:
+        with ProcessPoolExecutor(max_workers=n_parallel) as pool:
+            futures = {
+                pool.submit(_run_lammps_composition, lib_path, params_path,
+                            data["composition"]): (name, data)
+                for name, data in entries.items()
+            }
+            done = 0
+            for fut in as_completed(futures):
+                name, data = futures[fut]
+                done += 1
+                E, nu = fut.result()
+                _record(name, data, E, nu)
+                if not verbose and (done % 100 == 0 or done == n):
+                    dt = time.time() - t_start
+                    rate = done / dt if dt > 0 else 0.0
+                    eta = (n - done) / rate if rate > 0 else float("inf")
+                    logger.info(f"  [{label}] {done}/{n} ({rate:.2f}/s, "
+                                f"ETA {eta/60:.1f}min)")
 
-    if n > 0:
-        logger.info(f"\n  Average errors: E={total_E_err/n:.1f}%, nu={total_nu_err/n:.1f}%")
-        if total_E_err / n < 10 and total_nu_err / n < 10:
-            logger.info("  PASS: Within 10% target")
+    valid = [r for r in results.values() if r["E_opt"] != 0]
+    dt = time.time() - t_start
+    logger.info(f"\n  [{label}] {len(valid)}/{n} physically-valid in "
+                f"{dt:.1f}s ({dt/60:.1f}min)")
+    if valid:
+        avg_E = sum(r["E_err_pct"] for r in valid) / len(valid)
+        avg_nu = sum(r["nu_err_pct"] for r in valid) / len(valid)
+        rmse_E = (sum(r["E_err_pct"] ** 2 for r in valid) / len(valid)) ** 0.5
+        rmse_nu = (sum(r["nu_err_pct"] ** 2 for r in valid) / len(valid)) ** 0.5
+        logger.info(f"  [{label}] Avg errors:   E={avg_E:.1f}%, nu={avg_nu:.1f}%")
+        logger.info(f"  [{label}] RMSE errors:  E={rmse_E:.1f}%, nu={rmse_nu:.1f}%")
+        if avg_E < 10 and avg_nu < 10:
+            logger.info(f"  [{label}] PASS: within 10% target")
         else:
-            logger.info("  WARNING: Some targets exceed 10% error")
+            logger.info(f"  [{label}] WARNING: some targets exceed 10% error")
 
     return results
 
@@ -416,6 +470,12 @@ def main():
         "--split-seed", type=int, default=0,
         help="Seed for k-means and train/val split (default: 0)"
     )
+    parser.add_argument(
+        "--full-set-validation", action="store_true",
+        help="After the val-set check, also sweep every entry in results.json "
+             "(slow — hours of parallel LAMMPS). Results land under "
+             "'full_set_verification' in pipeline_summary.json."
+    )
     args = parser.parse_args()
 
     os.environ["TK_SILENT"] = "1"
@@ -432,6 +492,7 @@ def main():
         k_representatives=args.k_representatives,
         val_frac=args.val_frac,
         split_seed=args.split_seed,
+        full_set_validation=args.full_set_validation,
     )
 
 
