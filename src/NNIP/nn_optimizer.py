@@ -28,6 +28,7 @@ Workflow:
 """
 
 import argparse
+import hashlib
 import json
 import multiprocessing as mp
 import os
@@ -65,6 +66,8 @@ from src.NNIP.meam_io import (
 from src.NNIP.logging_config import setup_logger
 
 logger = setup_logger("nn_optimizer")
+
+DEFAULT_CHECKPOINT_PATH = os.path.join(os.path.dirname(__file__), "nn_checkpoint.json")
 
 
 # ── Cubic-isotropic algebra (E, nu) <-> (C11, C12) ───────────────────────────
@@ -272,37 +275,116 @@ def _eval_sample_worker(args):
 
 # ── Training data loading ────────────────────────────────────────────────────
 
-def load_training_targets(results_path=None):
-    """Load training targets from src/ML/results.json.
+DEFAULT_TRAIN_PATH = os.path.join(project_root, "src", "ML", "results_train.json")
+DEFAULT_VAL_PATH = os.path.join(project_root, "src", "ML", "results_val.json")
+
+
+def load_targets(path):
+    """Load alloy targets from a results-shaped JSON.
 
     Returns:
-        dict: {config_name: {"composition": {...}, "E_GPa": float, "nu": float}}
+        dict: {config_name: {"composition": {...}, "E_GPa": float, "nu": float,
+                             "C11_GPa": float (optional), "C12_GPa": float (optional)}}
     """
-    if results_path is None:
-        results_path = os.path.join(project_root, "src", "ML", "results.json")
-    with open(results_path) as f:
+    with open(path) as f:
         return json.load(f)
+
+
+# ── Phase-1 checkpoint (resume LAMMPS sampling after interruption) ───────────
+
+def _config_hash(lib_path, params_path, opt_spec, entries):
+    """SHA256 over inputs that determine whether cached samples are valid.
+
+    A checkpoint's (vec, y) pairs only mean something for the exact MEAM
+    files, opt_spec, and training targets they were generated against.
+    """
+    h = hashlib.sha256()
+    for path in (lib_path, params_path):
+        with open(path, "rb") as f:
+            h.update(f.read())
+    h.update(json.dumps(opt_spec, sort_keys=True).encode())
+    h.update(json.dumps(entries, sort_keys=True).encode())
+    return h.hexdigest()
+
+
+def _load_checkpoint(path, config_hash):
+    """Load checkpoint if compatible with current config; else return None."""
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except Exception as e:
+        logger.warning(f"  Failed to read checkpoint {path}: {e}")
+        return None
+    if data.get("config_hash") != config_hash:
+        logger.warning(f"  Checkpoint hash mismatch — ignoring stale samples ({path})")
+        return None
+    return data
+
+
+def _save_checkpoint(path, config_hash, param_names, X_samples, y_samples):
+    """Atomic snapshot of the current accepted-sample set."""
+    data = {
+        "config_hash": config_hash,
+        "param_names": list(param_names),
+        "samples": [
+            {"vec": [float(x) for x in v], "y": [float(x) for x in y]}
+            for v, y in zip(X_samples, y_samples)
+        ],
+    }
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
 
 
 # ── NN Surrogate Optimization ────────────────────────────────────────────────
 
 def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
-                results_path=None, n_parallel=None):
-    """Multi-target NN optimization using results.json training data.
+                train_path=None, val_path=None, n_parallel=None,
+                checkpoint_path=None, resume=True):
+    """Multi-target NN optimization with a held-out validation set.
+
+    Phases 1-3 fit and invert a surrogate against the ``train_path`` alloys.
+    Phase 4 runs LAMMPS on the optimized potential against the disjoint
+    ``val_path`` alloys and reports per-entry + aggregate generalisation
+    error — never against the training set.
 
     Args:
         lib_path: path to MEAM library file
         params_path: path to MEAM params file
         opt_spec: dict specifying which parameters to optimize
         n_samples: number of parameter space samples
-        results_path: path to results.json (default: src/ML/results.json)
+        train_path: path to training subset JSON (default:
+                    src/ML/results_train.json — produced by
+                    select_representatives.py)
+        val_path: path to validation subset JSON (default:
+                  src/ML/results_val.json — produced by
+                  select_representatives.py). Must be disjoint from train.
         n_parallel: number of parallel workers for LAMMPS sampling.
                     Default: auto (cpu_count // 2, leaving threads for OpenMP).
                     When launched via mpirun, samples are distributed across
                     MPI ranks and workers run within each rank.
+        checkpoint_path: Phase-1 sample checkpoint (default:
+                         nn_checkpoint.json next to this script). Rewritten
+                         atomically after every accepted sample so a killed
+                         run can resume without re-evaluating LAMMPS.
+        resume: if True, reuse a compatible checkpoint at startup.
     """
-    entries = load_training_targets(results_path)
+    if train_path is None:
+        train_path = DEFAULT_TRAIN_PATH
+    if val_path is None:
+        val_path = DEFAULT_VAL_PATH
+    entries = load_targets(train_path)
+    val_entries = load_targets(val_path)
     n_entries = len(entries)
+    n_val = len(val_entries)
+    # Guard against accidental overlap (would silently turn val into train).
+    overlap = set(entries.keys()) & set(val_entries.keys())
+    if overlap:
+        raise ValueError(f"train/val overlap detected ({len(overlap)} entries): "
+                         f"{sorted(overlap)[:5]}...")
 
     # ── Parallelism config ───────────────────────────────────────────────
     n_cpus = mp.cpu_count()
@@ -313,7 +395,8 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
     os.environ["OMP_NUM_THREADS"] = str(omp_threads)
 
     logger.info(f"\nMulti-Target NN Optimization (C11,C12 targets, Huber loss)")
-    logger.info(f"Training entries: {n_entries}")
+    logger.info(f"Training entries:   {n_entries}  ({train_path})")
+    logger.info(f"Validation entries: {n_val}  ({val_path})")
     logger.info(f"Parallelism: {_MPI_SIZE} MPI rank(s) x {n_parallel} workers x {omp_threads} OMP threads")
 
     def _target_cij(entry_data):
@@ -379,6 +462,27 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
     tmp_dir = os.path.join(os.path.dirname(__file__), "tmp_nn")
     os.makedirs(tmp_dir, exist_ok=True)
 
+    # ── Resume from checkpoint (Phase 1 only) ─────────────────────────────
+    if checkpoint_path is None:
+        checkpoint_path = DEFAULT_CHECKPOINT_PATH
+    config_hash = _config_hash(lib_path, params_path, opt_spec, entries)
+    if resume and _MPI_RANK == 0:
+        loaded = _load_checkpoint(checkpoint_path, config_hash)
+        if loaded is not None:
+            for s in loaded["samples"]:
+                X_samples.append(np.array(s["vec"]))
+                y_samples.append(np.array(s["y"]))
+            logger.info(f"  Resumed from checkpoint {checkpoint_path}: "
+                        f"{len(X_samples)} samples loaded")
+    if _MPI_SIZE > 1:
+        X_samples = _MPI_COMM.bcast(X_samples, root=0)
+        y_samples = _MPI_COMM.bcast(y_samples, root=0)
+
+    def _checkpoint_now():
+        if _MPI_RANK == 0:
+            _save_checkpoint(checkpoint_path, config_hash, names,
+                             X_samples, y_samples)
+
     def eval_to_flat(vec):
         """Run LAMMPS for all entries, return [C11_1, C12_1, C11_2, ...]."""
         results = eval_all_entries(vec, names, base_lib, base_params, entries, tmp_dir)
@@ -389,33 +493,43 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
         return np.array(flat)
 
     # Baseline (always sequential — need it before anything else)
-    logger.info(f"  Evaluating baseline parameters (timeout={SAMPLE_TIMEOUT_SEC}s)...")
-    t_baseline = time.time()
-    old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
-    signal.alarm(SAMPLE_TIMEOUT_SEC)
-    try:
-        y0 = eval_to_flat(initial_vec)
-    except _LammpsTimeout:
-        logger.error(f"  FATAL: Baseline evaluation timed out after {SAMPLE_TIMEOUT_SEC}s. "
-                      f"The initial MEAM potential is too unstable for LAMMPS to minimize.")
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, old_handler)
-        raise RuntimeError(f"Baseline LAMMPS evaluation timed out after {SAMPLE_TIMEOUT_SEC}s")
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, old_handler)
-    dt_baseline = time.time() - t_baseline
-    X_samples.append(initial_vec)
-    y_samples.append(y0)
-    logger.info(f"  Baseline evaluated in {dt_baseline:.1f}s: {y0}")
+    if not X_samples:
+        logger.info(f"  Evaluating baseline parameters (timeout={SAMPLE_TIMEOUT_SEC}s)...")
+        t_baseline = time.time()
+        old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+        signal.alarm(SAMPLE_TIMEOUT_SEC)
+        try:
+            y0 = eval_to_flat(initial_vec)
+        except _LammpsTimeout:
+            logger.error(f"  FATAL: Baseline evaluation timed out after {SAMPLE_TIMEOUT_SEC}s. "
+                          f"The initial MEAM potential is too unstable for LAMMPS to minimize.")
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
+            raise RuntimeError(f"Baseline LAMMPS evaluation timed out after {SAMPLE_TIMEOUT_SEC}s")
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
+        dt_baseline = time.time() - t_baseline
+        X_samples.append(initial_vec)
+        y_samples.append(y0)
+        _checkpoint_now()
+        logger.info(f"  Baseline evaluated in {dt_baseline:.1f}s: {y0}")
+    else:
+        logger.info(f"  Skipping baseline — {len(X_samples)} samples already loaded from checkpoint")
 
-    # Generate all candidate perturbations upfront
-    n_candidates = n_samples * 3
+    # Generate candidate perturbations for the *remaining* sample budget
+    n_remaining = max(0, n_samples - len(X_samples))
+    n_candidates = n_remaining * 3
     candidates = []
     for _ in range(n_candidates):
         pert = 1.0 + (np.random.rand(len(initial_vec)) - 0.5) * 0.2
         candidates.append(initial_vec * pert)
-    logger.info(f"  Generated {n_candidates} candidate perturbations")
+    if n_candidates == 0:
+        logger.info(f"  Already have {len(X_samples)}/{n_samples} samples from checkpoint — "
+                    f"skipping perturbation phase")
+    else:
+        logger.info(f"  Generated {n_candidates} candidate perturbations "
+                    f"(need {n_remaining} more samples)")
 
     if _MPI_SIZE > 1:
         # ── MPI mode: scatter candidates across ranks ────────────────────
@@ -442,6 +556,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
                         break
                     X_samples.append(vec)
                     y_samples.append(y)
+                    _checkpoint_now()
                     logger.info(f"  Sample {len(X_samples)}/{n_samples}")
         # Broadcast collected samples to all ranks
         X_samples = _MPI_COMM.bcast(X_samples, root=0)
@@ -494,6 +609,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
                 elif valid >= n_entries // 2:
                     X_samples.append(vec)
                     y_samples.append(y)
+                    _checkpoint_now()
                     rate = len(X_samples) / elapsed if elapsed > 0 else 0
                     eta = (n_samples - len(X_samples)) / rate if rate > 0 else float('inf')
                     logger.info(f"  [{n_evaluated}/{n_candidates}] OK {len(X_samples)}/{n_samples} "
@@ -522,6 +638,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
             if valid >= n_entries // 2:
                 X_samples.append(vec)
                 y_samples.append(y)
+                _checkpoint_now()
                 rate = len(X_samples) / elapsed if elapsed > 0 else 0
                 logger.info(f"  [{idx+1}/{n_candidates}] OK {len(X_samples)}/{n_samples} accepted "
                             f"(valid={valid}/{n_entries}, {dt_sample:.1f}s, {elapsed:.0f}s elapsed)")
@@ -629,51 +746,67 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
     dt_phase3 = time.time() - t_phase3
     logger.info(f"  PHASE 3 total: {dt_phase3:.1f}s ({dt_phase3/60:.1f}min)")
 
-    # 4. Validate with LAMMPS
+    # 4. Held-out validation: run LAMMPS on the 30% the surrogate never saw
     t_phase4 = time.time()
     optimized_vec = v_opt.numpy()[0] * X_std + X_mean
     logger.info(f"\n{'='*60}")
-    logger.info(f"PHASE 4: Validating optimized parameters with LAMMPS")
+    logger.info(f"PHASE 4: Held-out validation on {n_val} alloys")
+    logger.info(f"  Source: {val_path}")
     logger.info(f"  Timeout: {SAMPLE_TIMEOUT_SEC}s")
     logger.info(f"{'='*60}")
     old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.alarm(SAMPLE_TIMEOUT_SEC)
     try:
-        y_final = eval_to_flat(optimized_vec)
+        val_pairs = eval_all_entries(optimized_vec, names, base_lib, base_params,
+                                     val_entries, tmp_dir)
     except _LammpsTimeout:
         logger.error(f"  Validation timed out after {SAMPLE_TIMEOUT_SEC}s — "
                       f"optimized potential may be unstable")
-        y_final = np.zeros(n_entries * 2)
+        val_pairs = [(0.0, 0.5)] * n_val
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, old_handler)
 
     logger.info("\n" + "=" * 60)
-    logger.info("OPTIMIZATION RESULTS")
+    logger.info("VALIDATION RESULTS (held-out — never seen during training)")
     logger.info("=" * 60)
-    entry_names = list(entries.keys())
-    final_predictions = []
-    for k, name in enumerate(entry_names):
-        E_target = entries[name]["E_GPa"]
-        nu_target = entries[name]["nu"]
-        # ``y_final`` is now [C11_1, C12_1, C11_2, C12_2, ...]; derive the
-        # reportable (E, nu) analytically.
-        C11_opt = float(y_final[k * 2])
-        C12_opt = float(y_final[k * 2 + 1])
-        E_arr, nu_arr = _cij_to_e_nu(np.array([C11_opt]), np.array([C12_opt]))
-        E_opt = float(E_arr[0])
-        nu_opt = float(nu_arr[0])
+    val_predictions = []
+    E_errs, nu_errs = [], []
+    for (name, data), (E_opt, nu_opt) in zip(val_entries.items(), val_pairs):
+        E_target = data["E_GPa"]
+        nu_target = data["nu"]
+        C11_t, C12_t = _target_cij(data)
+        C11_opt, C12_opt = _e_nu_pair_to_cij(E_opt, nu_opt)
         E_err = abs(E_opt - E_target) / max(abs(E_target), 1e-6) * 100
         nu_err = abs(nu_opt - nu_target) / max(abs(nu_target), 1e-6) * 100
         logger.info(f"  {name}:")
-        logger.info(f"    C11: opt={C11_opt:.2f}  C12: opt={C12_opt:.2f}")
-        logger.info(f"    E:  target={E_target:.2f}  opt={E_opt:.2f}  err={E_err:.1f}%")
-        logger.info(f"    nu: target={nu_target:.3f}  opt={nu_opt:.3f}  err={nu_err:.1f}%")
-        final_predictions.append({
+        logger.info(f"    C11: target={C11_t:.2f}  opt={C11_opt:.2f}")
+        logger.info(f"    C12: target={C12_t:.2f}  opt={C12_opt:.2f}")
+        logger.info(f"    E:   target={E_target:.2f}  opt={E_opt:.2f}  err={E_err:.1f}%")
+        logger.info(f"    nu:  target={nu_target:.3f}  opt={nu_opt:.3f}  err={nu_err:.1f}%")
+        val_predictions.append({
             "name": name,
+            "C11_target": C11_t, "C12_target": C12_t,
             "C11_opt": C11_opt, "C12_opt": C12_opt,
-            "E_opt": E_opt, "nu_opt": nu_opt,
+            "E_target": E_target, "E_opt": E_opt, "E_err_pct": round(E_err, 2),
+            "nu_target": nu_target, "nu_opt": nu_opt, "nu_err_pct": round(nu_err, 2),
         })
+        if E_opt > 0:
+            E_errs.append(E_err)
+            nu_errs.append(nu_err)
+
+    if E_errs:
+        val_rmse_e = float(np.sqrt(np.mean(np.array(E_errs) ** 2)))
+        val_rmse_nu = float(np.sqrt(np.mean(np.array(nu_errs) ** 2)))
+        val_mean_e = float(np.mean(E_errs))
+        val_mean_nu = float(np.mean(nu_errs))
+        logger.info(f"\n  Aggregate over {len(E_errs)}/{n_val} physically-valid alloys:")
+        logger.info(f"    E:  mean err {val_mean_e:.1f}%  RMSE {val_rmse_e:.1f}%")
+        logger.info(f"    nu: mean err {val_mean_nu:.1f}%  RMSE {val_rmse_nu:.1f}%")
+    else:
+        val_rmse_e = val_rmse_nu = val_mean_e = val_mean_nu = float("nan")
+        logger.warning(f"  No physically-valid val alloys — optimized potential may be broken")
+
     dt_phase4 = time.time() - t_phase4
     logger.info(f"  PHASE 4 total: {dt_phase4:.1f}s ({dt_phase4/60:.1f}min)")
     logger.info("=" * 60)
@@ -686,13 +819,23 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
         "param_names": list(names),
         "initial_vec": initial_vec.tolist(),
         "optimized_vec": optimized_vec.tolist(),
-        "target_vec_cij": target_vec.tolist(),
-        "target_vec_enu": target_vec_enu.tolist(),
+        "train_target_vec_cij": target_vec.tolist(),
+        "train_target_vec_enu": target_vec_enu.tolist(),
+        "train_path": train_path,
+        "val_path": val_path,
         "loss": "Huber",
         "huber_delta": HUBER_DELTA,
         "nu_filter_max": NU_FILTER_MAX,
         "C_reject_min": C_REJECT_MIN,
-        "final_predictions": final_predictions,
+        "val_predictions": val_predictions,
+        "val_metrics": {
+            "rmse_E_pct": val_rmse_e,
+            "rmse_nu_pct": val_rmse_nu,
+            "mean_E_pct": val_mean_e,
+            "mean_nu_pct": val_mean_nu,
+            "n_valid": len(E_errs),
+            "n_val": n_val,
+        },
     }
     with open(diag_path, "w") as f:
         json.dump(diagnostics, f, indent=2)
@@ -730,9 +873,19 @@ if __name__ == "__main__":
     parser.add_argument("--samples", type=int, default=150, help="Number of initial samples")
     parser.add_argument("--parallel", type=int, default=None,
                         help="Number of parallel workers (default: auto = cpu_count/2)")
-    parser.add_argument("--results", default=None, help="Path to results.json")
+    parser.add_argument("--train", default=None,
+                        help=f"Training-subset JSON (default: {DEFAULT_TRAIN_PATH})")
+    parser.add_argument("--val", default=None,
+                        help=f"Validation-subset JSON (default: {DEFAULT_VAL_PATH})")
+    parser.add_argument("--checkpoint", default=None,
+                        help="Phase-1 sample checkpoint path "
+                             "(default: nn_checkpoint.json next to this script)")
+    parser.add_argument("--no-resume", action="store_true",
+                        help="Ignore existing checkpoint and start sampling from scratch")
     args = parser.parse_args()
 
     os.environ["TK_SILENT"] = "1"
     optimize_nn(args.library, args.params, n_samples=args.samples,
-                results_path=args.results, n_parallel=args.parallel)
+                train_path=args.train, val_path=args.val,
+                n_parallel=args.parallel,
+                checkpoint_path=args.checkpoint, resume=not args.no_resume)

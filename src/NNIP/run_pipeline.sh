@@ -13,6 +13,8 @@
 #   --resume         Auto-detect completed stages and skip them
 #   --samples N      Number of NN parameter samples (default: 150)
 #   --parallel N     Max parallel DFT workers (default: 4)
+#   --clean          Remove NNIP-generated content and exit (no pipeline run).
+#                    DFT artifacts (dft_results.json, dft_scratch/) are always preserved.
 
 set -euo pipefail
 
@@ -85,9 +87,13 @@ fi
 # ── Parse flags vs element arguments ─────────────────────────────────────────
 FLAGS=()
 ELEMENTS=()
+CLEAN=false
 
 for arg in "$@"; do
     case "$arg" in
+        --clean)
+            CLEAN=true
+            ;;
         --skip-dft|--skip-optimize|--skip-verify|--resume)
             FLAGS+=("$arg")
             ;;
@@ -107,6 +113,44 @@ for arg in "$@"; do
             ;;
     esac
 done
+
+# ── --clean: remove NNIP-generated content and exit ──────────────────────────
+if $CLEAN; then
+    NNIP_DIR="$PROJECT_ROOT/src/NNIP"
+    EAM_DIR="$PROJECT_ROOT/EAM"
+    ML_DIR="$PROJECT_ROOT/src/ML"
+    echo "Cleaning NNIP-generated content..."
+    # DFT artifacts (dft_results.json, dft_scratch/) are deliberately excluded
+    # — they take hours of QE to regenerate. Delete those manually if needed.
+    paths_to_remove=(
+        "$NNIP_DIR/nn_checkpoint.json"
+        "$NNIP_DIR/nn_checkpoint.json.tmp"
+        "$NNIP_DIR/nn_diagnostics.json"
+        "$NNIP_DIR/pipeline_summary.json"
+        "$NNIP_DIR/tmp_nn"
+        "$EAM_DIR/dft_initialized"
+        "$EAM_DIR/optimized"
+        "$ML_DIR/results_train.json"
+        "$ML_DIR/results_val.json"
+    )
+    removed=0
+    for p in "${paths_to_remove[@]}"; do
+        if [ -e "$p" ]; then
+            rm -rf "$p"
+            echo "  removed: $p"
+            removed=$((removed + 1))
+        fi
+    done
+    # Pipeline-run logs (preserve the logs/ dir itself in case the user has other things in it)
+    if compgen -G "$NNIP_DIR/logs/pipeline_*.log" >/dev/null; then
+        rm -f "$NNIP_DIR"/logs/pipeline_*.log
+        echo "  removed: $NNIP_DIR/logs/pipeline_*.log"
+        removed=$((removed + 1))
+    fi
+    echo "Cleaned ($removed item(s))."
+    trap - EXIT   # skip the timer teardown — no pipeline ran
+    exit 0
+fi
 
 # Build python args
 PYARGS=()

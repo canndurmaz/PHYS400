@@ -88,7 +88,8 @@ def _stage4_complete(summary_path):
 
 def run_pipeline(elements=None, skip_dft=False, n_samples=150,
                  skip_optimize=False, skip_verify=False, n_parallel=4,
-                 no_plots=False, resume=False):
+                 no_plots=False, resume=False,
+                 k_representatives=100, val_frac=0.3, split_seed=0):
     """Run the full MEAM potential pipeline.
 
     Args:
@@ -100,6 +101,10 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=150,
         n_parallel: max parallel DFT workers (default: 4)
         no_plots: skip visualization generation
         resume: auto-detect completed stages and skip them
+        k_representatives: total k-means medoids picked from results.json
+                          before train/val split (default 100)
+        val_frac: fraction of representatives held out for validation (default 0.3)
+        split_seed: random seed for k-means + train/val split (default 0)
     """
     eam_dir = os.path.join(project_root, "EAM")
     meam_opt_dir = os.path.dirname(__file__)
@@ -226,6 +231,9 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=150,
 
     # ── Stage 3: NN Optimization ───────────────────────────────────────────
     t0 = time.time()
+    ml_dir = os.path.join(project_root, "src", "ML")
+    train_path = os.path.join(ml_dir, "results_train.json")
+    val_path = os.path.join(ml_dir, "results_val.json")
     if resume and _stage3_complete(eam_dir, elements):
         logger.info("\n[Stage 3] [RESUME] Optimized MEAM files found, skipping Stage 3")
         opt_dir = os.path.join(eam_dir, "optimized")
@@ -234,11 +242,31 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=150,
     elif not skip_optimize:
         logger.info("\n[Stage 3] NN Surrogate Optimization")
         logger.info("-" * 40)
-        from src.NNIP.nn_optimizer import optimize_nn
 
+        # Build k-means representative train/val split before sampling.
+        # Re-running this is cheap (~1 s) and guarantees the split matches
+        # the seed even if results.json grew since the last run.
+        from src.NNIP.select_representatives import build_subset
+        results_path = os.path.join(ml_dir, "results.json")
+        logger.info(f"  Building train/val split: k={k_representatives}, "
+                    f"val_frac={val_frac}, seed={split_seed}")
+        with open(results_path) as f:
+            full_results = json.load(f)
+        train, val = build_subset(full_results, k=k_representatives,
+                                  val_frac=val_frac, seed=split_seed)
+        with open(train_path, "w") as f:
+            json.dump(train, f, indent=2)
+        with open(val_path, "w") as f:
+            json.dump(val, f, indent=2)
+        logger.info(f"  {len(full_results)} alloys -> {len(train)} train + {len(val)} val")
+        logger.info(f"    train -> {train_path}")
+        logger.info(f"    val   -> {val_path}")
+
+        from src.NNIP.nn_optimizer import optimize_nn
         lib_opt, par_opt = optimize_nn(
             lib_init, par_init, n_samples=n_samples,
             n_parallel=n_parallel,
+            train_path=train_path, val_path=val_path,
         )
     else:
         logger.info("\n[Stage 3] Skipping NN optimization")
@@ -254,9 +282,9 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=150,
         with open(summary_path) as f:
             verification_results = json.load(f).get("verification")
     elif not skip_verify:
-        logger.info("\n[Stage 4] Verification")
+        logger.info("\n[Stage 4] Verification (held-out validation set)")
         logger.info("-" * 40)
-        verification_results = _verify_against_targets(lib_opt, par_opt)
+        verification_results = _verify_against_targets(lib_opt, par_opt, val_path)
     stage_timings["verification"] = round(time.time() - t0, 2)
 
     # ── Stage 5: Visualization ─────────────────────────────────────────────
@@ -292,17 +320,15 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=150,
     logger.info("=" * 60)
 
 
-def _verify_against_targets(lib_path, params_path):
-    """Verify optimized potential against results.json targets.
+def _verify_against_targets(lib_path, params_path, targets_path):
+    """Verify the optimized potential against the held-out validation set.
 
     Returns:
         dict: {name: {E_opt, E_target, E_err_pct, nu_opt, nu_target, nu_err_pct}}
     """
-    from src.NNIP.nn_optimizer import (
-        load_training_targets, _run_lammps_composition,
-    )
+    from src.NNIP.nn_optimizer import load_targets, _run_lammps_composition
 
-    entries = load_training_targets()
+    entries = load_targets(targets_path)
     total_E_err = 0
     total_nu_err = 0
     n = 0
@@ -376,6 +402,18 @@ def main():
         "--resume", action="store_true",
         help="Auto-detect completed stages and resume from where the pipeline left off"
     )
+    parser.add_argument(
+        "--k-representatives", type=int, default=100,
+        help="k-means medoids picked from results.json before train/val split (default: 100)"
+    )
+    parser.add_argument(
+        "--val-frac", type=float, default=0.3,
+        help="Fraction of representatives held out for validation (default: 0.3)"
+    )
+    parser.add_argument(
+        "--split-seed", type=int, default=0,
+        help="Seed for k-means and train/val split (default: 0)"
+    )
     args = parser.parse_args()
 
     os.environ["TK_SILENT"] = "1"
@@ -389,6 +427,9 @@ def main():
         n_parallel=args.parallel,
         no_plots=args.no_plots,
         resume=args.resume,
+        k_representatives=args.k_representatives,
+        val_frac=args.val_frac,
+        split_seed=args.split_seed,
     )
 
 
