@@ -11,7 +11,7 @@
 #   --skip-optimize  Skip NN optimization stage
 #   --skip-verify    Skip verification stage
 #   --resume         Auto-detect completed stages and skip them
-#   --samples N      Number of NN parameter samples (default: 150)
+#   --perturbations N  Number of MEAM parameter perturbations in Phase 1 (default: 150)
 #   --parallel N     Max parallel DFT workers (default: 4)
 #   --clean          Remove NNIP-generated content and exit (no pipeline run).
 #                    DFT artifacts (dft_results.json, dft_scratch/) are always preserved.
@@ -97,12 +97,12 @@ for arg in "$@"; do
         --skip-dft|--skip-optimize|--skip-verify|--resume)
             FLAGS+=("$arg")
             ;;
-        --samples|--parallel)
+        --perturbations|--parallel)
             FLAGS+=("$arg")
             ;;
         [0-9]*)
-            # Number following --samples or --parallel
-            if [[ "${FLAGS[-1]:-}" == "--samples" || "${FLAGS[-1]:-}" == "--parallel" ]]; then
+            # Number following --perturbations or --parallel
+            if [[ "${FLAGS[-1]:-}" == "--perturbations" || "${FLAGS[-1]:-}" == "--parallel" ]]; then
                 FLAGS+=("$arg")
             else
                 ELEMENTS+=("$arg")

@@ -341,7 +341,7 @@ def _save_checkpoint(path, config_hash, param_names, X_samples, y_samples):
 
 # ── NN Surrogate Optimization ────────────────────────────────────────────────
 
-def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
+def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
                 train_path=None, val_path=None, n_parallel=None,
                 checkpoint_path=None, resume=True):
     """Multi-target NN optimization with a held-out validation set.
@@ -355,7 +355,8 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
         lib_path: path to MEAM library file
         params_path: path to MEAM params file
         opt_spec: dict specifying which parameters to optimize
-        n_samples: number of parameter space samples
+        n_perturbations: number of MEAM parameter perturbations sampled in
+                         Phase 1 (each evaluated against every training alloy)
         train_path: path to training subset JSON (default:
                     src/ML/results_train.json — produced by
                     select_representatives.py)
@@ -453,7 +454,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
 
     # 1. Sample parameter space (parallel)
     logger.info(f"\n{'='*60}")
-    logger.info(f"PHASE 1: Sampling {n_samples} points ({n_parallel} workers)")
+    logger.info(f"PHASE 1: Sampling {n_perturbations} points ({n_parallel} workers)")
     logger.info(f"  Per-sample timeout: {SAMPLE_TIMEOUT_SEC}s")
     logger.info(f"{'='*60}")
     t_phase1 = time.time()
@@ -518,14 +519,14 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
         logger.info(f"  Skipping baseline — {len(X_samples)} samples already loaded from checkpoint")
 
     # Generate candidate perturbations for the *remaining* sample budget
-    n_remaining = max(0, n_samples - len(X_samples))
+    n_remaining = max(0, n_perturbations - len(X_samples))
     n_candidates = n_remaining * 3
     candidates = []
     for _ in range(n_candidates):
         pert = 1.0 + (np.random.rand(len(initial_vec)) - 0.5) * 0.2
         candidates.append(initial_vec * pert)
     if n_candidates == 0:
-        logger.info(f"  Already have {len(X_samples)}/{n_samples} samples from checkpoint — "
+        logger.info(f"  Already have {len(X_samples)}/{n_perturbations} samples from checkpoint — "
                     f"skipping perturbation phase")
     else:
         logger.info(f"  Generated {n_candidates} candidate perturbations "
@@ -546,18 +547,18 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
                 my_results.append((vec, y))
             status = "accepted" if valid >= n_entries // 2 else "rejected"
             logger.info(f"  Rank {_MPI_RANK}: [{i+1}/{len(my_candidates)}] {status} "
-                        f"(OK {len(my_results)}/{n_samples} on this rank, valid={valid}/{n_entries})")
+                        f"(OK {len(my_results)}/{n_perturbations} on this rank, valid={valid}/{n_entries})")
         # Gather to rank 0
         all_results = _MPI_COMM.gather(my_results, root=0)
         if _MPI_RANK == 0:
             for rank_results in all_results:
                 for vec, y in rank_results:
-                    if len(X_samples) >= n_samples:
+                    if len(X_samples) >= n_perturbations:
                         break
                     X_samples.append(vec)
                     y_samples.append(y)
                     _checkpoint_now()
-                    logger.info(f"  Sample {len(X_samples)}/{n_samples}")
+                    logger.info(f"  Sample {len(X_samples)}/{n_perturbations}")
         # Broadcast collected samples to all ranks
         X_samples = _MPI_COMM.bcast(X_samples, root=0)
         y_samples = _MPI_COMM.bcast(y_samples, root=0)
@@ -578,7 +579,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
                 futures[pool.submit(_eval_sample_worker, args)] = candidates[i]
 
             for future in as_completed(futures):
-                if len(X_samples) >= n_samples:
+                if len(X_samples) >= n_perturbations:
                     # Cancel all remaining futures
                     n_cancelled = 0
                     for f in futures:
@@ -595,7 +596,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
                 except Exception as e:
                     n_rejected += 1
                     logger.info(f"  [{n_evaluated}/{n_candidates}] Worker failed "
-                                f"(OK {len(X_samples)}/{n_samples}, {elapsed:.0f}s elapsed): {e}")
+                                f"(OK {len(X_samples)}/{n_perturbations}, {elapsed:.0f}s elapsed): {e}")
                     continue
                 vec = futures[future]
                 valid = sum(1 for k in range(0, len(y), 2) if y[k] > C_REJECT_MIN)
@@ -604,21 +605,21 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
                     n_timed_out += 1
                     n_rejected += 1
                     logger.info(f"  [{n_evaluated}/{n_candidates}] TIMED OUT "
-                                f"(OK {len(X_samples)}/{n_samples}, {elapsed:.0f}s elapsed, "
+                                f"(OK {len(X_samples)}/{n_perturbations}, {elapsed:.0f}s elapsed, "
                                 f"{n_timed_out} timeouts so far)")
                 elif valid >= n_entries // 2:
                     X_samples.append(vec)
                     y_samples.append(y)
                     _checkpoint_now()
                     rate = len(X_samples) / elapsed if elapsed > 0 else 0
-                    eta = (n_samples - len(X_samples)) / rate if rate > 0 else float('inf')
-                    logger.info(f"  [{n_evaluated}/{n_candidates}] OK {len(X_samples)}/{n_samples} "
+                    eta = (n_perturbations - len(X_samples)) / rate if rate > 0 else float('inf')
+                    logger.info(f"  [{n_evaluated}/{n_candidates}] OK {len(X_samples)}/{n_perturbations} "
                                 f"accepted (valid={valid}/{n_entries}, {elapsed:.0f}s elapsed, "
                                 f"rate={rate:.2f}/s, ETA={eta:.0f}s)")
                 else:
                     n_rejected += 1
                     logger.info(f"  [{n_evaluated}/{n_candidates}] Rejected "
-                                f"(OK {len(X_samples)}/{n_samples}, valid={valid}/{n_entries}, "
+                                f"(OK {len(X_samples)}/{n_perturbations}, valid={valid}/{n_entries}, "
                                 f"{elapsed:.0f}s elapsed, rejected={n_rejected})")
         elapsed = time.time() - t_sampling
         logger.info(f"  Parallel sampling done in {elapsed:.1f}s ({elapsed/60:.1f}min): "
@@ -628,7 +629,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
         t_seq = time.time()
         n_rejected_seq = 0
         for idx, vec in enumerate(candidates):
-            if len(X_samples) >= n_samples:
+            if len(X_samples) >= n_perturbations:
                 break
             t_sample = time.time()
             y = eval_to_flat(vec)
@@ -640,12 +641,12 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_samples=150,
                 y_samples.append(y)
                 _checkpoint_now()
                 rate = len(X_samples) / elapsed if elapsed > 0 else 0
-                logger.info(f"  [{idx+1}/{n_candidates}] OK {len(X_samples)}/{n_samples} accepted "
+                logger.info(f"  [{idx+1}/{n_candidates}] OK {len(X_samples)}/{n_perturbations} accepted "
                             f"(valid={valid}/{n_entries}, {dt_sample:.1f}s, {elapsed:.0f}s elapsed)")
             else:
                 n_rejected_seq += 1
                 logger.info(f"  [{idx+1}/{n_candidates}] Rejected "
-                            f"(OK {len(X_samples)}/{n_samples}, valid={valid}/{n_entries}, "
+                            f"(OK {len(X_samples)}/{n_perturbations}, valid={valid}/{n_entries}, "
                             f"{dt_sample:.1f}s, rejected={n_rejected_seq}, {elapsed:.0f}s elapsed)")
 
     # Clean up worker tmp dirs
@@ -870,7 +871,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Multi-Target NN MEAM Optimizer")
     parser.add_argument("--library", required=True, help="Path to MEAM library file")
     parser.add_argument("--params", required=True, help="Path to MEAM params file")
-    parser.add_argument("--samples", type=int, default=150, help="Number of initial samples")
+    parser.add_argument("--perturbations", type=int, default=150,
+                        help="Number of MEAM parameter perturbations sampled in Phase 1 (default: 150)")
     parser.add_argument("--parallel", type=int, default=None,
                         help="Number of parallel workers (default: auto = cpu_count/2)")
     parser.add_argument("--train", default=None,
@@ -885,7 +887,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["TK_SILENT"] = "1"
-    optimize_nn(args.library, args.params, n_samples=args.samples,
+    optimize_nn(args.library, args.params, n_perturbations=args.perturbations,
                 train_path=args.train, val_path=args.val,
                 n_parallel=args.parallel,
                 checkpoint_path=args.checkpoint, resume=not args.no_resume)

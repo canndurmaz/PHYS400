@@ -12,7 +12,7 @@ Usage:
     python pipeline.py                          # Auto-discover elements from EAM/
     python pipeline.py --elements Al Cu Zn Mg   # Specify elements explicitly
     python pipeline.py --skip-dft --elements Al Cu Zn Mg  # Skip DFT stage
-    python pipeline.py --samples 150            # More NN samples
+    python pipeline.py --perturbations 150      # More Phase-1 perturbations
 """
 
 import argparse
@@ -86,7 +86,7 @@ def _stage4_complete(summary_path):
         return False
 
 
-def run_pipeline(elements=None, skip_dft=False, n_samples=150,
+def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
                  skip_optimize=False, skip_verify=False, n_parallel=4,
                  no_plots=False, resume=False,
                  k_representatives=100, val_frac=0.3, split_seed=0):
@@ -95,7 +95,9 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=150,
     Args:
         elements: list of element symbols (auto-discovered from EAM if None)
         skip_dft: skip DFT reference calculations (use existing dft_results.json)
-        n_samples: number of NN parameter samples
+        n_perturbations: number of MEAM parameter perturbations sampled in
+                         Phase 1 of optimize_nn (each evaluated against every
+                         training alloy)
         skip_optimize: skip NN optimization stage
         skip_verify: skip verification stage
         n_parallel: max parallel DFT workers (default: 4)
@@ -264,7 +266,7 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=150,
 
         from src.NNIP.nn_optimizer import optimize_nn
         lib_opt, par_opt = optimize_nn(
-            lib_init, par_init, n_samples=n_samples,
+            lib_init, par_init, n_perturbations=n_perturbations,
             n_parallel=n_parallel,
             train_path=train_path, val_path=val_path,
         )
@@ -299,7 +301,7 @@ def run_pipeline(elements=None, skip_dft=False, n_samples=150,
     # ── Write pipeline summary ─────────────────────────────────────────────
     summary = {
         "elements": elements,
-        "n_samples": n_samples,
+        "n_perturbations": n_perturbations,
         "skip_dft": skip_dft,
         "skip_optimize": skip_optimize,
         "skip_verify": skip_verify,
@@ -387,8 +389,8 @@ def main():
         help="Skip verification stage"
     )
     parser.add_argument(
-        "--samples", type=int, default=150,
-        help="Number of NN parameter samples (default: 150)"
+        "--perturbations", type=int, default=150,
+        help="Number of MEAM parameter perturbations sampled in Phase 1 (default: 150)"
     )
     parser.add_argument(
         "--parallel", type=int, default=4,
@@ -421,7 +423,7 @@ def main():
     run_pipeline(
         elements=args.elements,
         skip_dft=args.skip_dft,
-        n_samples=args.samples,
+        n_perturbations=args.perturbations,
         skip_optimize=args.skip_optimize,
         skip_verify=args.skip_verify,
         n_parallel=args.parallel,
