@@ -7,14 +7,21 @@
 #   ./run_pipeline.sh --skip-dft Al Cu Zn Mg # Skip DFT stage
 #
 # Options (place before element list):
-#   --skip-dft       Use existing dft_results.json instead of running QE
-#   --skip-optimize  Skip NN optimization stage
-#   --skip-verify    Skip verification stage
-#   --resume         Auto-detect completed stages and skip them
-#   --perturbations N  Number of MEAM parameter perturbations in Phase 1 (default: 150)
-#   --parallel N     Max parallel DFT workers (default: 4)
-#   --clean          Remove NNIP-generated content and exit (no pipeline run).
-#                    DFT artifacts (dft_results.json, dft_scratch/) are always preserved.
+#   --skip-dft               Use existing dft_results.json instead of running QE
+#   --skip-optimize          Skip NN optimization stage
+#   --skip-verify            Skip verification stage
+#   --resume                 Auto-detect completed stages and skip them
+#   --no-plots               Skip the visualization stage
+#   --perturbations N        Phase-1 parameter perturbations (default: 150)
+#   --parallel N             Max parallel DFT/sampling workers (default: 4)
+#   --k-representatives N    k-means medoids picked from results.json before split (default: 100)
+#   --val-frac F             Fraction of representatives held out for validation (default: 0.3)
+#   --split-seed N           Seed for k-means + train/val split (default: 0)
+#   --clean                  Remove NNIP-generated content and exit (no pipeline run).
+#                            DFT artifacts (dft_results.json, dft_scratch/) are always preserved.
+#
+# Any --flag (and its value, if any) is forwarded to pipeline.py verbatim — the
+# wrapper no longer maintains a hardcoded allowlist.
 
 set -euo pipefail
 
@@ -94,15 +101,14 @@ for arg in "$@"; do
         --clean)
             CLEAN=true
             ;;
-        --skip-dft|--skip-optimize|--skip-verify|--resume)
-            FLAGS+=("$arg")
-            ;;
-        --perturbations|--parallel)
+        --*)
+            # Any --flag (including --foo=value) goes straight to pipeline.py
             FLAGS+=("$arg")
             ;;
         [0-9]*)
-            # Number following --perturbations or --parallel
-            if [[ "${FLAGS[-1]:-}" == "--perturbations" || "${FLAGS[-1]:-}" == "--parallel" ]]; then
+            # Bare number: a flag value if it follows a --flag, else an element
+            # (real element symbols all start with a capital letter, never a digit)
+            if [[ "${FLAGS[-1]:-}" == --* ]]; then
                 FLAGS+=("$arg")
             else
                 ELEMENTS+=("$arg")
