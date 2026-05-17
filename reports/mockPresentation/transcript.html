@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mock Presentation Transcript — Can Durmaz (PHYS 400)</title>
+<style>
+  :root {
+    --deepred: #8C1414;
+    --deepred-soft: #c47272;
+    --bg-block: #f4f4f4;
+    --bg-tip: #fef6e8;
+    --border-tip: #d9a441;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 4rem 0;
+    background: #fafafa;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--deepred);
+    color: white;
+    padding: 0.9rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    z-index: 10;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  header .meta {
+    font-size: 0.85rem;
+    opacity: 0.92;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  }
+  main {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .intro {
+    background: white;
+    border-left: 4px solid var(--deepred);
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  .intro strong { color: var(--text); }
+  .slide {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-block);
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--deepred);
+    color: white;
+    font-weight: 700;
+    font-size: 0.82rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.7rem;
+    flex-shrink: 0;
+  }
+  .slide-title {
+    font-weight: 600;
+    color: var(--deepred);
+    flex-grow: 1;
+    font-size: 1rem;
+  }
+  .timing {
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: white;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid #d8d8d8;
+  }
+  .transcript {
+    padding: 1.1rem 1.3rem 0.4rem 1.3rem;
+    font-size: 1.02rem;
+    line-height: 1.7;
+  }
+  .transcript em { color: var(--deepred); font-style: italic; }
+  .transcript .pause {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.85rem;
+  }
+  .tip {
+    background: var(--bg-tip);
+    border-top: 1px solid #ecdcb3;
+    border-left: 3px solid var(--border-tip);
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    color: #5a4a1f;
+    margin: 0.6rem 1rem 1rem 1rem;
+    border-radius: 3px;
+  }
+  .tip strong { color: #3a2f0d; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 2rem;
+    padding: 0 1rem;
+  }
+  @media print {
+    header { position: static; box-shadow: none; }
+    .slide { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mock Presentation Transcript &mdash; Can Durmaz</h1>
+  <div class="meta">PHYS&nbsp;400 &middot; 5&nbsp;slides &middot; target&nbsp;3:00</div>
+</header>
+
+<main>
+
+<div class="intro">
+  <strong>How to use this:</strong> Each slide has a target time budget. Words in
+  <em>red italics</em> are emphasis points &mdash; slow down briefly. The
+  <span class="pause">(beat)</span> markers are short pauses (about half a second) &mdash; they let the
+  audience absorb a transition. Yellow tip boxes are delivery cues, not spoken.
+</div>
+
+<!-- Slide 1 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">1</span>
+    <span class="slide-title">Title</span>
+    <span class="timing">~15&nbsp;s &middot; ~35&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Good morning. I'm Can Durmaz. My project builds an <em>automated pipeline</em>
+    for constructing multi-element MEAM interatomic potentials, using DFT
+    references and neural-network optimization &mdash; so we can simulate
+    <em>arbitrary metallic alloys</em> without hand-fitting potentials.
+  </div>
+  <div class="tip"><strong>Delivery:</strong> Don't rush the title slide. Look up, make eye contact, then advance.</div>
+</section>
+
+<!-- Slide 2 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">2</span>
+    <span class="slide-title">The Problem</span>
+    <span class="timing">~30&nbsp;s &middot; ~75&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    The motivation is practical. Industrial alloys like <em>Al&nbsp;7075</em> are
+    chosen for their elastic properties &mdash; stiffness and Poisson's ratio.
+    Measuring those experimentally is <em>slow and expensive</em>.
+    <span class="pause">(beat)</span>
+    Molecular dynamics can predict them cheaply, but only with an accurate
+    interatomic potential. For metals, MEAM is the standard. So the goal is
+    simple: build a pipeline that produces a working MEAM potential for
+    <em>any</em> combination of elements.
+  </div>
+  <div class="tip"><strong>Delivery:</strong> The (beat) is your transition from "the pain" to "the goal." Let it land.</div>
+</section>
+
+<!-- Slide 3 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">3</span>
+    <span class="slide-title">Why Existing Approaches Fall Short</span>
+    <span class="timing">~40&nbsp;s &middot; ~90&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Here's the obstacle. Published MEAM files cover only <em>small subsets</em>
+    of elements &mdash; this table shows four of them. Al&nbsp;7075 needs nine
+    elements; <em>no single file covers all of them</em>.
+    <span class="pause">(beat)</span>
+    And when you try to merge files, the cross-interaction parameters between
+    elements from different sources are simply undefined &mdash; so the
+    simulation can't even run. The obvious alternative, pure machine-learning
+    potentials, works but demands enormous training datasets and throws away
+    MEAM's transparency. We want a <em>middle path</em>.
+  </div>
+  <div class="tip"><strong>Delivery:</strong> Gesture to the table when you say "this table shows four." Don't read it &mdash; the audience can see it.</div>
+</section>
+
+<!-- Slide 4 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">4</span>
+    <span class="slide-title">Pipeline Overview</span>
+    <span class="timing">~55&nbsp;s &middot; ~140&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    That middle path is this <em>five-stage pipeline</em>. Stage&nbsp;1 generates
+    random alloy compositions. Stage&nbsp;2 runs each composition through LAMMPS
+    to measure its elastic properties &mdash; Young's modulus, Poisson's ratio,
+    and the elastic constants. Stage&nbsp;3 runs DFT in Quantum Espresso for
+    every element and every binary pair, producing first-principles reference
+    values. Stage&nbsp;4 uses those DFT results to initialize a <em>merged,
+    multi-element MEAM library</em> &mdash; including the missing cross-terms.
+    <span class="pause">(beat)</span>
+    Stage&nbsp;5, shown dashed and planned for next semester, will train a
+    neural-network surrogate on Stage&nbsp;2's data, then inverse-optimize the
+    MEAM parameters to hit target elastic properties. The blue dashed branch
+    above is a separate ML sanity check &mdash; it predicts elastic properties
+    from composition, validates the dataset, but never feeds back into the
+    fitting loop.
+  </div>
+  <div class="tip"><strong>Delivery:</strong> This is the longest slide &mdash; sweep left-to-right with your hand or pointer as you name each stage. Slow down on Stage 5 (it's the most novel part).</div>
+</section>
+
+<!-- Slide 5 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">5</span>
+    <span class="slide-title">Pipeline Stages at a Glance</span>
+    <span class="timing">~30&nbsp;s &middot; ~65&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    To summarize: Stages&nbsp;1 through&nbsp;4 are <em>complete</em> &mdash; the
+    dataset, the DFT reference, and the DFT-seeded MEAM library are all in
+    place. Stage&nbsp;5 is what closes the loop: a neural-network surrogate
+    that lets us inverse-optimize MEAM parameters against the LAMMPS-measured
+    elastic targets &mdash; with <em>no further experimental input</em>.
+    That's the project.
+  </div>
+  <div class="tip"><strong>Delivery:</strong> End firmly on "That's the project." &mdash; don't trail off. Pause, then step back from the podium to signal you're done.</div>
+</section>
+
+<footer>
+  Total target: ~3:00 &middot; Total words: ~405 &middot; Pace: ~135 WPM
+</footer>
+
+</main>
+</body>
+</html>

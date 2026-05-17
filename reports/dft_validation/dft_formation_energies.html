@@ -61,18 +61,18 @@
 <h1>DFT Binary Formation Energies — Validation Against Literature</h1>
 <p class="subtitle">
   Comparison of <code>src/NNIP/dft_results.json</code> against published
-  formation energies. Regenerated 2026-05-17 after fixing the reference-leakage
+  formation energies. Regenerated 2026-05-18 after fixing the reference-leakage
   bug and adding spin-polarised initial moments for Fe/Cr/Mn.
   Quantum Espresso 7.5, PBE+PAW, L1₂/B2 reference structures, unrelaxed cells.
 </p>
 
 <div class="summary-stats">
-  <div class="stat"><div class="val">0</div><div class="lab">computed pairs</div></div>
-  <div class="stat"><div class="val">0</div><div class="lab">|Δ|&lt;0.20 eV/at</div></div>
-  <div class="stat"><div class="val">0</div><div class="lab">0.20–1.00 eV/at</div></div>
-  <div class="stat"><div class="val">0</div><div class="lab">&gt;1.00 eV/at</div></div>
-  <div class="stat"><div class="val">43</div><div class="lab">no DFT data</div></div>
-  <div class="stat"><div class="val">+0.00</div><div class="lab">mean Δ (eV/atom)</div></div>
+  <div class="stat"><div class="val">43</div><div class="lab">computed pairs</div></div>
+  <div class="stat"><div class="val">10</div><div class="lab">|Δ|&lt;0.20 eV/at</div></div>
+  <div class="stat"><div class="val">23</div><div class="lab">0.20–1.00 eV/at</div></div>
+  <div class="stat"><div class="val">10</div><div class="lab">&gt;1.00 eV/at</div></div>
+  <div class="stat"><div class="val">0</div><div class="lab">no DFT data</div></div>
+  <div class="stat"><div class="val">+0.72</div><div class="lab">mean Δ (eV/atom)</div></div>
 </div>
 
 <div class="panel info">
@@ -143,15 +143,15 @@
   <th class="num">e_bulk_per_atom (eV)</th>
 </tr></thead>
 <tbody>
-<tr class="bad"><td>Al</td><td>—</td><td class="num">—</td><td class="num">4.05</td><td class="num">—</td><td class="num">3.39</td><td class="num">—</td><td class="num">76</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-<tr class="bad"><td>Cu</td><td>—</td><td class="num">—</td><td class="num">3.61</td><td class="num">—</td><td class="num">3.49</td><td class="num">—</td><td class="num">137</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-<tr class="bad"><td>Si</td><td>—</td><td class="num">—</td><td class="num">5.43</td><td class="num">—</td><td class="num">4.63</td><td class="num">—</td><td class="num">98</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-<tr class="bad"><td>Ti</td><td>—</td><td class="num">—</td><td class="num">2.95</td><td class="num">—</td><td class="num">4.85</td><td class="num">—</td><td class="num">110</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-<tr class="bad"><td>Zn</td><td>—</td><td class="num">—</td><td class="num">2.66</td><td class="num">—</td><td class="num">1.35</td><td class="num">—</td><td class="num">70</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-<tr class="bad"><td>Cr</td><td>—</td><td class="num">—</td><td class="num">2.88</td><td class="num">—</td><td class="num">4.10</td><td class="num">—</td><td class="num">160</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-<tr class="bad"><td>Fe</td><td>—</td><td class="num">—</td><td class="num">2.87</td><td class="num">—</td><td class="num">4.28</td><td class="num">—</td><td class="num">170</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+<tr class="ok"><td>Al</td><td>fcc</td><td class="num">4.047</td><td class="num">4.05</td><td class="num">3.61</td><td class="num">3.39</td><td class="num">77.5</td><td class="num">76</td><td class="num">167.1</td><td class="num">32.6</td><td class="num">-537.53</td></tr>
+<tr class="ok"><td>Cu</td><td>fcc</td><td class="num">3.639</td><td class="num">3.61</td><td class="num">3.86</td><td class="num">3.49</td><td class="num">138.5</td><td class="num">137</td><td class="num">135.1</td><td class="num">127.5</td><td class="num">-2899.21</td></tr>
+<tr class="ok"><td>Si</td><td>diamond</td><td class="num">5.471</td><td class="num">5.43</td><td class="num">5.13</td><td class="num">4.63</td><td class="num">89.3</td><td class="num">98</td><td class="num">—</td><td class="num">—</td><td class="num">-635.74</td></tr>
+<tr class="ok"><td>Ti</td><td>hcp</td><td class="num">2.915</td><td class="num">2.95</td><td class="num">6.28</td><td class="num">4.85</td><td class="num">114.5</td><td class="num">110</td><td class="num">—</td><td class="num">—</td><td class="num">-2499.14</td></tr>
+<tr class="ok"><td>Zn</td><td>hcp</td><td class="num">2.766</td><td class="num">2.66</td><td class="num">0.96</td><td class="num">1.35</td><td class="num">68.4</td><td class="num">70</td><td class="num">—</td><td class="num">—</td><td class="num">-3315.80</td></tr>
+<tr class="ok"><td>Cr</td><td>bcc</td><td class="num">2.848</td><td class="num">2.88</td><td class="num">3.96</td><td class="num">4.10</td><td class="num">213.1</td><td class="num">160</td><td class="num">377.3</td><td class="num">23.6</td><td class="num">-3376.95</td></tr>
+<tr class="ok"><td>Fe</td><td>bcc</td><td class="num">2.806</td><td class="num">2.87</td><td class="num">6.83</td><td class="num">4.28</td><td class="num">420.5</td><td class="num">170</td><td class="num">16.7</td><td class="num">114.4</td><td class="num">-4477.09</td></tr>
 <tr class="ok"><td>Mg</td><td>hcp</td><td class="num">3.177</td><td class="num">3.21</td><td class="num">1.48</td><td class="num">1.51</td><td class="num">47.8</td><td class="num">36</td><td class="num">78.9</td><td class="num">32.2</td><td class="num">-1923.17</td></tr>
-<tr class="bad"><td>Mn</td><td>—</td><td class="num">—</td><td class="num">2.89</td><td class="num">—</td><td class="num">2.92</td><td class="num">—</td><td class="num">120</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+<tr class="ok"><td>Mn</td><td>bcc</td><td class="num">2.803</td><td class="num">2.89</td><td class="num">3.73</td><td class="num">2.92</td><td class="num">225.7</td><td class="num">120</td><td class="num">235.0</td><td class="num">244.7</td><td class="num">-3898.14</td></tr>
 <tr class="ok"><td>Mo</td><td>bcc</td><td class="num">3.169</td><td class="num">3.15</td><td class="num">10.35</td><td class="num">6.82</td><td class="num">280.8</td><td class="num">230</td><td class="num">407.6</td><td class="num">63.2</td><td class="num">-1910.21</td></tr>
 </tbody>
 </table>
@@ -160,7 +160,7 @@
   cubic (fcc/bcc) elements.
 </p>
 
-<h2 id="pairs">3. Pair-by-pair comparison (0/43 computed)</h2>
+<h2 id="pairs">3. Pair-by-pair comparison (43/43 computed)</h2>
 <div class="legend">
   <span><span class="swatch" style="background:var(--ok-bg)"></span>|Δ| &lt; 0.20 eV/atom (match)</span>
   <span><span class="swatch" style="background:var(--warn-bg)"></span>0.20–1.00 eV/atom (consistent with unrelaxed cell)</span>
@@ -179,27 +179,27 @@
   <th>GS phase</th><th class="num">Δ vs same-cell</th><th>Status</th>
 </tr></thead>
 <tbody>
-<tr class="bad"><td>Al-Cu</td><td>L1₂ (Al₃Cu)</td><td class="num">— (no data)</td><td class="num">+0.04 [a]</td><td class="num">-0.16 [g]</td><td>θ-Al₂Cu (C16)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Al-Mg</td><td>L1₂ (Al₃Mg)</td><td class="num">— (no data)</td><td class="num">+0.05 [a]</td><td class="num">-0.06 [g]</td><td>Al₃Mg₂ (β)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Al-Mo</td><td>B2 (AlMo)</td><td class="num">— (no data)</td><td class="num">+0.05 [a]</td><td class="num">-0.32 [g]</td><td>Al₈Mo₃</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Al-Si</td><td>L1₂ (Al₃Si)</td><td class="num">— (no data)</td><td class="num">+0.08 [b]</td><td class="num">+0.00 [g]</td><td>— (eutectic)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Al-Ti</td><td>L1₂ (Al₃Ti)</td><td class="num">— (no data)</td><td class="num">+0.06 [c]</td><td class="num">-0.41 [c]</td><td>Al₃Ti (D0₂₂)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Al-Zn</td><td>L1₂ (Al₃Zn)</td><td class="num">— (no data)</td><td class="num">+0.05 [a]</td><td class="num">+0.02 [g]</td><td>— (eutectic)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cu-Mg</td><td>L1₂ (Cu₃Mg)</td><td class="num">— (no data)</td><td class="num">-0.05 [a]</td><td class="num">-0.10 [g]</td><td>MgCu₂ (Laves C15)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cu-Mo</td><td>B2 (CuMo)</td><td class="num">— (no data)</td><td class="num">+0.40 [a]</td><td class="num">+0.15 [g]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cu-Si</td><td>L1₂ (Cu₃Si)</td><td class="num">— (no data)</td><td class="num">-0.05 [a]</td><td class="num">-0.07 [g]</td><td>η-Cu₃Si</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cu-Ti</td><td>L1₂ (Cu₃Ti)</td><td class="num">— (no data)</td><td class="num">-0.20 [d]</td><td class="num">-0.30 [d]</td><td>Cu₃Ti (D0_a)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cu-Zn</td><td>L1₂ (Cu₃Zn)</td><td class="num">— (no data)</td><td class="num">-0.04 [a]</td><td class="num">-0.05 [g]</td><td>CuZn (B2, β-brass)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mg-Mo</td><td>B2 (MgMo)</td><td class="num">— (no data)</td><td class="num">+0.50 [f]</td><td class="num">+0.40 [f]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mg-Si</td><td>L1₂ (Mg₃Si)</td><td class="num">— (no data)</td><td class="num">-0.05 [a]</td><td class="num">-0.21 [g]</td><td>Mg₂Si (anti-fluorite)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mg-Ti</td><td>B2 (MgTi)</td><td class="num">— (no data)</td><td class="num">+0.10 [f]</td><td class="num">+0.10 [f]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mg-Zn</td><td>B2 (MgZn)</td><td class="num">— (no data)</td><td class="num">+0.02 [a]</td><td class="num">-0.11 [g]</td><td>MgZn₂ (Laves C14)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mo-Si</td><td>B2 (MoSi)</td><td class="num">— (no data)</td><td class="num">-0.20 [a]</td><td class="num">-0.45 [g]</td><td>MoSi₂ (C11b)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mo-Ti</td><td>B2 (MoTi)</td><td class="num">— (no data)</td><td class="num">+0.05 [a]</td><td class="num">+0.05 [g]</td><td>— (BCC SS)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mo-Zn</td><td>B2 (MoZn)</td><td class="num">— (no data)</td><td class="num">+0.30 [f]</td><td class="num">+0.30 [f]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Si-Ti</td><td>L1₂ (Si₃Ti)</td><td class="num">— (no data)</td><td class="num">-0.05 [b]</td><td class="num">-0.66 [g]</td><td>Ti₅Si₃ (D8₈)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Si-Zn</td><td>L1₂ (Si₃Zn)</td><td class="num">— (no data)</td><td class="num">+0.10 [b]</td><td class="num">+0.10 [f]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Ti-Zn</td><td>B2 (TiZn)</td><td class="num">— (no data)</td><td class="num">+0.05 [b]</td><td class="num">-0.12 [b]</td><td>TiZn₃ (L1₂)</td><td class="num delta">—</td><td class="status">missing</td></tr>
+<tr class="ok"><td>Al-Cu</td><td>L1₂ (Al₃Cu)</td><td class="num">+0.03</td><td class="num">+0.04 [a]</td><td class="num">-0.16 [g]</td><td>θ-Al₂Cu (C16)</td><td class="num delta">-0.01</td><td class="status">match</td></tr>
+<tr class="warn"><td>Al-Mg</td><td>L1₂ (Al₃Mg)</td><td class="num">+0.81</td><td class="num">+0.05 [a]</td><td class="num">-0.06 [g]</td><td>Al₃Mg₂ (β)</td><td class="num delta">+0.76</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="bad"><td>Al-Mo</td><td>B2 (AlMo)</td><td class="num">+1.21</td><td class="num">+0.05 [a]</td><td class="num">-0.32 [g]</td><td>Al₈Mo₃</td><td class="num delta">+1.16</td><td class="status">unphysical</td></tr>
+<tr class="warn"><td>Al-Si</td><td>L1₂ (Al₃Si)</td><td class="num">+0.83</td><td class="num">+0.08 [b]</td><td class="num">+0.00 [g]</td><td>— (eutectic)</td><td class="num delta">+0.75</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Al-Ti</td><td>L1₂ (Al₃Ti)</td><td class="num">+0.68</td><td class="num">+0.06 [c]</td><td class="num">-0.41 [c]</td><td>Al₃Ti (D0₂₂)</td><td class="num delta">+0.62</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="bad"><td>Al-Zn</td><td>L1₂ (Al₃Zn)</td><td class="num">+1.82</td><td class="num">+0.05 [a]</td><td class="num">+0.02 [g]</td><td>— (eutectic)</td><td class="num delta">+1.77</td><td class="status">unphysical</td></tr>
+<tr class="warn"><td>Cu-Mg</td><td>L1₂ (Cu₃Mg)</td><td class="num">+0.41</td><td class="num">-0.05 [a]</td><td class="num">-0.10 [g]</td><td>MgCu₂ (Laves C15)</td><td class="num delta">+0.46</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Cu-Mo</td><td>B2 (CuMo)</td><td class="num">+1.19</td><td class="num">+0.40 [a]</td><td class="num">+0.15 [g]</td><td>— (immiscible)</td><td class="num delta">+0.79</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="bad"><td>Cu-Si</td><td>L1₂ (Cu₃Si)</td><td class="num">+1.11</td><td class="num">-0.05 [a]</td><td class="num">-0.07 [g]</td><td>η-Cu₃Si</td><td class="num delta">+1.16</td><td class="status">unphysical</td></tr>
+<tr class="bad"><td>Cu-Ti</td><td>L1₂ (Cu₃Ti)</td><td class="num">+1.51</td><td class="num">-0.20 [d]</td><td class="num">-0.30 [d]</td><td>Cu₃Ti (D0_a)</td><td class="num delta">+1.71</td><td class="status">unphysical</td></tr>
+<tr class="bad"><td>Cu-Zn</td><td>L1₂ (Cu₃Zn)</td><td class="num">+1.72</td><td class="num">-0.04 [a]</td><td class="num">-0.05 [g]</td><td>CuZn (B2, β-brass)</td><td class="num delta">+1.76</td><td class="status">unphysical</td></tr>
+<tr class="warn"><td>Mg-Mo</td><td>B2 (MgMo)</td><td class="num">+0.88</td><td class="num">+0.50 [f]</td><td class="num">+0.40 [f]</td><td>— (immiscible)</td><td class="num delta">+0.38</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="ok"><td>Mg-Si</td><td>L1₂ (Mg₃Si)</td><td class="num">-0.06</td><td class="num">-0.05 [a]</td><td class="num">-0.21 [g]</td><td>Mg₂Si (anti-fluorite)</td><td class="num delta">-0.01</td><td class="status">match</td></tr>
+<tr class="warn"><td>Mg-Ti</td><td>B2 (MgTi)</td><td class="num">+0.55</td><td class="num">+0.10 [f]</td><td class="num">+0.10 [f]</td><td>— (immiscible)</td><td class="num delta">+0.45</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Mg-Zn</td><td>B2 (MgZn)</td><td class="num">+0.27</td><td class="num">+0.02 [a]</td><td class="num">-0.11 [g]</td><td>MgZn₂ (Laves C14)</td><td class="num delta">+0.25</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="bad"><td>Mo-Si</td><td>B2 (MoSi)</td><td class="num">+4.05</td><td class="num">-0.20 [a]</td><td class="num">-0.45 [g]</td><td>MoSi₂ (C11b)</td><td class="num delta">+4.25</td><td class="status">unphysical</td></tr>
+<tr class="ok"><td>Mo-Ti</td><td>B2 (MoTi)</td><td class="num">+0.09</td><td class="num">+0.05 [a]</td><td class="num">+0.05 [g]</td><td>— (BCC SS)</td><td class="num delta">+0.04</td><td class="status">match</td></tr>
+<tr class="warn"><td>Mo-Zn</td><td>B2 (MoZn)</td><td class="num">+0.68</td><td class="num">+0.30 [f]</td><td class="num">+0.30 [f]</td><td>— (immiscible)</td><td class="num delta">+0.38</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Si-Ti</td><td>L1₂ (Si₃Ti)</td><td class="num">+0.21</td><td class="num">-0.05 [b]</td><td class="num">-0.66 [g]</td><td>Ti₅Si₃ (D8₈)</td><td class="num delta">+0.26</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Si-Zn</td><td>L1₂ (Si₃Zn)</td><td class="num">+0.47</td><td class="num">+0.10 [b]</td><td class="num">+0.10 [f]</td><td>— (immiscible)</td><td class="num delta">+0.37</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Ti-Zn</td><td>B2 (TiZn)</td><td class="num">+0.58</td><td class="num">+0.05 [b]</td><td class="num">-0.12 [b]</td><td>TiZn₃ (L1₂)</td><td class="num delta">+0.53</td><td class="status">high (unrelaxed)</td></tr>
 </tbody>
 </table>
 
@@ -216,28 +216,28 @@
   <th>GS phase</th><th class="num">Δ vs same-cell</th><th>Status</th>
 </tr></thead>
 <tbody>
-<tr class="bad"><td>Al-Cr</td><td>B2 (AlCr)</td><td class="num">— (no data)</td><td class="num">-0.10 [a]</td><td class="num">-0.20 [g]</td><td>Al₈Cr₅ (D8₁₀)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Al-Fe</td><td>B2 (AlFe)</td><td class="num">— (no data)</td><td class="num">-0.31 [a]</td><td class="num">-0.31 [g]</td><td>FeAl (B2)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Al-Mn</td><td>B2 (AlMn)</td><td class="num">— (no data)</td><td class="num">-0.18 [a]</td><td class="num">-0.21 [g]</td><td>Al₆Mn</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cr-Cu</td><td>B2 (CrCu)</td><td class="num">— (no data)</td><td class="num">+0.40 [a]</td><td class="num">+0.06 [g]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cr-Fe</td><td>B2 (CrFe)</td><td class="num">— (no data)</td><td class="num">+0.30 [e]</td><td class="num">-0.04 [g]</td><td>σ-FeCr</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cr-Mg</td><td>B2 (CrMg)</td><td class="num">— (no data)</td><td class="num">+0.40 [f]</td><td class="num">+0.15 [f]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cr-Mo</td><td>B2 (CrMo)</td><td class="num">— (no data)</td><td class="num">+0.10 [a]</td><td class="num">+0.02 [g]</td><td>— (BCC SS)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cr-Si</td><td>B2 (CrSi)</td><td class="num">— (no data)</td><td class="num">-0.40 [a]</td><td class="num">-0.40 [g]</td><td>CrSi (B20)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cr-Ti</td><td>B2 (CrTi)</td><td class="num">— (no data)</td><td class="num">-0.05 [a]</td><td class="num">-0.11 [g]</td><td>TiCr₂ (Laves C14)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cr-Zn</td><td>B2 (CrZn)</td><td class="num">— (no data)</td><td class="num">+0.20 [a]</td><td class="num">+0.20 [f]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cu-Fe</td><td>B2 (CuFe)</td><td class="num">— (no data)</td><td class="num">+0.20 [a]</td><td class="num">+0.05 [g]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Cu-Mn</td><td>B2 (CuMn)</td><td class="num">— (no data)</td><td class="num">-0.02 [a]</td><td class="num">-0.02 [f]</td><td>— (γ-CuMn AFM SS)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Fe-Mg</td><td>B2 (FeMg)</td><td class="num">— (no data)</td><td class="num">+0.50 [f]</td><td class="num">+0.20 [f]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Fe-Mo</td><td>B2 (FeMo)</td><td class="num">— (no data)</td><td class="num">+0.15 [a]</td><td class="num">-0.05 [g]</td><td>Fe₂Mo (Laves C14)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Fe-Si</td><td>B2 (FeSi)</td><td class="num">— (no data)</td><td class="num">-0.39 [a]</td><td class="num">-0.39 [g]</td><td>FeSi (B20)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Fe-Ti</td><td>B2 (FeTi)</td><td class="num">— (no data)</td><td class="num">-0.34 [a]</td><td class="num">-0.34 [g]</td><td>FeTi (B2)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Fe-Zn</td><td>B2 (FeZn)</td><td class="num">— (no data)</td><td class="num">+0.05 [a]</td><td class="num">-0.02 [g]</td><td>FeZn₁₃ (cmplx)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mg-Mn</td><td>B2 (MgMn)</td><td class="num">— (no data)</td><td class="num">+0.20 [f]</td><td class="num">+0.20 [f]</td><td>— (immiscible)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mn-Mo</td><td>B2 (MnMo)</td><td class="num">— (no data)</td><td class="num">+0.08 [a]</td><td class="num">+0.05 [g]</td><td>— (σ at high T)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mn-Si</td><td>B2 (MnSi)</td><td class="num">— (no data)</td><td class="num">-0.42 [a]</td><td class="num">-0.42 [g]</td><td>MnSi (B20)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mn-Ti</td><td>B2 (MnTi)</td><td class="num">— (no data)</td><td class="num">+0.05 [a]</td><td class="num">+0.02 [f]</td><td>MnTi (B2 metastable)</td><td class="num delta">—</td><td class="status">missing</td></tr>
-<tr class="bad"><td>Mn-Zn</td><td>B2 (MnZn)</td><td class="num">— (no data)</td><td class="num">-0.05 [a]</td><td class="num">-0.05 [g]</td><td>MnZn (B2)</td><td class="num delta">—</td><td class="status">missing</td></tr>
+<tr class="warn"><td>Al-Cr</td><td>B2 (AlCr)</td><td class="num">+0.62</td><td class="num">-0.10 [a]</td><td class="num">-0.20 [g]</td><td>Al₈Cr₅ (D8₁₀)</td><td class="num delta">+0.72</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="bad"><td>Al-Fe</td><td>B2 (AlFe)</td><td class="num">+0.80</td><td class="num">-0.31 [a]</td><td class="num">-0.31 [g]</td><td>FeAl (B2)</td><td class="num delta">+1.11</td><td class="status">unphysical</td></tr>
+<tr class="warn"><td>Al-Mn</td><td>B2 (AlMn)</td><td class="num">+0.41</td><td class="num">-0.18 [a]</td><td class="num">-0.21 [g]</td><td>Al₆Mn</td><td class="num delta">+0.59</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Cr-Cu</td><td>B2 (CrCu)</td><td class="num">+0.70</td><td class="num">+0.40 [a]</td><td class="num">+0.06 [g]</td><td>— (immiscible)</td><td class="num delta">+0.30</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="ok"><td>Cr-Fe</td><td>B2 (CrFe)</td><td class="num">+0.27</td><td class="num">+0.30 [e]</td><td class="num">-0.04 [g]</td><td>σ-FeCr</td><td class="num delta">-0.03</td><td class="status">match</td></tr>
+<tr class="warn"><td>Cr-Mg</td><td>B2 (CrMg)</td><td class="num">+0.80</td><td class="num">+0.40 [f]</td><td class="num">+0.15 [f]</td><td>— (immiscible)</td><td class="num delta">+0.40</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="ok"><td>Cr-Mo</td><td>B2 (CrMo)</td><td class="num">+0.11</td><td class="num">+0.10 [a]</td><td class="num">+0.02 [g]</td><td>— (BCC SS)</td><td class="num delta">+0.01</td><td class="status">match</td></tr>
+<tr class="bad"><td>Cr-Si</td><td>B2 (CrSi)</td><td class="num">+2.26</td><td class="num">-0.40 [a]</td><td class="num">-0.40 [g]</td><td>CrSi (B20)</td><td class="num delta">+2.66</td><td class="status">unphysical</td></tr>
+<tr class="warn"><td>Cr-Ti</td><td>B2 (CrTi)</td><td class="num">+0.19</td><td class="num">-0.05 [a]</td><td class="num">-0.11 [g]</td><td>TiCr₂ (Laves C14)</td><td class="num delta">+0.24</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Cr-Zn</td><td>B2 (CrZn)</td><td class="num">+0.65</td><td class="num">+0.20 [a]</td><td class="num">+0.20 [f]</td><td>— (immiscible)</td><td class="num delta">+0.45</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Cu-Fe</td><td>B2 (CuFe)</td><td class="num">+0.76</td><td class="num">+0.20 [a]</td><td class="num">+0.05 [g]</td><td>— (immiscible)</td><td class="num delta">+0.56</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Cu-Mn</td><td>B2 (CuMn)</td><td class="num">+0.34</td><td class="num">-0.02 [a]</td><td class="num">-0.02 [f]</td><td>— (γ-CuMn AFM SS)</td><td class="num delta">+0.36</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="ok"><td>Fe-Mg</td><td>B2 (FeMg)</td><td class="num">+0.46</td><td class="num">+0.50 [f]</td><td class="num">+0.20 [f]</td><td>— (immiscible)</td><td class="num delta">-0.04</td><td class="status">match</td></tr>
+<tr class="ok"><td>Fe-Mo</td><td>B2 (FeMo)</td><td class="num">+0.27</td><td class="num">+0.15 [a]</td><td class="num">-0.05 [g]</td><td>Fe₂Mo (Laves C14)</td><td class="num delta">+0.12</td><td class="status">match</td></tr>
+<tr class="bad"><td>Fe-Si</td><td>B2 (FeSi)</td><td class="num">+2.75</td><td class="num">-0.39 [a]</td><td class="num">-0.39 [g]</td><td>FeSi (B20)</td><td class="num delta">+3.14</td><td class="status">unphysical</td></tr>
+<tr class="ok"><td>Fe-Ti</td><td>B2 (FeTi)</td><td class="num">-0.36</td><td class="num">-0.34 [a]</td><td class="num">-0.34 [g]</td><td>FeTi (B2)</td><td class="num delta">-0.02</td><td class="status">match</td></tr>
+<tr class="warn"><td>Fe-Zn</td><td>B2 (FeZn)</td><td class="num">+0.31</td><td class="num">+0.05 [a]</td><td class="num">-0.02 [g]</td><td>FeZn₁₃ (cmplx)</td><td class="num delta">+0.26</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="ok"><td>Mg-Mn</td><td>B2 (MgMn)</td><td class="num">+0.30</td><td class="num">+0.20 [f]</td><td class="num">+0.20 [f]</td><td>— (immiscible)</td><td class="num delta">+0.10</td><td class="status">match</td></tr>
+<tr class="ok"><td>Mn-Mo</td><td>B2 (MnMo)</td><td class="num">+0.12</td><td class="num">+0.08 [a]</td><td class="num">+0.05 [g]</td><td>— (σ at high T)</td><td class="num delta">+0.04</td><td class="status">match</td></tr>
+<tr class="bad"><td>Mn-Si</td><td>B2 (MnSi)</td><td class="num">+2.04</td><td class="num">-0.42 [a]</td><td class="num">-0.42 [g]</td><td>MnSi (B20)</td><td class="num delta">+2.46</td><td class="status">unphysical</td></tr>
+<tr class="warn"><td>Mn-Ti</td><td>B2 (MnTi)</td><td class="num">-0.31</td><td class="num">+0.05 [a]</td><td class="num">+0.02 [f]</td><td>MnTi (B2 metastable)</td><td class="num delta">-0.36</td><td class="status">high (unrelaxed)</td></tr>
+<tr class="warn"><td>Mn-Zn</td><td>B2 (MnZn)</td><td class="num">+0.23</td><td class="num">-0.05 [a]</td><td class="num">-0.05 [g]</td><td>MnZn (B2)</td><td class="num delta">+0.28</td><td class="status">high (unrelaxed)</td></tr>
 </tbody>
 </table>
 
@@ -250,15 +250,15 @@
   <th class="num">B (GPa)<br>this work</th><th class="num">B (GPa)<br>exp [g]</th>
 </tr></thead>
 <tbody>
-<tr class="bad"><td>Al</td><td>—</td><td class="num">—</td><td class="num">4.05</td><td class="num">—</td><td class="num">3.39</td><td class="num">—</td><td class="num">76</td></tr>
-<tr class="bad"><td>Cu</td><td>—</td><td class="num">—</td><td class="num">3.61</td><td class="num">—</td><td class="num">3.49</td><td class="num">—</td><td class="num">137</td></tr>
-<tr class="bad"><td>Si</td><td>—</td><td class="num">—</td><td class="num">5.43</td><td class="num">—</td><td class="num">4.63</td><td class="num">—</td><td class="num">98</td></tr>
-<tr class="bad"><td>Ti</td><td>—</td><td class="num">—</td><td class="num">2.95</td><td class="num">—</td><td class="num">4.85</td><td class="num">—</td><td class="num">110</td></tr>
-<tr class="bad"><td>Zn</td><td>—</td><td class="num">—</td><td class="num">2.66</td><td class="num">—</td><td class="num">1.35</td><td class="num">—</td><td class="num">70</td></tr>
-<tr class="bad"><td>Cr</td><td>—</td><td class="num">—</td><td class="num">2.88</td><td class="num">—</td><td class="num">4.10</td><td class="num">—</td><td class="num">160</td></tr>
-<tr class="bad"><td>Fe</td><td>—</td><td class="num">—</td><td class="num">2.87</td><td class="num">—</td><td class="num">4.28</td><td class="num">—</td><td class="num">170</td></tr>
+<tr class="ok"><td>Al</td><td>fcc</td><td class="num">4.047</td><td class="num">4.05</td><td class="num">3.61</td><td class="num">3.39</td><td class="num">77.5</td><td class="num">76</td></tr>
+<tr class="ok"><td>Cu</td><td>fcc</td><td class="num">3.639</td><td class="num">3.61</td><td class="num">3.86</td><td class="num">3.49</td><td class="num">138.5</td><td class="num">137</td></tr>
+<tr class="ok"><td>Si</td><td>diamond</td><td class="num">5.471</td><td class="num">5.43</td><td class="num">5.13</td><td class="num">4.63</td><td class="num">89.3</td><td class="num">98</td></tr>
+<tr class="ok"><td>Ti</td><td>hcp</td><td class="num">2.915</td><td class="num">2.95</td><td class="num">6.28</td><td class="num">4.85</td><td class="num">114.5</td><td class="num">110</td></tr>
+<tr class="ok"><td>Zn</td><td>hcp</td><td class="num">2.766</td><td class="num">2.66</td><td class="num">0.96</td><td class="num">1.35</td><td class="num">68.4</td><td class="num">70</td></tr>
+<tr class="ok"><td>Cr</td><td>bcc</td><td class="num">2.848</td><td class="num">2.88</td><td class="num">3.96</td><td class="num">4.10</td><td class="num">213.1</td><td class="num">160</td></tr>
+<tr class="ok"><td>Fe</td><td>bcc</td><td class="num">2.806</td><td class="num">2.87</td><td class="num">6.83</td><td class="num">4.28</td><td class="num">420.5</td><td class="num">170</td></tr>
 <tr class="ok"><td>Mg</td><td>hcp</td><td class="num">3.177</td><td class="num">3.21</td><td class="num">1.48</td><td class="num">1.51</td><td class="num">47.8</td><td class="num">36</td></tr>
-<tr class="bad"><td>Mn</td><td>—</td><td class="num">—</td><td class="num">2.89</td><td class="num">—</td><td class="num">2.92</td><td class="num">—</td><td class="num">120</td></tr>
+<tr class="ok"><td>Mn</td><td>bcc</td><td class="num">2.803</td><td class="num">2.89</td><td class="num">3.73</td><td class="num">2.92</td><td class="num">225.7</td><td class="num">120</td></tr>
 <tr class="ok"><td>Mo</td><td>bcc</td><td class="num">3.169</td><td class="num">3.15</td><td class="num">10.35</td><td class="num">6.82</td><td class="num">280.8</td><td class="num">230</td></tr>
 </tbody>
 </table>
@@ -312,7 +312,7 @@
 
 <p class="footnote" style="margin-top:32px;">
   Source data: <code>src/NNIP/dft_results.json</code> (last touched
-  2026-05-17).
+  2026-05-18).
   Generating script: <code>src/NNIP/dft_reference.py</code>.
   Report generator: <code>reports/dft_validation/generate_report.py</code>
   — re-run after any DFT regeneration.

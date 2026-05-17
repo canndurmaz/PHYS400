@@ -1,0 +1,156 @@
+\documentclass[aspectratio=169, 11pt]{beamer}
+
+% --- Theme ---
+\usetheme{Boadilla}
+\usecolortheme{beaver}
+
+% --- Packages ---
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\newcommand{\Ang}{\text{\AA}}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+\usepackage{booktabs}
+
+% --- Extra colors for TikZ diagrams ---
+\definecolor{darkgray}{RGB}{80,80,80}
+\definecolor{lightgray2}{RGB}{230,230,230}
+\definecolor{deepred}{RGB}{140,20,20}
+
+% --- Gray accents ---
+\setbeamercolor{section in head/foot}{bg=gray!30, fg=darkred}
+\setbeamercolor{subsection in head/foot}{bg=gray!15, fg=darkred}
+\setbeamercolor{block body}{bg=gray!10}
+
+% --- Top-right logo ---
+\addtobeamertemplate{frametitle}{}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=north east, yshift=-2pt, xshift=-4pt]
+      at (current page.north east) {\includegraphics[height=0.7cm]{metu.png}};
+  \end{tikzpicture}%
+}
+
+% --- Title ---
+\title[MEAM Mock Pitch]{Automated Construction of Multi-Element\\MEAM Interatomic Potentials}
+\subtitle{DFT-Informed Neural Network Optimization}
+\author{Can Durmaz}
+\institute{METU}
+\date{PHYS\,400 --- Mock Presentation}
+\titlegraphic{\includegraphics[height=1.5cm]{metu.png}}
+
+\begin{document}
+
+% --- Slide 1: Title ---
+\begin{frame}[plain]
+\titlepage
+\end{frame}
+
+% --- Slide 2: The Problem ---
+\begin{frame}{The Problem}
+\begin{itemize}
+  \item Industrial alloys (Al\,7075, steels) are chosen by their \textbf{elastic properties} --- yet measuring them experimentally is \textbf{slow and expensive}.
+  \item Molecular dynamics can predict these properties \emph{computationally}, but only with accurate \textbf{interatomic potentials}.
+  \item The Modified Embedded Atom Method (MEAM) is the standard for metallic alloys.
+\end{itemize}
+
+\vspace{1em}
+\begin{block}{Goal}
+Build an automated pipeline that generates MEAM potentials for \emph{arbitrary} multi-element alloys.
+\end{block}
+\end{frame}
+
+% --- Slide 3: Why Existing Approaches Fall Short ---
+\begin{frame}{Why Existing Approaches Fall Short}
+Published MEAM files cover only \textbf{subsets} of elements. No single file spans Al\,7075 (Al, Zn, Mg, Cu, Cr, Mn, Fe, Si, Ti).
+
+\vspace{0.5em}
+\centering
+\small
+\begin{tabular}{l|cccccccccccc}
+\toprule
+\textbf{Library File} & Al & Co & Cr & Cu & Fe & Mg & Mn & Mo & Ni & Si & Ti & Zn \\
+\midrule
+AlMgZn           & \checkmark &   &   &   &   & \checkmark &   &   &   &   &   & \checkmark \\
+AlSiCuMgFe       & \checkmark &   &   & \checkmark & \checkmark & \checkmark &   &   &   & \checkmark &   &   \\
+CuMo             &   &   &   & \checkmark &   &   &   & \checkmark &   &   &   &   \\
+FeMnNiTiCuCrCoAl & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &   & \checkmark &   & \checkmark &   & \checkmark &   \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.7em}
+\raggedright
+\begin{itemize}\small
+  \item \textbf{Cross-interaction parameters} between files are undefined $\Rightarrow$ cannot simulate combined compositions.
+  \item \textbf{Pure ML potentials} (MLIPs) are accurate but demand massive datasets and sacrifice MEAM's transparency.
+\end{itemize}
+\end{frame}
+
+% --- Slide 4: Pipeline Overview (interim-style, 5 stages + ML branch) ---
+\begin{frame}{Pipeline Overview}
+\centering
+\begin{tikzpicture}[
+    node distance=0.5cm and 0.35cm,
+    stage/.style={rectangle, rounded corners, draw=darkred, fill=darkred!10,
+                  text width=2.5cm, minimum height=1.0cm, align=center,
+                  font=\scriptsize\bfseries},
+    planned/.style={rectangle, rounded corners, draw=darkred, dashed, fill=darkred!3,
+                  text width=2.5cm, minimum height=1.0cm, align=center,
+                  font=\scriptsize\bfseries\itshape},
+    aux/.style={rectangle, rounded corners, draw=blue!55!black, dashed, fill=blue!6,
+                  text width=2.5cm, minimum height=0.9cm, align=center,
+                  font=\scriptsize\bfseries},
+    arrow/.style={-{Stealth[length=2.5mm]}, thick, darkred},
+    plannedarrow/.style={-{Stealth[length=2.5mm]}, thick, dashed, darkred},
+    auxarrow/.style={-{Stealth[length=2.5mm]}, thick, dashed, blue!55!black},
+    label/.style={font=\tiny, text=darkred!70!black, align=center},
+    auxlabel/.style={font=\tiny, text=blue!55!black, align=center},
+  ]
+  \node[stage] (s1) {Stage 1\\Configurations};
+  \node[stage, right=of s1] (s2) {Stage 2\\MD: $E,\nu,C_{ij}$};
+  \node[stage, right=of s2] (s3) {Stage 3\\DFT};
+  \node[stage, right=of s3] (s4) {Stage 4\\MEAM init};
+  \node[planned, right=of s4] (s5) {Stage 5\\NN optim\\(planned)};
+
+  \draw[arrow] (s1) -- (s2);
+  \draw[arrow] (s2) -- (s3);
+  \draw[arrow] (s3) -- (s4);
+  \draw[plannedarrow] (s4) -- (s5);
+
+  \node[label, below=0.15cm of s1] {composition\\records};
+  \node[label, below=0.15cm of s2] {elastic\\database};
+  \node[label, below=0.15cm of s3] {DFT\\reference};
+  \node[label, below=0.15cm of s4] {merged MEAM\\library};
+  \node[label, below=0.15cm of s5] {refitted MEAM\\parameters};
+
+  % Divergent ML sanity-check branch (does not feed back into main flow)
+  \node[aux, above=1.0cm of s3] (ml) {ML branch\\(sanity check)};
+  \draw[auxarrow] (s2.north) |- (ml.west);
+  \node[auxlabel, right=0.15cm of ml] {$(E,\nu)$\\predictor};
+\end{tikzpicture}
+\end{frame}
+
+% --- Slide 5: Pipeline Stages at a Glance (interim-style: # / Description / Framework / Status) ---
+\begin{frame}{Pipeline Stages at a Glance}
+\centering
+\small
+\begin{tabular}{clll}
+\toprule
+\textbf{Stage} & \textbf{Description} & \textbf{Framework} & \textbf{Status} \\
+\midrule
+1 & Random alloy configuration generation   & Python                  & Complete \\
+2 & MD elastic-property evaluation          & LAMMPS Python API       & Complete \\
+3 & DFT reference calculations              & Quantum Espresso + ASE  & Complete \\
+4 & MEAM initialization \& library merging  & Python                  & Complete \\
+5 & Neural-network surrogate optimization   & TensorFlow + LAMMPS     & \emph{Planned} \\
+\bottomrule
+\end{tabular}
+
+\vspace{1em}
+\begin{block}{Key Idea}
+Use neural networks as a \textbf{surrogate} that learns the MEAM-parameters $\to$ elastic-properties map, then inverse-optimize parameters to hit target $(E, \nu)$.
+\end{block}
+\end{frame}
+
+\end{document}
