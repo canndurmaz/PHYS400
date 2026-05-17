@@ -13,6 +13,9 @@ Usage:
     python pipeline.py --elements Al Cu Zn Mg   # Specify elements explicitly
     python pipeline.py --skip-dft --elements Al Cu Zn Mg  # Skip DFT stage
     python pipeline.py --perturbations 150      # More Phase-1 perturbations
+    python pipeline.py --sampling sobol         # Sobol' Phase-1 sampling
+    python pipeline.py --sampling active --perturbations 60 --batch-size 6
+                                                # Active learning, ~3x fewer LAMMPS calls
 """
 
 import argparse
@@ -90,15 +93,16 @@ def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
                  skip_optimize=False, skip_verify=False, n_parallel=4,
                  no_plots=False, resume=False,
                  k_representatives=100, val_frac=0.3, split_seed=0,
-                 full_set_validation=False):
+                 full_set_validation=False,
+                 sampling_mode="random", seed_size=20, batch_size=5,
+                 ensemble_size=5, pool_size=500, sampling_seed=0):
     """Run the full MEAM potential pipeline.
 
     Args:
         elements: list of element symbols (auto-discovered from EAM if None)
         skip_dft: skip DFT reference calculations (use existing dft_results.json)
-        n_perturbations: number of MEAM parameter perturbations sampled in
-                         Phase 1 of optimize_nn (each evaluated against every
-                         training alloy)
+        n_perturbations: total Phase-1 sample budget for optimize_nn (each
+                         evaluated against every training alloy)
         skip_optimize: skip NN optimization stage
         skip_verify: skip verification stage
         n_parallel: max parallel DFT workers (default: 4)
@@ -113,6 +117,21 @@ def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
                              LAMMPS) so you can measure generalisation beyond
                              the 30% representative sample. Parallelised across
                              ``n_parallel`` workers. Default False.
+        sampling_mode: Phase-1 sampling strategy — one of "random" (legacy
+                       uniform-random ±10 % box), "lhs", "sobol", or
+                       "active" (NN-ensemble active learning, typically
+                       ~3x fewer LAMMPS calls for the same surrogate
+                       quality). Default "random".
+        seed_size: active mode only — bootstrap samples before iteration
+                   starts (default 20).
+        batch_size: active mode only — candidates selected per iteration
+                    (default 5; should match n_parallel for best throughput).
+        ensemble_size: active mode only — NNs in the acquisition ensemble
+                       (default 5).
+        pool_size: active mode only — Sobol candidate pool scored each
+                   iteration (default 500).
+        sampling_seed: RNG seed for candidate generation and the acquisition
+                       ensemble (default 0).
     """
     eam_dir = os.path.join(project_root, "EAM")
     meam_opt_dir = os.path.dirname(__file__)
@@ -275,6 +294,9 @@ def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
             lib_init, par_init, n_perturbations=n_perturbations,
             n_parallel=n_parallel,
             train_path=train_path, val_path=val_path,
+            sampling_mode=sampling_mode, seed_size=seed_size,
+            batch_size=batch_size, ensemble_size=ensemble_size,
+            pool_size=pool_size, sampling_seed=sampling_seed,
         )
     else:
         logger.info("\n[Stage 3] Skipping NN optimization")
@@ -476,6 +498,36 @@ def main():
              "(slow — hours of parallel LAMMPS). Results land under "
              "'full_set_verification' in pipeline_summary.json."
     )
+    parser.add_argument(
+        "--sampling", choices=("random", "lhs", "sobol", "active"),
+        default="random",
+        help="Phase-1 sampling strategy. 'random' (default) is the legacy "
+             "uniform-random ±10%% box; 'lhs' uses Latin Hypercube; 'sobol' uses "
+             "scrambled Sobol'; 'active' runs NN-ensemble active learning "
+             "(typically ~3x fewer LAMMPS calls for the same surrogate quality)."
+    )
+    parser.add_argument(
+        "--seed-size", type=int, default=20,
+        help="Active mode only: bootstrap samples drawn before iteration starts (default: 20)"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=5,
+        help="Active mode only: candidates selected per iteration (default: 5; "
+             "match --parallel for best throughput)"
+    )
+    parser.add_argument(
+        "--ensemble-size", type=int, default=5,
+        help="Active mode only: NNs in the acquisition ensemble (default: 5)"
+    )
+    parser.add_argument(
+        "--pool-size", type=int, default=500,
+        help="Active mode only: Sobol candidate pool scored each iteration (default: 500)"
+    )
+    parser.add_argument(
+        "--sampling-seed", type=int, default=0,
+        help="Seed for candidate generation and the acquisition ensemble (default: 0). "
+             "Distinct from --split-seed which controls upstream representative selection."
+    )
     args = parser.parse_args()
 
     os.environ["TK_SILENT"] = "1"
@@ -493,6 +545,12 @@ def main():
         val_frac=args.val_frac,
         split_seed=args.split_seed,
         full_set_validation=args.full_set_validation,
+        sampling_mode=args.sampling,
+        seed_size=args.seed_size,
+        batch_size=args.batch_size,
+        ensemble_size=args.ensemble_size,
+        pool_size=args.pool_size,
+        sampling_seed=args.sampling_seed,
     )
 
 

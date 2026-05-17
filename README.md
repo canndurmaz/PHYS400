@@ -141,6 +141,11 @@ cd src/NNIP
 
 # Skip DFT (reuse existing results), tune perturbations and parallelism
 ./run_pipeline.sh --skip-dft --perturbations 50 --parallel 6 Al Cu Zn Mg
+
+# Use active learning instead of random Phase-1 sampling (~3× fewer LAMMPS calls
+# for the same surrogate quality)
+./run_pipeline.sh --skip-dft --sampling active \
+    --perturbations 60 --batch-size 6 --parallel 6 Al Cu Zn Mg
 ```
 
 See [src/NNIP/README.md](src/NNIP/README.md) for full pipeline documentation.

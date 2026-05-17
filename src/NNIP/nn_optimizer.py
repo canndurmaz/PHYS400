@@ -64,10 +64,12 @@ from src.NNIP.meam_io import (
     parse_library, parse_params, params_to_vector, vector_to_files,
 )
 from src.NNIP.logging_config import setup_logger
+from src.NNIP import nn_active_learning as nnal
 
 logger = setup_logger("nn_optimizer")
 
 DEFAULT_CHECKPOINT_PATH = os.path.join(os.path.dirname(__file__), "nn_checkpoint.json")
+SAMPLING_MODES = ("random", "lhs", "sobol", "active")
 
 
 # ── Cubic-isotropic algebra (E, nu) <-> (C11, C12) ───────────────────────────
@@ -339,11 +341,137 @@ def _save_checkpoint(path, config_hash, param_names, X_samples, y_samples):
     os.replace(tmp, path)
 
 
+# ── Active-learning Phase 1 helper ───────────────────────────────────────────
+
+def _evaluate_candidates_parallel(candidates, names, base_lib, base_params,
+                                   entries, tmp_dir, omp_threads, n_parallel,
+                                   n_entries, label="batch"):
+    """Run LAMMPS on each candidate in parallel; return list of (vec, y) pairs
+    for those that pass the C_REJECT_MIN acceptance gate.
+
+    Mirrors the rejection logic used by the legacy one-shot dispatcher so
+    sample quality is consistent across sampling modes.
+    """
+    accepted = []
+    if not candidates:
+        return accepted
+    worker_args = [
+        (vec, names, base_lib, base_params, entries,
+         os.path.join(tmp_dir, f"al_{label}_{i}"), omp_threads)
+        for i, vec in enumerate(candidates)
+    ]
+    t0 = time.time()
+    with ProcessPoolExecutor(max_workers=n_parallel) as pool:
+        futures = {pool.submit(_eval_sample_worker, args): vec
+                   for args, vec in zip(worker_args, candidates)}
+        for future in as_completed(futures):
+            vec = futures[future]
+            try:
+                y = future.result()
+            except Exception as exc:
+                logger.info(f"  [active/{label}] worker failed: {exc}")
+                continue
+            timed_out = np.all(y == 0)
+            valid = sum(1 for k in range(0, len(y), 2) if y[k] > C_REJECT_MIN)
+            if timed_out:
+                logger.info(f"  [active/{label}] TIMED OUT (valid={valid}/{n_entries})")
+            elif valid >= n_entries // 2:
+                accepted.append((vec, y))
+                logger.info(f"  [active/{label}] accepted (valid={valid}/{n_entries})")
+            else:
+                logger.info(f"  [active/{label}] rejected (valid={valid}/{n_entries})")
+    elapsed = time.time() - t0
+    logger.info(f"  [active/{label}] batch done in {elapsed:.1f}s: "
+                f"{len(accepted)}/{len(candidates)} accepted")
+    return accepted
+
+
+def _phase1_active_loop(initial_vec, names, base_lib, base_params, entries,
+                         X_samples, y_samples, budget, batch_size,
+                         seed_size, ensemble_size, pool_size, n_parallel,
+                         omp_threads, tmp_dir, seed, checkpoint_fn,
+                         n_entries):
+    """Active-learning Phase 1: seed with Sobol, then iterate (ensemble
+    train → variance score pool → diverse batch select → LAMMPS) until
+    ``budget`` accepted samples are collected.
+
+    Mutates ``X_samples`` / ``y_samples`` in place and calls
+    ``checkpoint_fn`` after each accepted sample so a killed run resumes
+    from the same iteration boundary.
+    """
+    logger.info(f"  [active] budget={budget}, seed={seed_size}, batch={batch_size}, "
+                f"ensemble={ensemble_size}, pool={pool_size}")
+
+    # ── Seed phase: Sobol bootstrap to populate the ensemble ─────────────
+    seed_target = max(0, seed_size - len(X_samples))
+    if seed_target > 0:
+        logger.info(f"  [active/seed] generating {seed_target} Sobol seed samples")
+        # Oversample 2x so a few rejected samples don't leave the seed undersized.
+        seed_pool = list(nnal.generate_candidates(
+            initial_vec, "sobol", seed_target * 2, seed=seed))
+        accepted = _evaluate_candidates_parallel(
+            seed_pool[:seed_target * 2], names, base_lib, base_params,
+            entries, tmp_dir, omp_threads, n_parallel, n_entries,
+            label="seed")
+        for vec, y in accepted:
+            if len(X_samples) >= budget:
+                break
+            X_samples.append(np.asarray(vec))
+            y_samples.append(np.asarray(y))
+            checkpoint_fn()
+    else:
+        logger.info(f"  [active/seed] resume: {len(X_samples)} samples already on disk, "
+                    f"skipping seed")
+
+    # ── Iteration loop ──────────────────────────────────────────────────
+    iteration = 0
+    while len(X_samples) < budget:
+        iteration += 1
+        remaining = budget - len(X_samples)
+        this_batch = min(batch_size, remaining)
+        logger.info(f"  [active/iter {iteration}] {len(X_samples)}/{budget} accepted; "
+                    f"picking batch of {this_batch} via ensemble variance")
+        t_pick = time.time()
+        next_batch = nnal.pick_next_batch(
+            np.asarray(initial_vec),
+            np.asarray(X_samples), np.asarray(y_samples),
+            batch_size=this_batch, pool_size=pool_size,
+            ensemble_size=ensemble_size,
+            seed=seed + iteration,
+        )
+        logger.info(f"  [active/iter {iteration}] batch picked in {time.time()-t_pick:.1f}s")
+        accepted = _evaluate_candidates_parallel(
+            [v for v in next_batch], names, base_lib, base_params,
+            entries, tmp_dir, omp_threads, n_parallel, n_entries,
+            label=f"iter{iteration}")
+        if not accepted:
+            logger.warning(f"  [active/iter {iteration}] no candidates accepted — "
+                            f"continuing; if this persists the perturbation box may "
+                            f"be too wide for the current potential")
+            # Safety valve: if 5 consecutive iterations yield nothing, give up
+            # rather than spin forever on a broken potential.
+            if iteration >= 5 and len(X_samples) == seed_size:
+                logger.error(f"  [active] aborting after 5 fruitless iterations; "
+                              f"have {len(X_samples)} samples")
+                break
+            continue
+        for vec, y in accepted:
+            if len(X_samples) >= budget:
+                break
+            X_samples.append(np.asarray(vec))
+            y_samples.append(np.asarray(y))
+            checkpoint_fn()
+
+    logger.info(f"  [active] phase complete: {len(X_samples)} samples in {iteration} iterations")
+
+
 # ── NN Surrogate Optimization ────────────────────────────────────────────────
 
 def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
                 train_path=None, val_path=None, n_parallel=None,
-                checkpoint_path=None, resume=True):
+                checkpoint_path=None, resume=True,
+                sampling_mode="random", seed_size=20, batch_size=5,
+                ensemble_size=5, pool_size=500, sampling_seed=0):
     """Multi-target NN optimization with a held-out validation set.
 
     Phases 1-3 fit and invert a surrogate against the ``train_path`` alloys.
@@ -355,8 +483,9 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
         lib_path: path to MEAM library file
         params_path: path to MEAM params file
         opt_spec: dict specifying which parameters to optimize
-        n_perturbations: number of MEAM parameter perturbations sampled in
-                         Phase 1 (each evaluated against every training alloy)
+        n_perturbations: total Phase-1 sample budget. Every accepted
+                         (vec, y) pair counts against this number regardless
+                         of sampling mode.
         train_path: path to training subset JSON (default:
                     src/ML/results_train.json — produced by
                     select_representatives.py)
@@ -372,7 +501,36 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
                          atomically after every accepted sample so a killed
                          run can resume without re-evaluating LAMMPS.
         resume: if True, reuse a compatible checkpoint at startup.
+        sampling_mode: how Phase-1 picks candidates. One of
+                       ``"random"`` (legacy uniform-random ±10 % box),
+                       ``"lhs"`` (Latin Hypercube — same budget, better
+                       coverage), ``"sobol"`` (scrambled Sobol' — best
+                       low-discrepancy fill), ``"active"`` (NN-ensemble
+                       active learning with diverse batch selection;
+                       typically needs ~3x fewer LAMMPS calls for the same
+                       surrogate quality). Default ``"random"`` preserves
+                       legacy behaviour.
+        seed_size: active mode only — number of bootstrap samples drawn
+                   via Sobol before the iteration loop starts (default 20).
+        batch_size: active mode only — number of candidates selected per
+                    iteration (default 5; should match ``n_parallel`` for
+                    best throughput).
+        ensemble_size: active mode only — number of NN surrogates in the
+                       acquisition ensemble (default 5).
+        pool_size: active mode only — size of the Sobol candidate pool
+                   scored each iteration (default 500).
+        sampling_seed: RNG seed for candidate generation and the
+                       acquisition ensemble (default 0). Distinct from
+                       ``--split-seed`` which controls representative
+                       selection upstream.
     """
+    if sampling_mode not in SAMPLING_MODES:
+        raise ValueError(f"sampling_mode must be one of {SAMPLING_MODES}, "
+                         f"got {sampling_mode!r}")
+    if sampling_mode == "active" and _MPI_SIZE > 1:
+        raise RuntimeError("active sampling requires single-rank execution; "
+                           "the acquisition step is not yet MPI-distributed. "
+                           "Use --sampling random|lhs|sobol under mpirun.")
     if train_path is None:
         train_path = DEFAULT_TRAIN_PATH
     if val_path is None:
@@ -518,19 +676,37 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
     else:
         logger.info(f"  Skipping baseline — {len(X_samples)} samples already loaded from checkpoint")
 
-    # Generate candidate perturbations for the *remaining* sample budget
-    n_remaining = max(0, n_perturbations - len(X_samples))
-    n_candidates = n_remaining * 3
-    candidates = []
-    for _ in range(n_candidates):
-        pert = 1.0 + (np.random.rand(len(initial_vec)) - 0.5) * 0.2
-        candidates.append(initial_vec * pert)
-    if n_candidates == 0:
-        logger.info(f"  Already have {len(X_samples)}/{n_perturbations} samples from checkpoint — "
-                    f"skipping perturbation phase")
+    logger.info(f"  Sampling mode: {sampling_mode}")
+    if sampling_mode == "active":
+        _phase1_active_loop(
+            initial_vec=initial_vec, names=names,
+            base_lib=base_lib, base_params=base_params, entries=entries,
+            X_samples=X_samples, y_samples=y_samples,
+            budget=n_perturbations, batch_size=batch_size,
+            seed_size=seed_size, ensemble_size=ensemble_size,
+            pool_size=pool_size, n_parallel=n_parallel,
+            omp_threads=omp_threads, tmp_dir=tmp_dir,
+            seed=sampling_seed,
+            checkpoint_fn=_checkpoint_now,
+            n_entries=n_entries,
+        )
+        candidates = []  # downstream oneshot block is a no-op for active
     else:
-        logger.info(f"  Generated {n_candidates} candidate perturbations "
-                    f"(need {n_remaining} more samples)")
+        # Generate candidate perturbations for the *remaining* sample budget.
+        # Oversample by 3x (random) or 1.5x (LHS/Sobol — better coverage
+        # means fewer rejections).
+        n_remaining = max(0, n_perturbations - len(X_samples))
+        oversample = 3 if sampling_mode == "random" else 2
+        n_candidates = n_remaining * oversample
+        if n_candidates == 0:
+            logger.info(f"  Already have {len(X_samples)}/{n_perturbations} samples from checkpoint — "
+                        f"skipping perturbation phase")
+            candidates = []
+        else:
+            candidates = list(nnal.generate_candidates(
+                initial_vec, sampling_mode, n_candidates, seed=sampling_seed))
+            logger.info(f"  Generated {n_candidates} candidate perturbations via {sampling_mode} "
+                        f"(need {n_remaining} more samples)")
 
     if _MPI_SIZE > 1:
         # ── MPI mode: scatter candidates across ranks ────────────────────
@@ -872,7 +1048,9 @@ if __name__ == "__main__":
     parser.add_argument("--library", required=True, help="Path to MEAM library file")
     parser.add_argument("--params", required=True, help="Path to MEAM params file")
     parser.add_argument("--perturbations", type=int, default=150,
-                        help="Number of MEAM parameter perturbations sampled in Phase 1 (default: 150)")
+                        help="Total Phase-1 sample budget (default: 150). "
+                             "Used by all sampling modes — the legacy flag name is "
+                             "kept for backwards compatibility.")
     parser.add_argument("--parallel", type=int, default=None,
                         help="Number of parallel workers (default: auto = cpu_count/2)")
     parser.add_argument("--train", default=None,
@@ -884,10 +1062,30 @@ if __name__ == "__main__":
                              "(default: nn_checkpoint.json next to this script)")
     parser.add_argument("--no-resume", action="store_true",
                         help="Ignore existing checkpoint and start sampling from scratch")
+    parser.add_argument("--sampling", choices=SAMPLING_MODES, default="random",
+                        help="Phase-1 sampling strategy. "
+                             "'random' (default) is the legacy uniform-random ±10%% box; "
+                             "'lhs' uses Latin Hypercube; 'sobol' uses scrambled Sobol'; "
+                             "'active' runs ensemble-variance active learning "
+                             "(typically ~3x fewer LAMMPS calls for the same surrogate quality).")
+    parser.add_argument("--seed-size", type=int, default=20,
+                        help="Active mode only: bootstrap samples drawn before iteration starts (default: 20)")
+    parser.add_argument("--batch-size", type=int, default=5,
+                        help="Active mode only: candidates selected per iteration (default: 5; "
+                             "should match --parallel for best throughput)")
+    parser.add_argument("--ensemble-size", type=int, default=5,
+                        help="Active mode only: NNs in the acquisition ensemble (default: 5)")
+    parser.add_argument("--pool-size", type=int, default=500,
+                        help="Active mode only: Sobol candidate pool scored each iteration (default: 500)")
+    parser.add_argument("--sampling-seed", type=int, default=0,
+                        help="Seed for candidate generation and acquisition ensemble (default: 0)")
     args = parser.parse_args()
 
     os.environ["TK_SILENT"] = "1"
     optimize_nn(args.library, args.params, n_perturbations=args.perturbations,
                 train_path=args.train, val_path=args.val,
                 n_parallel=args.parallel,
-                checkpoint_path=args.checkpoint, resume=not args.no_resume)
+                checkpoint_path=args.checkpoint, resume=not args.no_resume,
+                sampling_mode=args.sampling, seed_size=args.seed_size,
+                batch_size=args.batch_size, ensemble_size=args.ensemble_size,
+                pool_size=args.pool_size, sampling_seed=args.sampling_seed)

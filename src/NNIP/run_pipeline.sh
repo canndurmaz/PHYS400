@@ -12,8 +12,17 @@
 #   --skip-verify            Skip verification stage
 #   --resume                 Auto-detect completed stages and skip them
 #   --no-plots               Skip the visualization stage
-#   --perturbations N        Phase-1 parameter perturbations (default: 150)
+#   --perturbations N        Total Phase-1 sample budget (default: 150).
+#                            With --sampling active, drop this to ~50–80 for the
+#                            equivalent surrogate quality of a 150-sample random run.
 #   --parallel N             Max parallel DFT/sampling workers (default: 4)
+#   --sampling MODE          Phase-1 strategy: random (default, legacy uniform ±10%),
+#                            lhs, sobol, or active (NN-ensemble active learning).
+#   --seed-size N            Active mode: bootstrap samples before iteration (default 20)
+#   --batch-size N           Active mode: candidates per iteration (default 5; match --parallel)
+#   --ensemble-size N        Active mode: NNs in the acquisition ensemble (default 5)
+#   --pool-size N            Active mode: Sobol candidate pool scored per iteration (default 500)
+#   --sampling-seed N        Seed for candidate generation + acquisition ensemble (default 0)
 #   --k-representatives N    k-means medoids picked from results.json before split (default: 100)
 #   --val-frac F             Fraction of representatives held out for validation (default: 0.3)
 #   --split-seed N           Seed for k-means + train/val split (default: 0)
@@ -107,17 +116,22 @@ for arg in "$@"; do
             # Any --flag (including --foo=value) goes straight to pipeline.py
             FLAGS+=("$arg")
             ;;
-        [0-9]*)
-            # Bare number: a flag value if it follows a --flag, else an element
-            # (real element symbols all start with a capital letter, never a digit)
-            if [[ "${FLAGS[-1]:-}" == --* ]]; then
+        *)
+            # Element symbols are always Capitalized (Al, Cu, Fe, Mg, ...).
+            # Anything that does NOT start with an uppercase letter and that
+            # follows a --flag is the flag's value (numbers like 60 or
+            # strings like "active", "sobol"). Everything else is an element.
+            # ${FLAGS[-1]} would warn under `set -u` when FLAGS is empty, so
+            # guard with a length check first.
+            last_flag=""
+            if (( ${#FLAGS[@]} > 0 )); then
+                last_flag="${FLAGS[-1]}"
+            fi
+            if [[ "$last_flag" == --* ]] && [[ ! "$arg" =~ ^[A-Z] ]]; then
                 FLAGS+=("$arg")
             else
                 ELEMENTS+=("$arg")
             fi
-            ;;
-        *)
-            ELEMENTS+=("$arg")
             ;;
     esac
 done

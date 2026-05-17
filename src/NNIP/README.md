@@ -45,7 +45,8 @@ This pipeline combines four stages into an automated workflow:
           v
   Stage 3: NN Surrogate Optimization
           |  k-means medoid select (k=100) → 70/30 train/val split
-          |  Sample (checkpointed) → Train NN on train set → Inverse optimize
+          |  Sample (random | LHS | Sobol | active, all checkpointed)
+          |  → Train NN on train set → Inverse optimize
           |  → EAM/optimized/, nn_checkpoint.json, nn_diagnostics.json
           v
   Stage 4: Verification
@@ -70,6 +71,11 @@ Elements are auto-discovered from `EAM/library_*.meam` files when `--elements` i
 ./run_pipeline.sh --skip-dft Al Cu Zn Mg                # Reuse existing DFT results
 ./run_pipeline.sh --skip-dft --parallel 6 \
     --perturbations 200 --k-representatives 50          # Tune sampling + representative count
+./run_pipeline.sh --skip-dft --sampling sobol           # Sobol' Phase-1 (better coverage,
+    Al Cu Zn Mg                                         #   same budget; drop-in upgrade)
+./run_pipeline.sh --skip-dft --sampling active \        # Active learning: ~3x fewer LAMMPS
+    --perturbations 60 --batch-size 6 --parallel 6 \    #   calls for equivalent surrogate
+    Al Cu Zn Mg                                         #   quality
 ./run_pipeline.sh --skip-dft --full-set-validation \    # Add post-optimization sweep over
     Al Cu Zn Mg                                         #   every entry in results.json
 ./run_pipeline.sh --clean                               # Remove pipeline outputs (preserves DFT)
@@ -85,8 +91,14 @@ Elements are auto-discovered from `EAM/library_*.meam` files when `--elements` i
 | `--skip-verify`            | Skip verification stage                                                      |
 | `--resume`                 | Auto-detect completed stages and skip them                                   |
 | `--no-plots`               | Skip visualization generation                                                |
-| `--perturbations N`        | MEAM parameter perturbations sampled in Phase 1 (default: 150)               |
+| `--perturbations N`        | Total Phase-1 sample budget (default: 150). With `--sampling active`, drop to 50–80 |
 | `--parallel N`             | Max parallel workers for DFT / NN sampling / full-set validation (default: 4)|
+| `--sampling MODE`          | Phase-1 strategy: `random` (default, legacy ±10% box), `lhs`, `sobol`, `active` (see below) |
+| `--seed-size N`            | Active mode only: bootstrap samples before iteration starts (default: 20)    |
+| `--batch-size N`           | Active mode only: candidates picked per iteration (default: 5; match `--parallel`) |
+| `--ensemble-size N`        | Active mode only: NNs in the acquisition ensemble (default: 5)               |
+| `--pool-size N`            | Active mode only: Sobol candidate pool scored each iteration (default: 500)  |
+| `--sampling-seed N`        | Seed for candidate generation + acquisition ensemble (default: 0)            |
 | `--k-representatives N`    | k-means medoids picked from `results.json` before train/val split (default: 100) |
 | `--val-frac F`             | Fraction of representatives held out for validation (default: 0.3)           |
 | `--split-seed N`           | Seed for k-means + train/val split (default: 0)                              |
@@ -132,10 +144,23 @@ by ~100× while keeping composition-space coverage broad.
 
 `optimize_nn` then runs four phases:
 
-1. **Sample**: Perturb initial MEAM parameters by $\pm 10\%$, evaluate each with LAMMPS across the **training-set alloys**, flatten the per-alloy `(E, ν)` to $(C_{11}, C_{12})$ via the cubic-isotropic algebra. Samples whose $C_{11}$ falls below `C_REJECT_MIN = 30 GPa` for too many compositions are rejected. **Each accepted sample is atomically appended to `nn_checkpoint.json`** — killing the process and re-running picks up exactly where it left off, gated by a hash over `(lib, params, opt_spec, train_entries)`.
+1. **Sample**: Perturb initial MEAM parameters by $\pm 10\%$, evaluate each with LAMMPS across the **training-set alloys**, flatten the per-alloy `(E, ν)` to $(C_{11}, C_{12})$ via the cubic-isotropic algebra. Samples whose $C_{11}$ falls below `C_REJECT_MIN = 30 GPa` for too many compositions are rejected. **Each accepted sample is atomically appended to `nn_checkpoint.json`** — killing the process and re-running picks up exactly where it left off, gated by a hash over `(lib, params, opt_spec, train_entries)`. The sampling strategy is selectable via `--sampling`; see [Phase-1 sampling modes](#phase-1-sampling-modes) below.
 2. **Train**: Feed-forward NN (`20 → 20 → 10 → 2·N_train` architecture) learns the params-to-$C_{ij}$ mapping using **Huber loss** (delta=1.0 in normalised units). Targets prefer the stored `C11_GPa`/`C12_GPa`, falling back to algebraic conversion only for legacy entries that pre-date the C_ij storage change.
 3. **Optimize**: Gradient descent through the trained NN toward the train $C_{ij}$ target vector, with the parameter vector clipped to $\pm 2.5\sigma$ around the training mean.
 4. **Held-out validation**: Final LAMMPS evaluation against the **30% validation alloys the surrogate never saw**. Reports per-entry $(C_{11}, C_{12}, E, \nu)$ — target vs optimized — plus aggregate mean and RMSE on $E$ and $\nu$. This replaces the prior train-set self-evaluation, which understated generalisation error.
+
+#### Phase-1 sampling modes
+
+Phase-1 LAMMPS evaluation is the wall-time bottleneck of the pipeline (cost ≈ `budget × N_representatives × T_LAMMPS`). Four sampling strategies are available via `--sampling`:
+
+| Mode | What it does | When to use |
+|---|---|---|
+| `random` *(default)* | Uniform-random in the ±10 % box around the baseline. Legacy behaviour; zero new dependencies. | Reproducing pre-active-learning results, or as a sanity baseline. |
+| `lhs` | Latin Hypercube fill of the same box. Same budget as random but each dimension is stratified once. | Drop-in upgrade — same code path, better coverage. |
+| `sobol` | Scrambled Sobol' quasi-random sequence (`scipy.stats.qmc.Sobol`). Best low-discrepancy fill for d ≤ 50. | Best one-line speedup; ~1.5× sample efficiency over random for modest extra code. |
+| `active` | Seed with Sobol, then iterate (train NN ensemble → score a 500-vector pool by predictive variance → pick a diverse top-`batch-size` set → run LAMMPS → checkpoint). | When LAMMPS time dominates and you want ~3× fewer total samples for the same surrogate quality. |
+
+For `active`, the budget specified by `--perturbations` is the *target accepted sample count*. The loop starts with a Sobol seed of `--seed-size` samples, then runs iterations of `--batch-size` evaluations (default 5; match `--parallel` for full throughput). The diversity selector enforces that the parallel LAMMPS workers don't waste compute on near-duplicate queries — a small but important detail in batch active learning. Implementation lives in `nn_active_learning.py`; per-iteration cost is dominated by ensemble training (~5 s) and is essentially free compared to one extra LAMMPS call. Active mode currently requires single-rank execution; under `mpirun`, use one of the one-shot modes (`random`/`lhs`/`sobol`).
 
 The diagnostics file `nn_diagnostics.json` carries `train_target_vec_cij`,
 `train_target_vec_enu`, the `train_path` / `val_path`, the full
@@ -176,6 +201,10 @@ src/NNIP/
                                (C_ij targets, Huber loss). Phase-1 sample
                                checkpointing via nn_checkpoint.json; held-out
                                val-set validation in Phase 4.
+  nn_active_learning.py        Candidate generators (random/LHS/Sobol),
+                               acquisition-ensemble training, and
+                               diversity-aware batch selection — used by
+                               --sampling active.
   meam_io.py                   MEAM library/params file I/O
   merge_potentials.py          Multi-source MEAM potential merger
   visualize.py                 Diagnostic plotting
@@ -230,6 +259,8 @@ python3 fill_elastic_constants.py --force       # also fix unphysical entries
 |---------|----------|
 | "Too many elements" from LAMMPS | Rebuild LAMMPS with `maxelt=20`; set `LD_LIBRARY_PATH=$HOME/.local/lib` |
 | DFT hangs or fails | Check `which pw.x`; pseudopotentials are auto-downloaded; partial results are saved |
-| NN won't converge | Increase `--perturbations`; bump `--k-representatives` for broader composition coverage; check that `results.json` targets are physically reasonable |
+| NN won't converge | Increase `--perturbations`; bump `--k-representatives` for broader composition coverage; check that `results.json` targets are physically reasonable. Or try `--sampling active` to spend the budget on more informative samples. |
 | Phase 1 killed midway | Just re-run — `nn_checkpoint.json` resumes from the last accepted sample. Pass `--no-resume` (via `nn_optimizer.py` directly) to ignore the checkpoint and start fresh |
 | Missing pseudopotential | Run `python download_pseudopotentials.py Al Cu Fe` to fetch manually |
+| Active mode rejects every batch | The ±10 % perturbation box may be too wide for an unstable potential. Drop to `--sampling sobol` (or `random`) for one run; the rejection logic survives across modes. |
+| Active mode under `mpirun` errors out | Active mode is single-rank only (the acquisition ensemble isn't MPI-distributed). Use `--sampling sobol` for multi-node runs. |

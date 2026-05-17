@@ -45,7 +45,7 @@ ELEMENT_DATA = {
     "Mg": ("hcp", 3.21, "Mg.pbe-spnl-kjpaw_psl.1.0.0.UPF"),
     "Ti": ("hcp", 2.95, "Ti.pbe-spn-kjpaw_psl.1.0.0.UPF"),
     "Cr": ("bcc", 2.91, "Cr.pbe-spn-kjpaw_psl.1.0.0.UPF"),
-    "Mn": ("bcc", 8.91, "Mn.pbe-spn-kjpaw_psl.0.3.1.UPF"),  # alpha-Mn is complex; use BCC approx
+    "Mn": ("bcc", 2.89, "Mn.pbe-spn-kjpaw_psl.0.3.1.UPF"),  # δ-Mn/γ-Mn BCC proxy (α-Mn is 29-atom non-collinear)
     "Si": ("diamond", 5.43, "Si.pbe-n-kjpaw_psl.1.0.0.UPF"),
     "Au": ("fcc", 4.08, "Au.pz-rrkjus_aewfc.UPF"),
     "Mo": ("bcc", 3.15, "Mo-PBE.upf"),
@@ -53,6 +53,33 @@ ELEMENT_DATA = {
 
 # Elements requiring spin-polarized calculation
 MAGNETIC_ELEMENTS = {"Fe", "Cr", "Mn"}
+
+# Initial magnetic moments (μ_B) for SCF symmetry-breaking. Cr uses an
+# alternating-sign pattern across the supercell to seed G-AFM ordering; Fe and
+# Mn use ferromagnetic starts (Mn α-phase is non-collinear AFM in reality,
+# but a small FM seed converges to the closest collinear minimum).
+ELEMENTAL_MAGMOM = {
+    "Fe": 2.5,
+    "Cr": 0.6,
+    "Mn": 2.0,
+}
+
+
+def _initial_magmoms(symbols):
+    """Per-atom initial magnetic moments for a list of atomic symbols.
+
+    Cr atoms get alternating signs (G-AFM seed); other magnetic elements get a
+    constant ferromagnetic seed; non-magnetic species get 0.
+    """
+    moms = []
+    cr_count = 0
+    for s in symbols:
+        m = ELEMENTAL_MAGMOM.get(s, 0.0)
+        if s == "Cr":
+            m *= (-1) ** cr_count
+            cr_count += 1
+        moms.append(m)
+    return moms
 
 # Reference structure for binary pairs.
 # Keys are sorted tuples of lattice types.
@@ -103,7 +130,11 @@ def _isolated_atom_energy(symbol, pseudo, calc_dir, magnetic):
 
     box_size = 12.0  # large enough to avoid periodic image interaction
     atoms = Atoms(symbol, positions=[[0, 0, 0]], cell=[box_size] * 3, pbc=True)
-    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic)
+    if magnetic:
+        atoms.set_initial_magnetic_moments(_initial_magmoms([symbol]))
+    # Γ-only is exact for a single atom in a non-periodic box; default 6×6×6
+    # samples 216 redundant k-points and dominates the per-element wall time.
+    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic, kpts=(1, 1, 1))
     try:
         t0 = time.time()
         e = atoms.get_potential_energy()
@@ -121,6 +152,8 @@ def _run_eos_point(symbol, pseudo, ase_lat, a, calc_dir, magnetic, strain_idx):
     """Run a single EOS strain point. Returns (strain_idx, volume, energy) or (strain_idx, None, None)."""
     try:
         atoms = bulk(symbol, ase_lat, a=a) * (2, 2, 2)
+        if magnetic:
+            atoms.set_initial_magnetic_moments(_initial_magmoms(atoms.get_chemical_symbols()))
         atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic, kpts=(3, 3, 3))
         t0 = time.time()
         e = atoms.get_potential_energy()
@@ -252,6 +285,8 @@ def _elastic_constants(symbol, a0, work_dir):
     # FCC conventional: 4 atoms × (1,1,2) = 8; BCC conventional: 2 atoms × (2,2,2) = 16 → use (1,1,2) for FCC, (2,2,2) for BCC
     logger.info(f"  [ELASTIC] Step 1/2: Baseline stress...")
     atoms = bulk(symbol, lat, a=a0, cubic=True) * (2, 2, 2)
+    if magnetic:
+        atoms.set_initial_magnetic_moments(_initial_magmoms(atoms.get_chemical_symbols()))
     calc_dir = os.path.join(work_dir, "elastic_base")
     atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic, kpts=(3, 3, 3))
 
@@ -270,6 +305,8 @@ def _elastic_constants(symbol, a0, work_dir):
     cell[0, 0] *= (1 + delta)
     atoms_strained = atoms.copy()
     atoms_strained.set_cell(cell, scale_atoms=True)
+    if magnetic:
+        atoms_strained.set_initial_magnetic_moments(_initial_magmoms(atoms_strained.get_chemical_symbols()))
     calc_dir_s = os.path.join(work_dir, "elastic_strain")
     atoms_strained.calc = _make_calculator({symbol: pseudo}, calc_dir_s, magnetic=magnetic, kpts=(3, 3, 3))
 
@@ -339,13 +376,27 @@ def _run_binary_pair(sym_i, sym_j, work_dir, e_per_atom):
         symbols = [sym_i, sym_j]
         cell = [[a, 0, 0], [0, a, 0], [0, 0, a]]
 
+    pair_key = f"{sym_i}-{sym_j}"
+
+    # Hard-fail when either reference is missing — silently treating it as
+    # 0 eV pollutes E_form with the pseudopotential total energy of the other
+    # species, which was the root cause of all the ~-268 / -1448 / -1657 eV
+    # entries in earlier dft_results.json revisions.
+    e_ref_i = e_per_atom.get(sym_i)
+    e_ref_j = e_per_atom.get(sym_j)
+    if e_ref_i is None or e_ref_j is None or e_ref_i == 0.0 or e_ref_j == 0.0:
+        print(f"  [BINARY] {pair_key}: SKIPPED — missing/zero elemental reference "
+              f"(E_bulk_{sym_i}={e_ref_i}, E_bulk_{sym_j}={e_ref_j})", flush=True)
+        return (pair_key, None)
+
     atoms = Atoms(symbols=symbols, positions=positions, cell=cell, pbc=True)
+    if magnetic:
+        atoms.set_initial_magnetic_moments(_initial_magmoms(symbols))
     pseudopotentials = {sym_i: pseudo_i, sym_j: pseudo_j}
     calc_dir = os.path.join(work_dir, f"binary_{sym_i}_{sym_j}")
     os.makedirs(calc_dir, exist_ok=True)
     atoms.calc = _make_calculator(pseudopotentials, calc_dir, magnetic=magnetic)
 
-    pair_key = f"{sym_i}-{sym_j}"
     try:
         t0 = time.time()
         e_total = atoms.get_potential_energy()
@@ -354,7 +405,7 @@ def _run_binary_pair(sym_i, sym_j, work_dir, e_per_atom):
         e_mix = e_total / n_atoms
         n_i = symbols.count(sym_i)
         n_j = symbols.count(sym_j)
-        e_ref = (n_i * e_per_atom.get(sym_i, 0) + n_j * e_per_atom.get(sym_j, 0)) / n_atoms
+        e_ref = (n_i * e_ref_i + n_j * e_ref_j) / n_atoms
         e_form = e_mix - e_ref
         print(f"  [BINARY] {pair_key}: E_form={e_form:.4f} eV/atom ({dt:.1f}s)", flush=True)
         return (pair_key, e_form)
