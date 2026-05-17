@@ -30,6 +30,16 @@ const RANGES = {
   C12: { min: 0,   max: 250 },
 };
 
+// Per-target display unit, appended to any "± σ" chip so the magnitude
+// reads correctly. ν is dimensionless and gets the empty string (no
+// stray space at the end of the chip).
+const UNITS = {
+  E:   'GPa',
+  nu:  '',
+  C11: 'GPa',
+  C12: 'GPa',
+};
+
 // Calibration block emitted by Flask into a <script type="application/json">
 // tag. Used to draw the ±1σ band on each axis using the validation `Std`.
 const CAL = (() => {
@@ -300,10 +310,24 @@ function fmt(v, digits = 2) {
   return v.toFixed(digits);
 }
 
-function setStat(key, value, digits) {
+function setStat(key, value, digits, sigma) {
   const el = document.getElementById('val-' + key);
   if (!el) return;
   el.textContent = fmt(value, digits);
+
+  // Per-prediction σ chip: hidden when sigma is non-finite or exactly 0
+  // (the single-model case). Reporting "± 0.00 GPa" would falsely imply
+  // that we've quantified uncertainty and found none.
+  const sigEl = document.getElementById('sig-' + key);
+  if (sigEl) {
+    if (Number.isFinite(sigma) && sigma > 0) {
+      const unit = UNITS[key] ? ' ' + UNITS[key] : '';
+      sigEl.textContent = '± ' + fmt(sigma, digits) + unit;
+      sigEl.hidden = false;
+    } else {
+      sigEl.hidden = true;
+    }
+  }
 
   const card = el.closest('.stat');
   const axis = card?.querySelector('.stat__axis');
@@ -315,13 +339,55 @@ function setStat(key, value, digits) {
   const pct = ((clamped - min) / span) * 100;
   axis.style.setProperty('--mark-pos', pct + '%');
 
-  // ±1σ confidence band, derived from the validation Std for this target.
-  const std = VAL_STATS[key]?.Std;
-  if (Number.isFinite(std)) {
-    const bandW = Math.min(100, (2 * std / span) * 100);
+  // Confidence band: prefer the per-prediction ensemble σ (varies with
+  // composition); fall back to the validation residual std (constant per
+  // target) when no ensemble is available. Both render as the existing
+  // `.stat__axis-band` element.
+  const effectiveStd =
+    (Number.isFinite(sigma) && sigma > 0) ? sigma : VAL_STATS[key]?.Std;
+  if (Number.isFinite(effectiveStd)) {
+    const bandW = Math.min(100, (2 * effectiveStd / span) * 100);
     axis.style.setProperty('--band-w', bandW.toFixed(2) + '%');
   }
   card.classList.add('has-result');
+}
+
+// ─── Uncertainty strip (OOD + ensemble) ─────────────────────────────
+const uncertStrip = document.getElementById('uncert-strip');
+const oodPill     = document.getElementById('ood-pill');
+const oodLabel    = document.getElementById('ood-label');
+const oodHint     = document.getElementById('ood-hint');
+const ensPill     = document.getElementById('ens-pill');
+const ensVal      = document.getElementById('ens-val');
+
+const OOD_COPY = {
+  in:      { label: 'in distribution',  hint: '' },
+  edge:    { label: 'sparse region',    hint: 'few neighbours' },
+  out:     { label: 'extrapolation',    hint: 'beyond training data' },
+  unknown: { label: 'unknown',          hint: '' },
+};
+
+function renderUncertainty(data) {
+  if (!uncertStrip) return;
+  uncertStrip.hidden = false;
+
+  // OOD pill — class + label + optional hint
+  const u = data.uncertainty || {};
+  const cls = OOD_COPY[u.ood_class] ? u.ood_class : 'unknown';
+  oodPill.dataset.class = cls;
+  oodLabel.textContent  = OOD_COPY[cls].label;
+  // Distance is in composition-fraction units; render to 3 dp for a
+  // recognisable number without overwhelming the pill.
+  const dHint = Number.isFinite(u.knn_distance)
+    ? `d=${u.knn_distance.toFixed(3)}`
+    : '';
+  oodHint.textContent = [OOD_COPY[cls].hint, dHint].filter(Boolean).join(' · ');
+
+  // Ensemble pill — N members; flag "single" so the dashed border + dim
+  // text remind the user that the σ chips on the cards will not appear.
+  const n = data.ensemble_size || 1;
+  ensVal.textContent = n > 1 ? `${n} members` : 'single model';
+  ensPill.classList.toggle('ens-pill--single', n <= 1);
 }
 
 function renderResult(data) {
@@ -335,11 +401,12 @@ function renderResult(data) {
     el.style.animation = '';
   });
 
-  setStat('E',   data.E_GPa,   2);
-  setStat('nu',  data.nu,      3);
-  setStat('C11', data.C11_GPa, 2);
-  setStat('C12', data.C12_GPa, 2);
+  setStat('E',   data.E_GPa,   2, data.E_GPa_std);
+  setStat('nu',  data.nu,      3, data.nu_std);
+  setStat('C11', data.C11_GPa, 2, data.C11_GPa_std);
+  setStat('C12', data.C12_GPa, 2, data.C12_GPa_std);
 
+  renderUncertainty(data);
   renderAshby(data.E_GPa, data.nu);
   renderTornado(data.sensitivity || []);
 

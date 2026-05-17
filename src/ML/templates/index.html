@@ -330,6 +330,24 @@
         <!-- Results grid -->
         <div class="readout" id="readout" hidden>
 
+          <!-- ── Uncertainty strip (above the cards) ───────────────────
+               OOD pill describes how close the query composition sits to
+               the training distribution (KNN-distance against per-corpus
+               self-distance percentiles). Ensemble pill shows how many
+               independently trained members contributed to the σ values
+               on each card. Both are hidden until the first prediction. -->
+          <div class="uncert-strip" id="uncert-strip" hidden>
+            <span class="ood-pill" id="ood-pill" data-class="unknown">
+              <span class="ood-pill__dot"></span>
+              <span class="ood-pill__label" id="ood-label">—</span>
+              <span class="ood-pill__hint" id="ood-hint"></span>
+            </span>
+            <span class="ens-pill" id="ens-pill">
+              <span class="ens-pill__lbl">ensemble</span>
+              <span class="ens-pill__val" id="ens-val">—</span>
+            </span>
+          </div>
+
           <div class="cards">
 
             <article class="stat" data-key="E">
@@ -343,6 +361,7 @@
               <div class="stat__val">
                 <span class="stat__num" id="val-E">—</span>
                 <span class="stat__unit">GPa</span>
+                <span class="stat__sigma" id="sig-E" hidden title="±1σ across ensemble members for this composition">&plusmn;&thinsp;0.0&nbsp;GPa</span>
               </div>
               <div class="stat__axis" data-min="40" data-max="180" data-val="0">
                 <span class="stat__axis-bar"></span>
@@ -366,6 +385,7 @@
               <div class="stat__val">
                 <span class="stat__num" id="val-nu">—</span>
                 <span class="stat__unit">&mdash;</span>
+                <span class="stat__sigma" id="sig-nu" hidden title="±1σ across ensemble members for this composition">&plusmn;&thinsp;0.000</span>
               </div>
               <div class="stat__axis" data-min="0.0" data-max="0.5" data-val="0">
                 <span class="stat__axis-bar"></span>
@@ -389,6 +409,7 @@
               <div class="stat__val">
                 <span class="stat__num" id="val-C11">—</span>
                 <span class="stat__unit">GPa</span>
+                <span class="stat__sigma" id="sig-C11" hidden title="±1σ across ensemble members for this composition">&plusmn;&thinsp;0.0&nbsp;GPa</span>
               </div>
               <div class="stat__axis" data-min="30" data-max="400" data-val="0">
                 <span class="stat__axis-bar"></span>
@@ -412,6 +433,7 @@
               <div class="stat__val">
                 <span class="stat__num" id="val-C12">—</span>
                 <span class="stat__unit">GPa</span>
+                <span class="stat__sigma" id="sig-C12" hidden title="±1σ across ensemble members for this composition">&plusmn;&thinsp;0.0&nbsp;GPa</span>
               </div>
               <div class="stat__axis" data-min="0" data-max="250" data-val="0">
                 <span class="stat__axis-bar"></span>

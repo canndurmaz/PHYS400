@@ -14,14 +14,36 @@ from __future__ import annotations
 import json
 import os
 import random
+import sys
 from datetime import datetime, timezone
 
 from flask import Flask, jsonify, render_template, request
 
-from nn_alloy import ALL_ELEMENTS
+from model_constants import ALL_ELEMENTS  # TF-free constants
 from predict_from_model import predict_properties
+from uncertainty import (
+    classify_ood,
+    composition_to_vector,
+    knn_distance,
+    load_training_X,
+    ood_thresholds,
+)
 
-app = Flask(__name__)
+# ── Resource root ──────────────────────────────────────────────────────────
+# In a normal Python run, data files (templates/static/models/json) live
+# next to this file. In a PyInstaller-frozen bundle they're extracted to a
+# temp dir whose path is exposed as ``sys._MEIPASS``. Detect that mode and
+# resolve everything against the right root.
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    _RESOURCE_ROOT = sys._MEIPASS  # type: ignore[attr-defined]
+else:
+    _RESOURCE_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(_RESOURCE_ROOT, "templates"),
+    static_folder=os.path.join(_RESOURCE_ROOT, "static"),
+)
 
 # ── Calibration: load nn_metrics.json so the UI can display the model's
 # validation-set MAPE alongside each prediction. The calibration panel and
@@ -30,9 +52,19 @@ app = Flask(__name__)
 # (or ``run_nn.sh``) while the Flask server is up refreshes the panel on
 # the next request without a restart. Unchanged files are served from
 # cache for free (one stat() syscall, no JSON re-parse).
-_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_THIS_DIR = _RESOURCE_ROOT
 _METRICS_PATH = os.path.join(_THIS_DIR, "nn_metrics.json")
-_MODEL_PATH   = os.path.join(_THIS_DIR, "alloy_model.keras")
+# Model path is only used for the "trained on" date stamp in the calibration
+# panel. Prefer an ONNX checkpoint (runtime format); fall back to the legacy
+# .keras name so the panel still populates in a dev environment that hasn't
+# converted yet.
+_MODEL_PATH   = next(
+    (os.path.join(_THIS_DIR, p) for p in
+     ("alloy_model_0.onnx", "alloy_model.onnx",
+      "alloy_model_0.keras", "alloy_model.keras")
+     if os.path.exists(os.path.join(_THIS_DIR, p))),
+    os.path.join(_THIS_DIR, "alloy_model.keras"),
+)
 _RESULTS_PATH = os.path.join(_THIS_DIR, "results.json")
 _CLOUD_MAX    = 800        # rendered SVG dots; ~800 reads dense without lagging
 
@@ -142,6 +174,10 @@ def _load_calibration() -> dict:
 # by a fresh training run. Initial values force a load on the first call.
 _CAL_CACHE: dict = {"mtime": None, "data": {}}
 _CLOUD_CACHE: dict = {"mtime": None, "data": []}
+# OOD cache holds the training composition matrix *and* the precomputed
+# self-distance percentiles used to classify a query. Both are derived
+# from ``results.json``, so a single mtime key suffices.
+_OOD_CACHE: dict = {"mtime": None, "X": None, "thresholds": {}}
 
 
 def _file_mtime(path: str) -> float | None:
@@ -167,6 +203,49 @@ def _cloud() -> list[dict]:
         _CLOUD_CACHE["mtime"] = mtime
         _CLOUD_CACHE["data"] = _load_cloud()
     return _CLOUD_CACHE["data"]
+
+
+def _ood() -> dict:
+    """Return cached training matrix + OOD thresholds.
+
+    Rebuilds on ``results.json`` mtime change so a fresh active-learning
+    round (which appends new compositions to results.json) auto-updates
+    the OOD baseline without a server restart. The threshold computation
+    is O(N²) in the training set size; for N≲1k it runs in well under
+    a second and is amortised across many predictions.
+    """
+    mtime = _file_mtime(_RESULTS_PATH)
+    if mtime != _OOD_CACHE["mtime"]:
+        X = load_training_X(_RESULTS_PATH, ALL_ELEMENTS)
+        _OOD_CACHE["mtime"] = mtime
+        _OOD_CACHE["X"] = X
+        _OOD_CACHE["thresholds"] = ood_thresholds(X)
+    return _OOD_CACHE
+
+
+def _uncertainty_for_query(comp_norm: dict[str, float]) -> dict:
+    """KNN-distance + OOD bucket for a normalised composition.
+
+    Pure-NumPy and ~sub-millisecond on a few-thousand-row training set,
+    so it's safe to call inline from ``/api/predict``. The ensemble σ
+    is provided separately by ``predict_properties`` itself; the two
+    signals are intentionally independent (data-density vs model-spread).
+    """
+    cache = _ood()
+    X = cache["X"]
+    if X is None or X.shape[0] == 0:
+        return {"knn_distance": None, "ood_class": "unknown",
+                "ood_p50": None, "ood_p95": None, "n_train_ref": 0}
+    query = composition_to_vector(comp_norm, ALL_ELEMENTS)
+    d = knn_distance(query, X)
+    thr = cache["thresholds"]
+    return {
+        "knn_distance": d,
+        "ood_class":    classify_ood(d, thr),
+        "ood_p50":      thr.get("p50"),
+        "ood_p95":      thr.get("p95"),
+        "n_train_ref":  thr.get("n", X.shape[0]),
+    }
 
 
 # Tolerance on the composition sum. MD/DFT inputs always normalise to 1.0,
@@ -263,6 +342,15 @@ def api_predict():
     except FileNotFoundError as e:
         return jsonify(error=str(e)), 503
 
+    # Attach the two composition-dependent uncertainty signals:
+    #   - ``ensemble_size`` + ``*_std`` (from predict_properties): how much
+    #     do independently trained ensemble members disagree at this point?
+    #   - ``uncertainty`` block (below): how far is this composition from
+    #     anything we have training data for?
+    # The two are complementary — an ensemble can be confidently wrong in
+    # a sparsely sampled region, and a known region can still have
+    # genuinely noisy ground truth.
+    out["uncertainty"] = _uncertainty_for_query(normalised)
     out["input_sum"] = total
     out["normalised_composition"] = normalised
     return jsonify(out)

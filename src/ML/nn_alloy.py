@@ -40,7 +40,9 @@ except ImportError:
     HAS_MPL = False
 
 # ── Constants ────────────────────────────────────────────────────────────────
-ALL_ELEMENTS = ["Al", "Co", "Cr", "Cu", "Fe", "Mg", "Mn", "Ni", "Ti", "Zn"]
+# ALL_ELEMENTS and C_SCALE are re-exported from ``model_constants`` so the
+# runtime predictor can import them without pulling TF into its process.
+from model_constants import ALL_ELEMENTS, C_SCALE  # noqa: E402  (re-export)
 
 TRAIN_RATIO = 0.70
 RANDOM_SEED = 42
@@ -52,10 +54,17 @@ TRAIN_BATCH_SIZE = 128
 
 # Filter ν close to the (1-2ν)=0 singularity to avoid noisy C_ij targets.
 NU_FILTER_MAX = 0.48
-# Output normalisation: most C_ij values are in 50-400 GPa.
-C_SCALE = 200.0
 # Huber transition point in scaled units (1.0 = 200 GPa).
 HUBER_DELTA = 1.0
+
+# Deep-ensemble support. Set ``ENSEMBLE_SIZE=5 ./run_nn.sh`` to train five
+# independent models with seeds [RANDOM_SEED, RANDOM_SEED+1, ...], saved
+# as ``alloy_model_0.keras`` ... ``alloy_model_{N-1}.keras``. The Flask
+# predictor (``predict_from_model.predict_properties``) auto-discovers
+# the checkpoints and reports mean ± σ across members. With the default
+# ``ENSEMBLE_SIZE=1`` the legacy ``alloy_model.keras`` filename is kept,
+# so older tooling keeps working unchanged.
+ENSEMBLE_SIZE = int(os.environ.get("ENSEMBLE_SIZE", "1"))
 
 # Report integration paths (re-uses the existing names so ``\input`` and
 # ``\includegraphics`` in the report require no changes).
@@ -432,104 +441,146 @@ def main():
     y_val_scaled = y_val_cij / C_SCALE
     print(f"\n  Train set: {len(X_train)} | Val set: {len(X_val)}")
 
+    # ── Ensemble cleanup ────────────────────────────────────────────────
+    # When training a fresh ensemble, drop any legacy single-model
+    # checkpoint so ``predict_from_model._discover_model_paths`` does not
+    # fall back to it after we write ``alloy_model_*.keras`` members.
+    if ENSEMBLE_SIZE > 1:
+        legacy_path = os.path.join(script_dir, "alloy_model.keras")
+        if os.path.exists(legacy_path):
+            os.remove(legacy_path)
+            print(f"\n  Removed legacy single-model checkpoint: {legacy_path}")
+        # Also drop any prior ensemble checkpoints with a *higher* index than
+        # we're about to write (e.g. shrinking from 7 → 5 members).
+        import glob as _glob
+        for stale in _glob.glob(os.path.join(script_dir, "alloy_model_*.keras")):
+            try:
+                idx = int(os.path.basename(stale).removeprefix("alloy_model_").removesuffix(".keras"))
+            except ValueError:
+                continue
+            if idx >= ENSEMBLE_SIZE:
+                os.remove(stale)
+                print(f"  Removed stale ensemble member: {stale}")
+        print(f"\n  Training deep ensemble: {ENSEMBLE_SIZE} members "
+              f"(seeds {RANDOM_SEED}..{RANDOM_SEED + ENSEMBLE_SIZE - 1})")
+
     # ── Train loop with restart ─────────────────────────────────────────
+    # Outer loop trains one independent ensemble member per iteration. With
+    # ``ENSEMBLE_SIZE=1`` (the default) this collapses to a single pass.
+    # Final reported metrics (table / plots / nn_metrics.json) reflect the
+    # *last* member only; per-prediction ensemble σ is computed at inference
+    # time by the Flask app, not from these training-time artefacts.
     t_total = time.time()
     all_loss = all_val_loss = all_mae = all_val_mae = None
-    for attempt in range(1, MAX_RESTARTS + 1):
-        print(f"\n{'='*70}\n  ATTEMPT {attempt}/{MAX_RESTARTS}\n{'='*70}")
-        model = build_model()
-        if attempt == 1:
-            model.summary(print_fn=lambda s: print(f"  {s}"))
+    for member_idx in range(ENSEMBLE_SIZE):
+        if ENSEMBLE_SIZE > 1:
+            member_seed = RANDOM_SEED + member_idx
+            np.random.seed(member_seed)
+            tf.random.set_seed(member_seed)
+            print(f"\n{'#' * 70}")
+            print(f"#  ENSEMBLE MEMBER {member_idx + 1}/{ENSEMBLE_SIZE} "
+                  f"(seed={member_seed})")
+            print('#' * 70)
+        for attempt in range(1, MAX_RESTARTS + 1):
+            print(f"\n{'='*70}\n  ATTEMPT {attempt}/{MAX_RESTARTS}\n{'='*70}")
+            model = build_model()
+            if attempt == 1 and member_idx == 0:
+                model.summary(print_fn=lambda s: print(f"  {s}"))
 
-        t0 = time.time()
-        total_epochs = 0
-        all_loss = []
-        all_val_loss = []
-        all_mae = []
-        all_val_mae = []
+            t0 = time.time()
+            total_epochs = 0
+            all_loss = []
+            all_val_loss = []
+            all_mae = []
+            all_val_mae = []
 
-        while total_epochs < MAX_EPOCHS:
-            class _EpochLogger(tf.keras.callbacks.Callback):
-                def __init__(self, offset, t_start, X_v, y_v_enu):
-                    super().__init__()
-                    self._offset = offset
-                    self._t0 = t_start
-                    self._X_v = X_v
-                    self._y_v = y_v_enu
-                    self.h_loss = []
-                    self.h_val_loss = []
-                    self.h_mae = []
-                    self.h_val_mae = []
+            while total_epochs < MAX_EPOCHS:
+                class _EpochLogger(tf.keras.callbacks.Callback):
+                    def __init__(self, offset, t_start, X_v, y_v_enu):
+                        super().__init__()
+                        self._offset = offset
+                        self._t0 = t_start
+                        self._X_v = X_v
+                        self._y_v = y_v_enu
+                        self.h_loss = []
+                        self.h_val_loss = []
+                        self.h_mae = []
+                        self.h_val_mae = []
 
-                def on_epoch_end(self, epoch, logs=None):
-                    logs = logs or {}
-                    self.h_loss.append(logs.get("loss", 0))
-                    self.h_val_loss.append(logs.get("val_loss", 0))
-                    self.h_mae.append(logs.get("mae", 0))
-                    self.h_val_mae.append(logs.get("val_mae", 0))
-                    ge = self._offset + epoch
-                    elapsed = time.time() - self._t0
-                    if ge >= 5 and ge % 100 != 0:
-                        return
-                    E_p, nu_p, _, _ = _predict_enu(self.model, self._X_v)
-                    e_err = np.abs(E_p - self._y_v[:, 0]) / np.maximum(np.abs(self._y_v[:, 0]), 1e-8) * 100
-                    n_err = np.abs(nu_p - self._y_v[:, 1]) / np.maximum(np.abs(self._y_v[:, 1]), 1e-8) * 100
-                    n_over = int(np.sum((e_err > MAX_ERROR_PCT) | (n_err > MAX_ERROR_PCT)))
-                    print(f"  Epoch {ge:5d} | loss={logs.get('loss',0):.6f} "
-                          f"val_loss={logs.get('val_loss',0):.6f} | "
-                          f"E_MAPE={e_err.mean():.1f}% nu_MAPE={n_err.mean():.1f}% | "
-                          f"max_err: E={e_err.max():.1f}% nu={n_err.max():.1f}% | "
-                          f"fail={n_over}/{len(self._y_v)} | {elapsed:.0f}s")
+                    def on_epoch_end(self, epoch, logs=None):
+                        logs = logs or {}
+                        self.h_loss.append(logs.get("loss", 0))
+                        self.h_val_loss.append(logs.get("val_loss", 0))
+                        self.h_mae.append(logs.get("mae", 0))
+                        self.h_val_mae.append(logs.get("val_mae", 0))
+                        ge = self._offset + epoch
+                        elapsed = time.time() - self._t0
+                        if ge >= 5 and ge % 100 != 0:
+                            return
+                        E_p, nu_p, _, _ = _predict_enu(self.model, self._X_v)
+                        e_err = np.abs(E_p - self._y_v[:, 0]) / np.maximum(np.abs(self._y_v[:, 0]), 1e-8) * 100
+                        n_err = np.abs(nu_p - self._y_v[:, 1]) / np.maximum(np.abs(self._y_v[:, 1]), 1e-8) * 100
+                        n_over = int(np.sum((e_err > MAX_ERROR_PCT) | (n_err > MAX_ERROR_PCT)))
+                        print(f"  Epoch {ge:5d} | loss={logs.get('loss',0):.6f} "
+                              f"val_loss={logs.get('val_loss',0):.6f} | "
+                              f"E_MAPE={e_err.mean():.1f}% nu_MAPE={n_err.mean():.1f}% | "
+                              f"max_err: E={e_err.max():.1f}% nu={n_err.max():.1f}% | "
+                              f"fail={n_over}/{len(self._y_v)} | {elapsed:.0f}s")
 
-            logger = _EpochLogger(total_epochs, t0, X_val, y_val_enu)
-            model.fit(
-                X_train, y_train_scaled,
-                validation_data=(X_val, y_val_scaled),
-                epochs=BATCH_EPOCHS,
-                batch_size=min(TRAIN_BATCH_SIZE, len(X_train)),
-                verbose=0,
-                callbacks=[logger],
-            )
-            total_epochs += len(logger.h_loss)
-            all_loss.extend(logger.h_loss)
-            all_val_loss.extend(logger.h_val_loss)
-            all_mae.extend(logger.h_mae)
-            all_val_mae.extend(logger.h_val_mae)
+                logger = _EpochLogger(total_epochs, t0, X_val, y_val_enu)
+                model.fit(
+                    X_train, y_train_scaled,
+                    validation_data=(X_val, y_val_scaled),
+                    epochs=BATCH_EPOCHS,
+                    batch_size=min(TRAIN_BATCH_SIZE, len(X_train)),
+                    verbose=0,
+                    callbacks=[logger],
+                )
+                total_epochs += len(logger.h_loss)
+                all_loss.extend(logger.h_loss)
+                all_val_loss.extend(logger.h_val_loss)
+                all_mae.extend(logger.h_mae)
+                all_val_mae.extend(logger.h_val_mae)
 
-            (passed, n_pass, n_fail, fail_rows,
-             max_E_err, max_nu_err, mean_E_err, mean_nu_err) = (
-                _check_val_accuracy(model, X_val, y_val_enu, val_names))
-            elapsed = time.time() - t0
-            print(f"\n  --- Epoch {total_epochs}: Val {n_pass} PASS / {n_fail} FAIL "
-                  f"| mean_err: E={mean_E_err:.1f}% nu={mean_nu_err:.1f}% "
-                  f"| max_err: E={max_E_err:.1f}% nu={max_nu_err:.1f}% "
-                  f"(target: mean <={MAX_ERROR_PCT:.0f}%) [{elapsed:.0f}s] ---")
+                (passed, n_pass, n_fail, fail_rows,
+                 max_E_err, max_nu_err, mean_E_err, mean_nu_err) = (
+                    _check_val_accuracy(model, X_val, y_val_enu, val_names))
+                elapsed = time.time() - t0
+                print(f"\n  --- Epoch {total_epochs}: Val {n_pass} PASS / {n_fail} FAIL "
+                      f"| mean_err: E={mean_E_err:.1f}% nu={mean_nu_err:.1f}% "
+                      f"| max_err: E={max_E_err:.1f}% nu={max_nu_err:.1f}% "
+                      f"(target: mean <={MAX_ERROR_PCT:.0f}%) [{elapsed:.0f}s] ---")
+                if passed:
+                    print(f"  Mean val error within {MAX_ERROR_PCT:.0f}% on derived (E, nu)!")
+                    break
+                else:
+                    if 0 < len(fail_rows) <= 10:
+                        print(tabulate(fail_rows,
+                                       headers=["Alloy", "E true", "E pred",
+                                                "E err%", "nu true", "nu pred",
+                                                "nu err%"],
+                                       tablefmt="simple"))
+
             if passed:
-                print(f"  Mean val error within {MAX_ERROR_PCT:.0f}% on derived (E, nu)!")
                 break
             else:
-                if 0 < len(fail_rows) <= 10:
-                    print(tabulate(fail_rows,
-                                   headers=["Alloy", "E true", "E pred",
-                                            "E err%", "nu true", "nu pred",
-                                            "nu err%"],
-                                   tablefmt="simple"))
+                if attempt < MAX_RESTARTS:
+                    print(f"\n  Attempt {attempt} failed; restarting.")
+                else:
+                    print(f"\n  Max restarts reached. Using best result so far.")
 
-        if passed:
-            break
+        # ── Save this member's checkpoint ───────────────────────────────
+        if ENSEMBLE_SIZE > 1:
+            member_path = os.path.join(script_dir, f"alloy_model_{member_idx}.keras")
         else:
-            if attempt < MAX_RESTARTS:
-                print(f"\n  Attempt {attempt} failed; restarting.")
-            else:
-                print(f"\n  Max restarts reached. Using best result so far.")
+            member_path = os.path.join(script_dir, "alloy_model.keras")
+        model.save(member_path)
+        print(f"  Model saved to {member_path}")
 
     dt_total = time.time() - t_total
     print(f"\n  Training complete: {total_epochs} epochs, {attempt} attempt(s), {dt_total:.1f}s")
-
-    # ── Save model ──────────────────────────────────────────────────────
-    model_path = os.path.join(script_dir, "alloy_model.keras")
-    model.save(model_path)
-    print(f"  Model saved to {model_path}")
+    if ENSEMBLE_SIZE > 1:
+        print(f"  Ensemble: {ENSEMBLE_SIZE} members trained.")
 
     # ── Final metrics on both targets ───────────────────────────────────
     E_tr, nu_tr, C11_tr, C12_tr = _predict_enu(model, X_train)

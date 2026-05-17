@@ -40,6 +40,12 @@
   --amber-bg-1h:  #3a2810;        /* button gradient hover start */
   --amber-bg-2h:  #2a1d0a;        /* button gradient hover end   */
 
+  /* Status accents — used by the OOD pill and any future alert state.
+     Desaturated to sit comfortably alongside the filament amber without
+     fighting it for visual weight. */
+  --ok:           #6ec07a;
+  --danger:       #d2735a;
+
   /* Element-family hues — desaturated for the dark theme but recognisably
      periodic-table-derived: alkaline-earth = warm yellow, post-transition =
      steel blue, transition metal = muted rose. */
@@ -699,6 +705,97 @@ body {
 /* ─── Readout / stat cards ──────────────────────────────────────────── */
 .readout { display: flex; flex-direction: column; gap: 22px; }
 
+/* ── Uncertainty strip (above the prediction cards) ────────────────────
+   Holds the OOD pill (composition vs. training-data density) and the
+   ensemble pill (member count + meaningfulness of σ). Designed as two
+   horizontally-anchored chips with quiet defaults; the OOD pill swaps
+   accent color via data-class to call attention to extrapolation. */
+.uncert-strip {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: -8px;       /* tighten against the cards grid below */
+}
+.uncert-strip[hidden] { display: none; }
+
+.ood-pill, .ens-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--panel-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.ood-pill__dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--ink-fade);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink-fade) 30%, transparent);
+}
+.ood-pill__hint {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--ink-fade);
+  font-size: 9.5px;
+}
+
+/* OOD bucket colorways. "in" is a quiet success state (no glow, just to
+   confirm); "edge" picks up the calibration amber; "out" turns assertive
+   red-orange. "unknown" keeps the neutral ink-fade dot. */
+.ood-pill[data-class="in"] {
+  border-color: color-mix(in srgb, var(--ok, #6ec07a) 45%, var(--line-strong));
+  color: color-mix(in srgb, var(--ok, #6ec07a) 80%, var(--ink));
+}
+.ood-pill[data-class="in"] .ood-pill__dot {
+  background: var(--ok, #6ec07a);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok, #6ec07a) 35%, transparent);
+}
+.ood-pill[data-class="edge"] {
+  border-color: color-mix(in srgb, var(--amber) 55%, var(--line-strong));
+  color: color-mix(in srgb, var(--amber) 90%, var(--ink));
+  background: color-mix(in srgb, var(--amber) 6%, var(--panel-3));
+}
+.ood-pill[data-class="edge"] .ood-pill__dot {
+  background: var(--amber);
+  box-shadow: 0 0 8px -1px var(--amber-glow);
+}
+.ood-pill[data-class="out"] {
+  border-color: color-mix(in srgb, var(--danger, #d2735a) 55%, var(--line-strong));
+  color: color-mix(in srgb, var(--danger, #d2735a) 90%, var(--ink));
+  background: color-mix(in srgb, var(--danger, #d2735a) 8%, var(--panel-3));
+}
+.ood-pill[data-class="out"] .ood-pill__dot {
+  background: var(--danger, #d2735a);
+  box-shadow: 0 0 10px -1px color-mix(in srgb, var(--danger, #d2735a) 50%, transparent);
+}
+
+.ens-pill__lbl {
+  color: var(--ink-fade);
+  letter-spacing: 0.08em;
+}
+.ens-pill__val {
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+/* When ensemble = 1 the σ is mechanically zero, so the JS adds this class
+   to dim the pill — it's a reminder, not a value to celebrate. */
+.ens-pill.ens-pill--single {
+  border-style: dashed;
+  color: var(--ink-fade);
+}
+.ens-pill.ens-pill--single .ens-pill__val { color: var(--ink-dim); }
+
 .cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -774,6 +871,32 @@ body {
   color: var(--ink-dim);
   letter-spacing: 0.06em;
 }
+
+/* ── Per-prediction ensemble σ chip ──────────────────────────────────────
+   Sits inside .stat__val next to the unit. Hidden by default (and by JS
+   when ensemble_size <= 1, since σ is then mechanically zero and would
+   misrepresent uncertainty as quantified). */
+.stat__sigma {
+  margin-left: auto;
+  padding: 2px 7px;
+  align-self: center;
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line-strong));
+  border-radius: 2px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--amber) 85%, var(--ink));
+  background: color-mix(in srgb, var(--amber) 6%, transparent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.stat--sub .stat__sigma {
+  border-color: var(--line-strong);
+  color: var(--ink-soft);
+  background: transparent;
+}
+.stat__sigma[hidden] { display: none; }
+
 .stat__axis {
   position: relative;
   height: 22px;

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="40" fill="#1a1d22"/>
+  <g transform="translate(128 128) scale(2.4)" stroke="#ffb347" stroke-width="2.4" fill="none" stroke-linecap="round">
+    <line x1="-25" y1="-15" x2="25"  y2="-15"/>
+    <line x1="-25" y1="-15" x2="-25" y2="35"/>
+    <line x1="25"  y1="-15" x2="25"  y2="35"/>
+    <line x1="-25" y1="35"  x2="25"  y2="35"/>
+    <line x1="-25" y1="-15" x2="-40" y2="0"/>
+    <line x1="25"  y1="-15" x2="10"  y2="0"/>
+    <line x1="-25" y1="35"  x2="-40" y2="50"/>
+    <line x1="25"  y1="35"  x2="10"  y2="50"/>
+    <line x1="-40" y1="0"  x2="10"  y2="0"/>
+    <line x1="-40" y1="50" x2="10"  y2="50"/>
+    <line x1="-40" y1="0"  x2="-40" y2="50"/>
+    <line x1="10"  y1="0"  x2="10"  y2="50"/>
+  </g>
+  <g transform="translate(128 128) scale(2.4)" fill="#ffb347">
+    <circle cx="-25" cy="-15" r="4.5"/>
+    <circle cx="25"  cy="-15" r="4.5"/>
+    <circle cx="-25" cy="35"  r="4.5"/>
+    <circle cx="25"  cy="35"  r="4.5"/>
+    <circle cx="-40" cy="0"   r="5.5"/>
+    <circle cx="10"  cy="0"   r="5.5"/>
+    <circle cx="-40" cy="50"  r="5.5"/>
+    <circle cx="10"  cy="50"  r="5.5"/>
+  </g>
+</svg>

@@ -27,3 +27,13 @@ GEMINI.md
 *.toc
 *.out
 reports/slideshow/tmp/
+
+# AppImage build artifacts (residuals; final AppImage is committed)
+/src/ML/build/
+/src/ML/dist/
+/src/ML/AppDir/
+/dist-tools/
+/src/ML/__pycache__/
+# Per-run training splits (regenerated each ./run_nn.sh)
+/src/ML/results_train.json
+/src/ML/results_val.json

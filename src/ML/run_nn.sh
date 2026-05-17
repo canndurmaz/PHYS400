@@ -31,6 +31,12 @@ PYTHON_VENV="../../phys/bin/python3"
 # Ensure we are in the script's directory so relative paths work
 cd "$(dirname "$0")"
 
-echo "Training Alloy Neural Network and predicting for predict.json..."
+# Deep-ensemble size. Default 5: a common sweet spot in the surrogate-model
+# literature (good aleatoric+epistemic separation, low marginal benefit
+# beyond 5–10 for a network this small). Override by exporting before the
+# call, e.g. ``ENSEMBLE_SIZE=1 ./run_nn.sh`` for a quick single-model run.
+export ENSEMBLE_SIZE="${ENSEMBLE_SIZE:-5}"
+
+echo "Training Alloy Neural Network (ensemble of $ENSEMBLE_SIZE) and predicting for predict.json..."
 _setup_timer
 $PYTHON_VENV nn_alloy.py
