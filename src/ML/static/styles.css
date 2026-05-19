@@ -326,13 +326,13 @@ body {
 }
 @keyframes cell-in { to { opacity: 1; transform: none; } }
 
-/* Family colour mapping: alkaline-earth (Mg), post-transition (Al),
-   transition metals (everyone else). */
+/* Family colour mapping: alkaline-earth (Mg), p-block (Al, Si),
+   transition metals (everyone else, incl. Mo). */
 .cell[data-el="Mg"] { --fam: var(--fam-ae); }
-.cell[data-el="Al"] { --fam: var(--fam-pt); }
+.cell[data-el="Al"], .cell[data-el="Si"] { --fam: var(--fam-pt); }
 .cell[data-el="Co"], .cell[data-el="Cr"], .cell[data-el="Cu"],
-.cell[data-el="Fe"], .cell[data-el="Mn"], .cell[data-el="Ni"],
-.cell[data-el="Ti"], .cell[data-el="Zn"] { --fam: var(--fam-tm); }
+.cell[data-el="Fe"], .cell[data-el="Mn"], .cell[data-el="Mo"],
+.cell[data-el="Ni"], .cell[data-el="Ti"], .cell[data-el="Zn"] { --fam: var(--fam-tm); }
 
 .cell__stripe {
   position: absolute; left: 0; top: 0; bottom: 0;

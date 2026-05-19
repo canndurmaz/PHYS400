@@ -17,7 +17,7 @@ import numpy as np
 # Composition basis. Order matters: the trained model's input column ``i``
 # corresponds to the mole fraction of ``ALL_ELEMENTS[i]``. Adding an
 # element here means retraining; reordering means rewriting checkpoints.
-ALL_ELEMENTS = ["Al", "Co", "Cr", "Cu", "Fe", "Mg", "Mn", "Ni", "Ti", "Zn"]
+ALL_ELEMENTS = ["Al", "Co", "Cr", "Cu", "Fe", "Mg", "Mn", "Mo", "Ni", "Si", "Ti", "Zn"]
 
 # Output normalisation: most C_ij values land in 50–400 GPa, so we divide
 # by 200 before training and multiply back at inference. Lives here (not

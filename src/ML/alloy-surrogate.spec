@@ -1,12 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
 """PyInstaller spec for the alloy-surrogate desktop app.
 
-Builds a one-folder bundle (faster startup than one-file; AppImage wraps
-it into a single distributable file anyway). Entry point is the pywebview
+Builds a one-file self-extracting binary. Entry point is the pywebview
 launcher in ``app_desktop.py``. The Flask UI, templates, static assets,
 ensemble ONNX checkpoints, and ground-truth data are all bundled in;
 TensorFlow is deliberately excluded (the ONNX runtime is enough) to keep
 the binary an order of magnitude smaller.
+
+One-file mode trades ~1-2 s of cold-start (the bootloader extracts the
+bundle to /tmp/_MEI<pid>/ on each launch) for a true single-file
+artifact — no AppImage wrapper, no _internal/ sidecar directory, just
+one executable the user can ``chmod +x`` and run on any modern Linux.
 
 Build with:
     pyinstaller --noconfirm alloy-surrogate.spec
@@ -38,6 +42,20 @@ hiddenimports = [
     "webview.platforms.gtk",
     "webview.platforms.cocoa",
     "webview.platforms.edgechromium",
+    # setuptools >= 60 vendors a stack of helper packages through
+    # ``pkg_resources.extern``; PyInstaller's static analyser misses them
+    # and the bundled app dies at startup with ImportError. Name them all
+    # explicitly. setuptools 82 (the version in this venv) needs at least
+    # jaraco.* + more_itertools + platformdirs + packaging + backports.
+    "jaraco.text",
+    "jaraco.context",
+    "jaraco.functools",
+    "more_itertools",
+    "platformdirs",
+    "packaging",
+    "autocommand",
+    "typing_extensions",
+    "backports.tarfile",
 ]
 # onnxruntime ships a C extension whose submodules PyInstaller occasionally
 # misses; let the hook collector enumerate them all.
@@ -88,16 +106,22 @@ a = Analysis(
 
 pyz = PYZ(a.pure)
 
+# One-file: pack binaries + zipped pure-Python + data files into the EXE
+# itself. The bootloader extracts everything to ``sys._MEIPASS`` (a
+# ``/tmp/_MEI<pid>`` dir) on each launch.
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.datas,
     [],
-    exclude_binaries=True,
     name="alloy-surrogate",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,           # UPX-compressing libpython sometimes breaks loaders
+    upx_exclude=[],
+    runtime_tmpdir=None, # default /tmp/_MEI<pid>; let the OS pick
     console=False,       # no terminal window pops up on launch
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -106,12 +130,4 @@ exe = EXE(
     entitlements_file=None,
 )
 
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=False,
-    upx_exclude=[],
-    name="alloy-surrogate",
-)
+# No COLLECT() in one-file mode — everything is inside the EXE above.

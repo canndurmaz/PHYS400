@@ -12,9 +12,9 @@ cannot recover even an approximate trend in $(E,\nu)$ from the
 dataset, the MD output itself is suspect --- and to provide a
 ready-to-use predictor for novel compositions.
 
-Each input vector has 10 entries (one mass fraction per element in
-$\{$Al, Co, Cr, Cu, Fe, Mg, Mn, Ni, Ti, Zn$\}$); the network has the
-architecture $10\to32\to20\to2$ with ReLU activations and is trained
+Each input vector has 12 entries (one mass fraction per element in
+$\{$Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, Zn$\}$); the network has the
+architecture $12\to32\to20\to2$ with ReLU activations and is trained
 under a 70/30 train/validation split with the Adam optimizer.
 
 \paragraph{Targets and Huber loss.}

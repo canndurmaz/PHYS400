@@ -29,7 +29,7 @@ from typing import Mapping
 import numpy as np
 
 
-# With ~hundreds of training points in a 10-dim composition space, k=5
+# With ~hundreds of training points in a 12-dim composition space, k=5
 # averages out single-point quirks while staying local enough to flag
 # genuine extrapolation. Tune in callers if the training cloud grows.
 DEFAULT_K = 5

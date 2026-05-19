@@ -61,11 +61,11 @@ Flask single-page app that wraps the predictor behind a form: enter mole fractio
 - **`nn_metrics.json`**: per-target metrics from the most recent training run.
 
 ## Feature Mapping (Element Indices)
-Compositions are converted into 10-dimensional feature vectors using this order:
+Compositions are converted into 12-dimensional feature vectors using this order (alphabetical, matching the full MEAM library coverage):
 
-| Index | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **Symbol** | Al | Co | Cr | Cu | Fe | Mg | Mn | Ni | Ti | Zn |
+| Index | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Symbol** | Al | Co | Cr | Cu | Fe | Mg | Mn | Mo | Ni | Si | Ti | Zn |
 
 ## Dependencies
 - TensorFlow
