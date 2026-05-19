@@ -5,7 +5,7 @@ Quantum ESPRESSO v7.5 (PWSCF)
 
 ## Build Details
 - **Source:** GitHub release `qe-7.5` from [QEF/q-e](https://github.com/QEF/q-e)
-- **Build location:** `/home/kenobi/Workspaces/qe/`
+- **Build location:** `$HOME/Workspaces/qe/`
 - **Build date:** 2026-03-15
 - **Compiler:** gfortran 13.3.0
 - **MPI:** OpenMPI 4.1.6 (parallel build)
@@ -15,8 +15,8 @@ Quantum ESPRESSO v7.5 (PWSCF)
 ## Build Steps
 ```bash
 # 1. Download source
-mkdir -p /home/kenobi/Workspaces/qe
-cd /home/kenobi/Workspaces/qe
+mkdir -p $HOME/Workspaces/qe
+cd $HOME/Workspaces/qe
 curl -L -o qe-7.5.tar.gz "https://api.github.com/repos/QEF/q-e/tarball/refs/tags/qe-7.5"
 tar xzf qe-7.5.tar.gz --strip-components=1
 
@@ -42,10 +42,10 @@ All were pre-installed on this system:
 
 | Resource | Path |
 |----------|------|
-| QE binary (`pw.x`) | `/home/kenobi/Workspaces/qe/bin/pw.x` |
-| Pseudopotentials | `/home/kenobi/Workspaces/PHYS400/pseudopotentials/` |
-| Test script | `/home/kenobi/Workspaces/PHYS400/src/QE/test_qe.py` |
-| Run script | `/home/kenobi/Workspaces/PHYS400/src/QE/run.sh` |
+| QE binary (`pw.x`) | `$HOME/Workspaces/qe/bin/pw.x` |
+| Pseudopotentials | `pseudopotentials/` (repo-relative) |
+| Test script | `src/QE/test_qe.py` (repo-relative) |
+| Run script | `src/QE/run.sh` (repo-relative) |
 
 ## Pseudopotentials
 
@@ -66,8 +66,9 @@ QE is driven from Python using **ASE** (Atomic Simulation Environment, v3.27.0).
 ```python
 from ase.calculators.espresso import Espresso, EspressoProfile
 
-QE_BIN = "/home/kenobi/Workspaces/qe/bin/pw.x"
-PSEUDO_DIR = "/home/kenobi/Workspaces/PHYS400/pseudopotentials"
+import os
+QE_BIN = os.path.expandvars("$HOME/Workspaces/qe/bin/pw.x")
+PSEUDO_DIR = os.path.abspath("pseudopotentials")  # relative to repo root
 
 profile = EspressoProfile(command=QE_BIN, pseudo_dir=PSEUDO_DIR)
 ```
@@ -152,8 +153,8 @@ Test output cleaned up.
 ## CLI Usage
 
 ```bash
-# Activate the phys venv (adds QE to PATH automatically)
-source /home/kenobi/Workspaces/PHYS400/phys/bin/activate
+# Activate the phys venv (adds QE to PATH automatically) — run from repo root
+source phys/bin/activate
 
 # Run a calculation
 pw.x < input.in > output.out

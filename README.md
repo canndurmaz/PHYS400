@@ -13,6 +13,20 @@ source phys/bin/activate
 pip install lammps ovito numpy tensorflow matplotlib ase mpi4py
 ```
 
+#### Optional: GPU acceleration for the ML stage
+
+If you have an NVIDIA GPU (driver ≥ 525 for CUDA 12), install TensorFlow's
+bundled CUDA wheels — this pulls matching `libcudart` / `libcudnn` as pip
+packages, so no system CUDA toolkit is required:
+
+```bash
+phys/bin/python3 -m pip install --upgrade 'tensorflow[and-cuda]==2.21.0'
+```
+
+Verify with `phys/bin/python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"`.
+If no GPU is detected, the ML stage transparently falls back to CPU (the
+composition surrogate is small enough that CPU training is fine).
+
 ### Custom LAMMPS Build
 The default LAMMPS build limits MEAM potentials to 5 elements. Rebuild with `maxelt=20` to support multi-element alloys:
 

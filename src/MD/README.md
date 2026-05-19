@@ -128,19 +128,19 @@ In the full pipeline workflow:
 ### Running all configs in a directory
 ```bash
 # Run every .json in the configs folder, in parallel by default
-./src/MD/run.sh --all ../configs/
+./src/MD/run.sh --all src/configs/
 
 # Force the sequential code path (e.g. for one-off debugging)
-./src/MD/run.sh --all ../configs/ --jobs 1
+./src/MD/run.sh --all src/configs/ --jobs 1
 
 # Cap the worker pool explicitly
-./src/MD/run.sh --all ../configs/ --jobs 4
+./src/MD/run.sh --all src/configs/ --jobs 4
 
 # With visualization (forces sequential — OVITO render is per-process)
-./src/MD/run.sh --viz --all ../configs/
+./src/MD/run.sh --viz --all src/configs/
 
 # With NVT molecular dynamics (forces sequential)
-./src/MD/run.sh --simMD --all ../configs/
+./src/MD/run.sh --simMD --all src/configs/
 ```
 
 By default the elastic-only batch path runs in parallel via `ProcessPoolExecutor` (`max_workers = cpu_count // 2`, `OMP_NUM_THREADS = 1`). All `results.json` writes happen in the main process so there is no race. Progress is printed as `[i/N]` with elapsed time and ETA. Results are appended to `src/ML/results.json` automatically.

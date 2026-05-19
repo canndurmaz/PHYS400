@@ -73,3 +73,24 @@ Compositions are converted into 10-dimensional feature vectors using this order:
 - Flask (for the web UI in `app.py`)
 - Matplotlib (optional, for plots)
 - `tabulate` (for the auto-generated LaTeX metrics table)
+
+### Optional: NVIDIA GPU acceleration
+
+`nn_alloy.py` runs on CPU by default. If a CUDA-capable GPU is present
+(driver ≥ 525 for CUDA 12), install TensorFlow's bundled CUDA wheels:
+
+```bash
+phys/bin/python3 -m pip install --upgrade 'tensorflow[and-cuda]==2.21.0'
+```
+
+This installs the matching `libcudart` / `libcudnn` as pip packages — no
+system CUDA toolkit needed. Confirm detection:
+
+```bash
+phys/bin/python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+```
+
+The network is tiny (`10 → 32 → 20 → 2`), so GPU speedup over CPU is
+modest (≈2-3× per epoch on a low-end card); CPU is perfectly usable.
+If a CUDA-related warning appears at startup *without* the libraries
+installed, force CPU explicitly: `export CUDA_VISIBLE_DEVICES=""`.

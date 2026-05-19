@@ -34,9 +34,9 @@
 
 % --- Title ---
 \title[MEAM Mock Pitch]{Automated Construction of Multi-Element\\MEAM Interatomic Potentials}
-\subtitle{DFT-Informed Neural Network Optimization}
+\subtitle{A DFT-Informed Neural-Network Optimization Framework}
 \author{Can Durmaz}
-\institute{METU}
+\institute{METU --- Department of Physics}
 \date{PHYS\,400 --- Mock Presentation}
 \titlegraphic{\includegraphics[height=1.5cm]{metu.png}}
 
@@ -47,23 +47,23 @@
 \titlepage
 \end{frame}
 
-% --- Slide 2: The Problem ---
-\begin{frame}{The Problem}
+% --- Slide 2: Motivation ---
+\begin{frame}{Motivation}
 \begin{itemize}
-  \item Industrial alloys (Al\,7075, steels) are chosen by their \textbf{elastic properties} --- yet measuring them experimentally is \textbf{slow and expensive}.
-  \item Molecular dynamics can predict these properties \emph{computationally}, but only with accurate \textbf{interatomic potentials}.
-  \item The Modified Embedded Atom Method (MEAM) is the standard for metallic alloys.
+  \item Elastic properties --- the cubic stiffness constants $C_{11}, C_{12}$, and the derived Young's modulus $E$ and Poisson's ratio $\nu$ --- are the principal design criteria for structural alloys.
+  \item Direct experimental characterization is costly and slow; classical molecular dynamics can recover these properties at negligible cost, \emph{provided} an accurate interatomic potential is available.
+  \item For metallic systems the \textbf{Modified Embedded Atom Method (MEAM)}\footnote{\tiny\textbf{MEAM}: Modified Embedded Atom Method.} remains the de-facto standard semi-empirical formalism.
 \end{itemize}
 
-\vspace{1em}
-\begin{block}{Goal}
-Build an automated pipeline that generates MEAM potentials for \emph{arbitrary} multi-element alloys.
+\vspace{0.6em}
+\begin{block}{Objective}
+Construct MEAM potentials \emph{automatically} for arbitrary subsets of elements, with no manual parameter fitting and no experimental input.
 \end{block}
 \end{frame}
 
-% --- Slide 3: Why Existing Approaches Fall Short ---
-\begin{frame}{Why Existing Approaches Fall Short}
-Published MEAM files cover only \textbf{subsets} of elements. No single file spans Al\,7075 (Al, Zn, Mg, Cu, Cr, Mn, Fe, Si, Ti).
+% --- Slide 3: Limitations of existing libraries ---
+\begin{frame}{Limitations of Existing MEAM Libraries}
+Published MEAM libraries cover disjoint subsets of elements; no single file spans the nine elements specified by the Al\,7075 alloy.
 
 \vspace{0.5em}
 \centering
@@ -82,27 +82,23 @@ FeMnNiTiCuCrCoAl & \checkmark & \checkmark & \checkmark & \checkmark & \checkmar
 \vspace{0.7em}
 \raggedright
 \begin{itemize}\small
-  \item \textbf{Cross-interaction parameters} between files are undefined $\Rightarrow$ cannot simulate combined compositions.
-  \item \textbf{Pure ML potentials} (MLIPs) are accurate but demand massive datasets and sacrifice MEAM's transparency.
+  \item \textbf{Cross-interaction parameters} between elements drawn from distinct libraries are undefined; naive merging produces a potential that cannot be evaluated.
+  \item \textbf{Purely data-driven interatomic potentials} (MLIPs)\footnote{\tiny\textbf{MLIP}: Machine-Learning Interatomic Potential.} avoid the coverage problem but require very large training corpora and forgo the physical interpretability of MEAM.
 \end{itemize}
 \end{frame}
 
-% --- Slide 4: Pipeline Overview (interim-style, 5 stages + ML branch) ---
-\begin{frame}{Pipeline Overview}
+% --- Slide 4: Methodology ---
+\begin{frame}{Methodology: Five-Stage Pipeline}
 \centering
 \begin{tikzpicture}[
     node distance=0.5cm and 0.35cm,
     stage/.style={rectangle, rounded corners, draw=darkred, fill=darkred!10,
                   text width=2.5cm, minimum height=1.0cm, align=center,
                   font=\scriptsize\bfseries},
-    planned/.style={rectangle, rounded corners, draw=darkred, dashed, fill=darkred!3,
-                  text width=2.5cm, minimum height=1.0cm, align=center,
-                  font=\scriptsize\bfseries\itshape},
     aux/.style={rectangle, rounded corners, draw=blue!55!black, dashed, fill=blue!6,
                   text width=2.5cm, minimum height=0.9cm, align=center,
                   font=\scriptsize\bfseries},
     arrow/.style={-{Stealth[length=2.5mm]}, thick, darkred},
-    plannedarrow/.style={-{Stealth[length=2.5mm]}, thick, dashed, darkred},
     auxarrow/.style={-{Stealth[length=2.5mm]}, thick, dashed, blue!55!black},
     label/.style={font=\tiny, text=darkred!70!black, align=center},
     auxlabel/.style={font=\tiny, text=blue!55!black, align=center},
@@ -111,12 +107,12 @@ FeMnNiTiCuCrCoAl & \checkmark & \checkmark & \checkmark & \checkmark & \checkmar
   \node[stage, right=of s1] (s2) {Stage 2\\MD: $E,\nu,C_{ij}$};
   \node[stage, right=of s2] (s3) {Stage 3\\DFT};
   \node[stage, right=of s3] (s4) {Stage 4\\MEAM init};
-  \node[planned, right=of s4] (s5) {Stage 5\\NN optim\\(planned)};
+  \node[stage, right=of s4] (s5) {Stage 5\\NN optim};
 
   \draw[arrow] (s1) -- (s2);
   \draw[arrow] (s2) -- (s3);
   \draw[arrow] (s3) -- (s4);
-  \draw[plannedarrow] (s4) -- (s5);
+  \draw[arrow] (s4) -- (s5);
 
   \node[label, below=0.15cm of s1] {composition\\records};
   \node[label, below=0.15cm of s2] {elastic\\database};
@@ -124,15 +120,16 @@ FeMnNiTiCuCrCoAl & \checkmark & \checkmark & \checkmark & \checkmark & \checkmar
   \node[label, below=0.15cm of s4] {merged MEAM\\library};
   \node[label, below=0.15cm of s5] {refitted MEAM\\parameters};
 
-  % Divergent ML sanity-check branch (does not feed back into main flow)
-  \node[aux, above=1.0cm of s3] (ml) {ML branch\\(sanity check)};
+  % Composition-to-stiffness linearity probe
+  \node[aux, above=1.0cm of s3] (ml) {Linearity probe\\composition $\to (E,\nu)$};
   \draw[auxarrow] (s2.north) |- (ml.west);
-  \node[auxlabel, right=0.15cm of ml] {$(E,\nu)$\\predictor};
+  \node[auxlabel, right=0.15cm of ml] {Can we represent $E$ and $\nu$\\as a linear function\\of composition?};
 \end{tikzpicture}
+\let\thefootnote\relax\footnotetext{\tiny\textbf{MD}: Molecular Dynamics; \textbf{DFT}: Density-Functional Theory; \textbf{NN}: Neural Network.}
 \end{frame}
 
-% --- Slide 5: Pipeline Stages at a Glance (interim-style: # / Description / Framework / Status) ---
-\begin{frame}{Pipeline Stages at a Glance}
+% --- Slide 5: Implementation status & contribution ---
+\begin{frame}{Implementation Status \& Contribution}
 \centering
 \small
 \begin{tabular}{clll}
@@ -143,14 +140,15 @@ FeMnNiTiCuCrCoAl & \checkmark & \checkmark & \checkmark & \checkmark & \checkmar
 2 & MD elastic-property evaluation          & LAMMPS Python API       & Complete \\
 3 & DFT reference calculations              & Quantum Espresso + ASE  & Complete \\
 4 & MEAM initialization \& library merging  & Python                  & Complete \\
-5 & Neural-network surrogate optimization   & TensorFlow + LAMMPS     & \emph{Planned} \\
+5 & Neural-network surrogate optimization   & TensorFlow + LAMMPS     & \emph{Implementing} \\
 \bottomrule
 \end{tabular}
 
 \vspace{1em}
-\begin{block}{Key Idea}
-Use neural networks as a \textbf{surrogate} that learns the MEAM-parameters $\to$ elastic-properties map, then inverse-optimize parameters to hit target $(E, \nu)$.
+\begin{block}{Methodological Contribution}
+A closed-loop framework in which a neural-network surrogate of the MEAM-to-stiffness map is inverse-optimized against MD-measured targets, enabling end-to-end MEAM construction from first-principles input alone --- no manual fitting, no experimental data.
 \end{block}
+\let\thefootnote\relax\footnotetext{\tiny\textbf{LAMMPS}: Large-scale Atomic/Molecular Massively Parallel Simulator.}
 \end{frame}
 
 \end{document}

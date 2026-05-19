@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>Mock Presentation Transcript — Can Durmaz (PHYS 400)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
 <style>
   :root {
     --deepred: #8C1414;
@@ -12,11 +15,14 @@
     --border-tip: #d9a441;
     --text: #1f1f1f;
     --muted: #6b6b6b;
+    --serif: 'Source Serif 4', 'Source Serif Pro', Charter, 'Iowan Old Style', Georgia, serif;
+    --sans: 'Helvetica Neue', Arial, sans-serif;
+    --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: var(--sans);
     line-height: 1.55;
     color: var(--text);
     margin: 0;
@@ -46,22 +52,55 @@
   header .meta {
     font-size: 0.85rem;
     opacity: 0.92;
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-family: var(--mono);
   }
   main {
-    max-width: 800px;
+    max-width: 820px;
     margin: 2rem auto;
     padding: 0 1.5rem;
   }
   .intro {
     background: white;
     border-left: 4px solid var(--deepred);
-    padding: 1rem 1.25rem;
+    padding: 1rem 1.25rem 1.05rem 1.25rem;
     margin-bottom: 2rem;
     font-size: 0.95rem;
     color: var(--muted);
+    border-radius: 0 4px 4px 0;
+  }
+  .intro .label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--deepred);
+    font-weight: 700;
+    margin-bottom: 0.35rem;
   }
   .intro strong { color: var(--text); }
+  .intro.abbrev {
+    padding: 0.75rem 1.1rem 0.85rem 1.1rem;
+  }
+  .intro.abbrev .label { margin-bottom: 0.4rem; }
+  .intro.abbrev dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.15rem 0.85rem;
+    font-size: 0.74rem;
+    line-height: 1.4;
+  }
+  .intro.abbrev dt {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--deepred);
+    letter-spacing: 0.02em;
+    font-size: 0.72rem;
+  }
+  .intro.abbrev dd {
+    margin: 0;
+    color: var(--muted);
+  }
   .slide {
     background: white;
     border-radius: 6px;
@@ -89,32 +128,48 @@
     text-align: center;
     line-height: 1.7rem;
     flex-shrink: 0;
+    font-family: var(--mono);
   }
   .slide-title {
     font-weight: 600;
     color: var(--deepred);
     flex-grow: 1;
-    font-size: 1rem;
+    font-size: 1.0rem;
+    letter-spacing: 0.005em;
   }
   .timing {
-    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
-    font-size: 0.78rem;
+    font-family: var(--mono);
+    font-size: 0.74rem;
     color: var(--muted);
     background: white;
     padding: 0.2rem 0.55rem;
     border-radius: 999px;
     border: 1px solid #d8d8d8;
+    letter-spacing: 0.02em;
   }
   .transcript {
-    padding: 1.1rem 1.3rem 0.4rem 1.3rem;
-    font-size: 1.02rem;
+    padding: 1.15rem 1.5rem 0.5rem 1.5rem;
+    font-family: var(--serif);
+    font-size: 1.12rem;
     line-height: 1.7;
+    color: #181818;
+    font-variant-numeric: oldstyle-nums;
   }
-  .transcript em { color: var(--deepred); font-style: italic; }
+  .transcript em {
+    color: var(--deepred);
+    font-style: italic;
+    font-weight: 500;
+  }
   .transcript .pause {
     color: var(--muted);
     font-style: italic;
-    font-size: 0.85rem;
+    font-size: 0.9em;
+    font-family: var(--sans);
+  }
+  .transcript .term {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.04em;
+    font-weight: 600;
   }
   .tip {
     background: var(--bg-tip);
@@ -125,6 +180,7 @@
     color: #5a4a1f;
     margin: 0.6rem 1rem 1rem 1rem;
     border-radius: 3px;
+    font-family: var(--sans);
   }
   .tip strong { color: #3a2f0d; }
   footer {
@@ -133,6 +189,8 @@
     font-size: 0.8rem;
     margin-top: 2rem;
     padding: 0 1rem;
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
   }
   @media print {
     header { position: static; box-shadow: none; }
@@ -145,16 +203,31 @@
 
 <header>
   <h1>Mock Presentation Transcript &mdash; Can Durmaz</h1>
-  <div class="meta">PHYS&nbsp;400 &middot; 5&nbsp;slides &middot; target&nbsp;3:00</div>
+  <div class="meta">PHYS&nbsp;400 &middot; academic version &middot; 5&nbsp;slides &middot; target&nbsp;3:00</div>
 </header>
 
 <main>
 
 <div class="intro">
-  <strong>How to use this:</strong> Each slide has a target time budget. Words in
-  <em>red italics</em> are emphasis points &mdash; slow down briefly. The
-  <span class="pause">(beat)</span> markers are short pauses (about half a second) &mdash; they let the
-  audience absorb a transition. Yellow tip boxes are delivery cues, not spoken.
+  <span class="label">How to use this</span>
+  <strong>Format:</strong> Each slide carries a target time budget and approximate word count.
+  Words in <em>red italics</em> mark points of emphasis &mdash; slow down briefly. The
+  <span class="pause">(beat)</span> markers are short pauses (~half a second) used to separate
+  argument segments. Small-caps mark <span class="term">technical terms</span> on first
+  use. Yellow callouts are delivery cues, not spoken. The deck contains no acknowledgements
+  or references slide; the talk closes on Slide&nbsp;5.
+</div>
+
+<div class="intro abbrev">
+  <span class="label">Abbreviations</span>
+  <dl>
+    <dt>MEAM</dt><dd>Modified Embedded Atom Method &mdash; semi-empirical interatomic potential for metals</dd>
+    <dt>MD</dt><dd>Molecular Dynamics &mdash; classical-mechanical simulation of atoms</dd>
+    <dt>DFT</dt><dd>Density-Functional Theory &mdash; quantum-mechanical electronic-structure method</dd>
+    <dt>NN</dt><dd>Neural Network &mdash; here, a small feed-forward surrogate model</dd>
+    <dt>MLIP</dt><dd>Machine-Learning Interatomic Potential &mdash; data-driven alternative to MEAM</dd>
+    <dt>LAMMPS</dt><dd>Large-scale Atomic/Molecular Massively Parallel Simulator &mdash; the MD engine used in Stage&nbsp;2</dd>
+  </dl>
 </div>
 
 <!-- Slide 1 -->
@@ -165,101 +238,121 @@
     <span class="timing">~15&nbsp;s &middot; ~35&nbsp;words</span>
   </div>
   <div class="transcript">
-    Good morning. I'm Can Durmaz. My project builds an <em>automated pipeline</em>
-    for constructing multi-element MEAM interatomic potentials, using DFT
-    references and neural-network optimization &mdash; so we can simulate
-    <em>arbitrary metallic alloys</em> without hand-fitting potentials.
+    Good morning. I am Can Durmaz. This is my <span class="term">PHYS&nbsp;400</span>
+    mock presentation. The work proposes an <em>automated framework</em> for
+    constructing multi-element <span class="term">MEAM</span> interatomic
+    potentials, by integrating density-functional reference data with
+    neural-network parameter optimization.
   </div>
-  <div class="tip"><strong>Delivery:</strong> Don't rush the title slide. Look up, make eye contact, then advance.</div>
+  <div class="tip"><strong>Delivery:</strong> Do not rush the title. Look up, make eye contact, advance.</div>
 </section>
 
 <!-- Slide 2 -->
 <section class="slide">
   <div class="slide-header">
     <span class="badge">2</span>
-    <span class="slide-title">The Problem</span>
-    <span class="timing">~30&nbsp;s &middot; ~75&nbsp;words</span>
+    <span class="slide-title">Motivation</span>
+    <span class="timing">~42&nbsp;s &middot; ~100&nbsp;words</span>
   </div>
   <div class="transcript">
-    The motivation is practical. Industrial alloys like <em>Al&nbsp;7075</em> are
-    chosen for their elastic properties &mdash; stiffness and Poisson's ratio.
-    Measuring those experimentally is <em>slow and expensive</em>.
+    <em>As a mechanical engineer graduate</em>, the motivation is twofold.
+    First, elastic properties &mdash; the
+    <span class="term">cubic stiffness constants</span> and the derived Young's
+    modulus and Poisson's ratio &mdash; are the principal design criteria for
+    structural alloys, yet direct experimental characterization remains
+    <em>costly and slow</em>.
     <span class="pause">(beat)</span>
-    Molecular dynamics can predict them cheaply, but only with an accurate
-    interatomic potential. For metals, MEAM is the standard. So the goal is
-    simple: build a pipeline that produces a working MEAM potential for
-    <em>any</em> combination of elements.
+    Second, classical molecular dynamics can recover these properties at
+    negligible cost &mdash; but only when supplied with an accurate interatomic
+    potential. For metallic systems the <em>Modified Embedded Atom Method</em>
+    remains the de-facto standard semi-empirical formalism. Our objective is to
+    construct such potentials <em>automatically</em>, for arbitrary subsets of
+    elements, with no manual parameter fitting.
   </div>
-  <div class="tip"><strong>Delivery:</strong> The (beat) is your transition from "the pain" to "the goal." Let it land.</div>
+  <div class="tip"><strong>Delivery:</strong> The (beat) separates "what's wrong with the status quo" from "what we propose." Let it land.</div>
 </section>
 
 <!-- Slide 3 -->
 <section class="slide">
   <div class="slide-header">
     <span class="badge">3</span>
-    <span class="slide-title">Why Existing Approaches Fall Short</span>
-    <span class="timing">~40&nbsp;s &middot; ~90&nbsp;words</span>
+    <span class="slide-title">Limitations of Existing MEAM Libraries</span>
+    <span class="timing">~42&nbsp;s &middot; ~98&nbsp;words</span>
   </div>
   <div class="transcript">
-    Here's the obstacle. Published MEAM files cover only <em>small subsets</em>
-    of elements &mdash; this table shows four of them. Al&nbsp;7075 needs nine
-    elements; <em>no single file covers all of them</em>.
+    The principal obstacle is the <em>fragmented coverage</em> of existing MEAM
+    libraries. Each published file covers only a small subset of elements; the
+    table summarises four representative cases. The Al&nbsp;7075 specification
+    alone calls for nine elements, and no single library spans them all.
     <span class="pause">(beat)</span>
-    And when you try to merge files, the cross-interaction parameters between
-    elements from different sources are simply undefined &mdash; so the
-    simulation can't even run. The obvious alternative, pure machine-learning
-    potentials, works but demands enormous training datasets and throws away
-    MEAM's transparency. We want a <em>middle path</em>.
+    Naively merging libraries fails: the
+    <span class="term">cross-interaction parameters</span> between elements drawn
+    from distinct sources are undefined, so the combined potential cannot be
+    evaluated. Purely data-driven machine-learning potentials avoid the coverage
+    problem but require very large training corpora and forgo MEAM's physical
+    interpretability. We therefore <em>retain the MEAM formalism</em> and supply
+    the missing parameters automatically.
   </div>
-  <div class="tip"><strong>Delivery:</strong> Gesture to the table when you say "this table shows four." Don't read it &mdash; the audience can see it.</div>
+  <div class="tip"><strong>Delivery:</strong> Gesture to the table on "this table." Do not read its rows aloud &mdash; let the audience read it.</div>
 </section>
 
 <!-- Slide 4 -->
 <section class="slide">
   <div class="slide-header">
     <span class="badge">4</span>
-    <span class="slide-title">Pipeline Overview</span>
-    <span class="timing">~55&nbsp;s &middot; ~140&nbsp;words</span>
+    <span class="slide-title">Methodology &mdash; Five-Stage Pipeline</span>
+    <span class="timing">~65&nbsp;s &middot; ~155&nbsp;words</span>
   </div>
   <div class="transcript">
-    That middle path is this <em>five-stage pipeline</em>. Stage&nbsp;1 generates
-    random alloy compositions. Stage&nbsp;2 runs each composition through LAMMPS
-    to measure its elastic properties &mdash; Young's modulus, Poisson's ratio,
-    and the elastic constants. Stage&nbsp;3 runs DFT in Quantum Espresso for
-    every element and every binary pair, producing first-principles reference
-    values. Stage&nbsp;4 uses those DFT results to initialize a <em>merged,
-    multi-element MEAM library</em> &mdash; including the missing cross-terms.
+    Our methodology comprises five sequential stages. <em>Stage&nbsp;1</em>
+    generates random alloy compositions across the elements of interest.
+    <em>Stage&nbsp;2</em> evaluates each composition with LAMMPS molecular
+    dynamics to obtain the cubic stiffness tensor; Young's modulus and
+    Poisson's ratio are derived analytically. <em>Stage&nbsp;3</em> performs
+    density-functional calculations in Quantum Espresso for every element and
+    every binary pair, producing first-principles cohesive energies, lattice
+    constants, bulk moduli, and formation energies.
     <span class="pause">(beat)</span>
-    Stage&nbsp;5, shown dashed and planned for next semester, will train a
-    neural-network surrogate on Stage&nbsp;2's data, then inverse-optimize the
-    MEAM parameters to hit target elastic properties. The blue dashed branch
-    above is a separate ML sanity check &mdash; it predicts elastic properties
-    from composition, validates the dataset, but never feeds back into the
-    fitting loop.
+    <em>Stage&nbsp;4</em> maps those references onto the MEAM parameter space,
+    yielding an initialized library that includes the previously undefined
+    cross-terms. <em>Stage&nbsp;5</em> trains a neural-network surrogate of the
+    parameters-to-stiffness map and inverse-optimizes the parameters against the
+    Stage-2 targets. The dashed branch above is a separate
+    composition-to-stiffness model &mdash; a <em>linearity probe</em>. It maps
+    composition directly to <em>E</em> and <em>&nu;</em>, and exists to answer
+    one question: <em>can we represent E and &nu; as a linear function of
+    composition?</em> If we could, MEAM would be unnecessary &mdash; a linear
+    regression would suffice. The observed non-linearity is what justifies a
+    physics-based potential.
   </div>
-  <div class="tip"><strong>Delivery:</strong> This is the longest slide &mdash; sweep left-to-right with your hand or pointer as you name each stage. Slow down on Stage 5 (it's the most novel part).</div>
+  <div class="tip"><strong>Delivery:</strong> Longest slide. Sweep your pointer left-to-right across the stage boxes as you name each one. Slow on Stage&nbsp;5 (closed-loop core) and on the linearity-probe explanation &mdash; that motivates why MEAM is needed at all.</div>
 </section>
 
 <!-- Slide 5 -->
 <section class="slide">
   <div class="slide-header">
     <span class="badge">5</span>
-    <span class="slide-title">Pipeline Stages at a Glance</span>
-    <span class="timing">~30&nbsp;s &middot; ~65&nbsp;words</span>
+    <span class="slide-title">Implementation Status &amp; Contribution</span>
+    <span class="timing">~30&nbsp;s &middot; ~80&nbsp;words</span>
   </div>
   <div class="transcript">
-    To summarize: Stages&nbsp;1 through&nbsp;4 are <em>complete</em> &mdash; the
-    dataset, the DFT reference, and the DFT-seeded MEAM library are all in
-    place. Stage&nbsp;5 is what closes the loop: a neural-network surrogate
-    that lets us inverse-optimize MEAM parameters against the LAMMPS-measured
-    elastic targets &mdash; with <em>no further experimental input</em>.
-    That's the project.
+    In summary, Stages&nbsp;1 through&nbsp;4 are complete; Stage&nbsp;5 &mdash;
+    the neural-network optimization layer &mdash; is <em>currently being
+    implemented</em>. The dataset already comprises over seven thousand
+    evaluated compositions; the DFT reference covers the full element set with
+    binary formation energies; the initialized MEAM library is in place,
+    awaiting the closing surrogate-driven refinement. The methodological
+    contribution is the <em>closed-loop integration</em>: a neural-network
+    surrogate that inverse-optimizes MEAM parameters directly against
+    MD-measured stiffness, producing multi-element potentials from
+    first-principles input alone &mdash; with no manual fitting and no
+    experimental data.
   </div>
-  <div class="tip"><strong>Delivery:</strong> End firmly on "That's the project." &mdash; don't trail off. Pause, then step back from the podium to signal you're done.</div>
+  <div class="tip"><strong>Delivery:</strong> Land firmly on "first-principles input alone." Pause, hold the slide for two beats, then step back. Do not say "thank you" &mdash; the silence is the close.</div>
 </section>
 
 <footer>
-  Total target: ~3:00 &middot; Total words: ~405 &middot; Pace: ~135 WPM
+  total target ~3:10 &middot; ~470 words &middot; pace ~145 WPM &middot; no acknowledgements, no references
 </footer>
 
 </main>

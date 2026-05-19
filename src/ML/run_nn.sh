@@ -31,6 +31,16 @@ PYTHON_VENV="../../phys/bin/python3"
 # Ensure we are in the script's directory so relative paths work
 cd "$(dirname "$0")"
 
+# If tensorflow[and-cuda] is installed, its CUDA libraries live as pip wheels
+# under phys/lib/.../site-packages/nvidia/*/lib. TF 2.21 doesn't add those to
+# the dynamic linker path automatically, so prepend them here. Silently no-op
+# when the dirs don't exist (CPU-only install).
+_NV_LIB_GLOB=../../phys/lib/python3.12/site-packages/nvidia/*/lib
+if compgen -G "$_NV_LIB_GLOB" > /dev/null; then
+    _NV_LIBS=$(printf '%s:' $_NV_LIB_GLOB)
+    export LD_LIBRARY_PATH="${_NV_LIBS%:}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+
 # Deep-ensemble size. Default 5: a common sweet spot in the surrogate-model
 # literature (good aleatoric+epistemic separation, low marginal benefit
 # beyond 5–10 for a network this small). Override by exporting before the

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DFT Basics — Conceptual Overview (PHYS 400)</title>
+<style>
+  :root {
+    --deepred: #8C1414;
+    --deepred-soft: #c47272;
+    --bg-block: #f4f4f4;
+    --bg-tip: #fef6e8;
+    --border-tip: #d9a441;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 4rem 0;
+    background: #fafafa;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--deepred);
+    color: white;
+    padding: 0.9rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    z-index: 10;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  header .meta {
+    font-size: 0.85rem;
+    opacity: 0.92;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  }
+  main {
+    max-width: 820px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .intro {
+    background: white;
+    border-left: 4px solid var(--deepred);
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    border-radius: 0 4px 4px 0;
+  }
+  .intro strong { color: var(--text); }
+  nav.toc {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+  }
+  nav.toc strong {
+    display: block;
+    color: var(--deepred);
+    margin-bottom: 0.4rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  nav.toc ol {
+    margin: 0;
+    padding-left: 1.3rem;
+    columns: 2;
+    column-gap: 1.5rem;
+  }
+  nav.toc a {
+    color: var(--text);
+    text-decoration: none;
+    border-bottom: 1px dotted #ccc;
+  }
+  nav.toc a:hover { color: var(--deepred); border-bottom-color: var(--deepred); }
+  section.slide {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-block);
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--deepred);
+    color: white;
+    font-weight: 700;
+    font-size: 0.82rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.7rem;
+    flex-shrink: 0;
+  }
+  .slide-title {
+    font-weight: 600;
+    color: var(--deepred);
+    flex-grow: 1;
+    font-size: 1rem;
+  }
+  .body {
+    padding: 1.1rem 1.3rem 1.1rem 1.3rem;
+    font-size: 1.0rem;
+    line-height: 1.65;
+  }
+  .body p { margin: 0 0 0.85rem 0; }
+  .body p:last-child { margin-bottom: 0; }
+  .body em { color: var(--deepred); font-style: italic; }
+  .body ul { margin: 0.3rem 0 0.85rem 1.2rem; padding: 0; }
+  .body li { margin-bottom: 0.35rem; }
+  .body code {
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 0.9em;
+    background: var(--bg-block);
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+  }
+  .tip {
+    background: var(--bg-tip);
+    border-top: 1px solid #ecdcb3;
+    border-left: 3px solid var(--border-tip);
+    padding: 0.6rem 1rem;
+    font-size: 0.88rem;
+    color: #5a4a1f;
+    margin: 0 1rem 1rem 1rem;
+    border-radius: 3px;
+  }
+  .tip strong { color: #3a2f0d; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 2rem;
+    padding: 0 1rem;
+  }
+  @media print {
+    header { position: static; box-shadow: none; }
+    section.slide { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    body { background: white; }
+    nav.toc { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DFT Basics &mdash; Conceptual Overview</h1>
+  <div class="meta">PHYS&nbsp;400 &middot; reference notes</div>
+</header>
+
+<main>
+
+<div class="intro">
+  <strong>Scope:</strong> a plain-language tour of what Density Functional Theory
+  (DFT) <em>is</em>, why it works, and what it gives you &mdash; no formulas, no
+  implementation details. Aimed at building intuition before you touch
+  Quantum&nbsp;Espresso input files.
+</div>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#s1">The problem DFT solves</a></li>
+    <li><a href="#s2">Why the wavefunction is hopeless</a></li>
+    <li><a href="#s3">The Hohenberg&ndash;Kohn insight</a></li>
+    <li><a href="#s4">The Kohn&ndash;Sham trick</a></li>
+    <li><a href="#s5">The exchange&ndash;correlation functional</a></li>
+    <li><a href="#s6">Pseudopotentials</a></li>
+    <li><a href="#s7">Crystals, periodicity, k-points</a></li>
+    <li><a href="#s8">The self-consistent loop</a></li>
+    <li><a href="#s9">What DFT actually gives you</a></li>
+    <li><a href="#s10">Where DFT struggles</a></li>
+  </ol>
+</nav>
+
+<!-- 1 -->
+<section class="slide" id="s1">
+  <div class="slide-header">
+    <span class="badge">1</span>
+    <span class="slide-title">The problem DFT solves</span>
+  </div>
+  <div class="body">
+    <p>
+      We want to predict properties of materials &mdash; the lattice constant of
+      aluminium, the cohesive energy of nickel, the elastic stiffness of a copper
+      alloy &mdash; <em>from first principles</em>. That means: starting only from
+      the identities of the atoms (their nuclear charges) and the laws of quantum
+      mechanics, with <em>no empirical fitting</em> to experimental data.
+    </p>
+    <p>
+      Why first principles? Because once you have a method that works without
+      experimental input, you can predict properties of materials that have never
+      been synthesised, or are dangerous, or rare. That's the whole appeal of
+      computational materials science.
+    </p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" id="s2">
+  <div class="slide-header">
+    <span class="badge">2</span>
+    <span class="slide-title">Why the wavefunction is hopeless</span>
+  </div>
+  <div class="body">
+    <p>
+      In principle, everything about a material is contained in the
+      <em>many-body wavefunction</em> &mdash; a single mathematical object that
+      tells you the joint probability of finding every electron at every
+      position simultaneously. Solve the Schr&ouml;dinger equation for it, and
+      you're done.
+    </p>
+    <p>
+      The catch: a wavefunction for <em>N</em> electrons lives in
+      <em>3N-dimensional</em> space. For just 100 electrons that's a function of
+      300 variables &mdash; storing it on any conceivable grid would require more
+      atoms than exist in the observable universe. Direct attack is impossible
+      for anything larger than a few atoms.
+    </p>
+    <div class="tip"><strong>The wall:</strong> the curse of dimensionality. Every additional electron multiplies the problem size by another spatial dimension.</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" id="s3">
+  <div class="slide-header">
+    <span class="badge">3</span>
+    <span class="slide-title">The Hohenberg&ndash;Kohn insight (1964)</span>
+  </div>
+  <div class="body">
+    <p>
+      Hohenberg and Kohn proved something startling: for the <em>ground state</em>
+      of any electronic system, you don't actually need the full wavefunction. The
+      <em>electron density</em> &mdash; just a real-valued function of three
+      spatial coordinates, telling you how many electrons are at each point on
+      average &mdash; <em>uniquely determines everything</em>: the total energy,
+      the forces on every atom, the magnetic structure, all of it.
+    </p>
+    <p>
+      This is a dramatic reduction. Instead of a function of 3N variables, you
+      only need to find the right function of 3 variables. The bookkeeping problem
+      becomes <em>tractable</em>.
+    </p>
+    <div class="tip"><strong>Conceptual leap:</strong> the density is far less information than the wavefunction &mdash; yet for ground-state properties, it's enough. That's the foundational claim of DFT.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" id="s4">
+  <div class="slide-header">
+    <span class="badge">4</span>
+    <span class="slide-title">The Kohn&ndash;Sham trick</span>
+  </div>
+  <div class="body">
+    <p>
+      Hohenberg&ndash;Kohn says "the density is enough" but doesn't tell you
+      <em>how</em> to find it. Real electrons are entangled with each other, so
+      even reformulating the problem in terms of density still leaves a knotted
+      many-body interaction to deal with.
+    </p>
+    <p>
+      Kohn and Sham (1965) sidestep this with a clever bait-and-switch. They
+      replace the real, interacting electrons with a <em>fictitious system of
+      non-interacting electrons</em>, chosen so that this pretend system produces
+      <em>exactly the same density</em> as the real one. Because the fictitious
+      electrons don't interact, each one obeys a much simpler single-particle
+      Schr&ouml;dinger-like equation. Stack <em>N</em> of those, solve them, and
+      you recover the density of the original interacting problem.
+    </p>
+    <p>
+      All the messy many-body physics &mdash; quantum exchange, electron
+      correlation, all the parts where electrons "feel" each other beyond simple
+      electrostatic repulsion &mdash; gets <em>swept into a single extra term</em>
+      added to the effective potential. That term is the
+      exchange&ndash;correlation functional, and it's where the entire
+      approximation lives.
+    </p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" id="s5">
+  <div class="slide-header">
+    <span class="badge">5</span>
+    <span class="slide-title">The exchange&ndash;correlation functional</span>
+  </div>
+  <div class="body">
+    <p>
+      If we knew the exact exchange&ndash;correlation (XC) functional, DFT would
+      be <em>exact</em>. We don't. The community has built increasingly
+      sophisticated approximations, organised into a rough hierarchy:
+    </p>
+    <ul>
+      <li><strong>LDA</strong> (Local Density Approximation) &mdash; at each point in space, treat the electron gas as if it were locally uniform. Crude but surprisingly useful; the simplest rung.</li>
+      <li><strong>GGA</strong> (Generalised Gradient Approximation) &mdash; also look at how fast the density is changing. PBE, the most widely used GGA, is the workhorse for solids and what we use here.</li>
+      <li><strong>meta-GGA, hybrids, and beyond</strong> &mdash; mix in kinetic-energy information or a fraction of exact Hartree&ndash;Fock exchange. More accurate, much more expensive, sometimes overkill for the question you're asking.</li>
+    </ul>
+    <p>
+      Choice of functional is a <em>modelling decision</em>, not a settled fact.
+      Different functionals can give somewhat different lattice constants or
+      formation energies for the same material. You pick one that's known to
+      perform well for your class of system &mdash; for metallic alloys, PBE
+      is a defensible default.
+    </p>
+    <div class="tip"><strong>Why this matters:</strong> when people say "DFT gives the wrong answer," they almost always mean "this particular XC functional gives the wrong answer." DFT as a framework is exact in principle.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" id="s6">
+  <div class="slide-header">
+    <span class="badge">6</span>
+    <span class="slide-title">Pseudopotentials &mdash; why we ignore the core</span>
+  </div>
+  <div class="body">
+    <p>
+      An aluminium atom has 13 electrons. Most of them sit deep in the core,
+      tightly bound to the nucleus, and play almost no role in chemistry or
+      bonding &mdash; they're chemically inert. Only the outer
+      <em>valence electrons</em> participate in forming bonds.
+    </p>
+    <p>
+      Simulating the core electrons explicitly would force us to resolve very
+      sharp wiggles in the wavefunction near the nucleus, which is
+      computationally brutal. So we cheat: we replace the nucleus-plus-core
+      bundle with a smooth, effective <em>pseudopotential</em> that the valence
+      electrons feel exactly as if the real thing were there. The valence
+      electrons see the correct chemistry; the messy core wiggles are gone.
+    </p>
+    <p>
+      Pseudopotentials come in flavours (PAW, ultrasoft, norm-conserving) with
+      different trade-offs between accuracy and cost. Each element needs one,
+      and they're calibrated separately &mdash; you can't mix and match
+      carelessly.
+    </p>
+    <div class="tip"><strong>In this project:</strong> we use PAW (Projector Augmented Wave) PBE pseudopotentials from the QE library. The NNIP pipeline auto-downloads any missing ones.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" id="s7">
+  <div class="slide-header">
+    <span class="badge">7</span>
+    <span class="slide-title">Crystals, periodicity, and k-points</span>
+  </div>
+  <div class="body">
+    <p>
+      A real crystal is enormous &mdash; Avogadro-scale. We obviously can't
+      simulate that many atoms. But a perfect crystal is also boringly repetitive:
+      one small repeating block (the unit cell) tiles space forever. We exploit
+      this with <em>periodic boundary conditions</em> &mdash; simulate one unit
+      cell and pretend it's surrounded by identical copies of itself in every
+      direction.
+    </p>
+    <p>
+      For periodic systems, the natural language is not real space but
+      <em>reciprocal space</em>: each electronic state is labelled by a wavevector
+      <em>k</em> that captures its phase pattern across unit cells. To compute
+      anything physically meaningful, we have to sum over many such wavevectors
+      &mdash; this is the <em>k-point sampling</em>. More k-points means a finer
+      sampling and more accurate energies, but more compute.
+    </p>
+    <p>
+      For metals there's an additional subtlety: the boundary between occupied
+      and unoccupied states (the Fermi surface) is a sharp cliff in
+      reciprocal space, and sampling near a cliff is numerically unstable. We
+      smear that cliff slightly &mdash; just enough to converge cleanly without
+      distorting the answer. This is the "smearing" you see in QE input files.
+    </p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" id="s8">
+  <div class="slide-header">
+    <span class="badge">8</span>
+    <span class="slide-title">The self-consistent loop</span>
+  </div>
+  <div class="body">
+    <p>
+      The Kohn&ndash;Sham equations have a chicken-and-egg structure: the
+      effective potential each electron feels depends on the density, which
+      depends on solving the equations, which depends on the potential.
+    </p>
+    <p>
+      The standard fix is iteration. Start with a guess for the density. Build
+      the potential from that guess. Solve the single-particle equations to get
+      new wavefunctions and a new density. Mix the new density with the old to
+      avoid oscillation. Repeat until the density stops changing meaningfully
+      from one iteration to the next. This is the <em>SCF loop</em>
+      (self-consistent field). When SCF has converged, you have a consistent
+      ground state.
+    </p>
+    <div class="tip"><strong>Practical note:</strong> "SCF didn't converge" is one of the most common DFT failure modes. Usually it means smearing is too sharp, the system is metallic and unstable, or the initial guess is too far off.</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" id="s9">
+  <div class="slide-header">
+    <span class="badge">9</span>
+    <span class="slide-title">What DFT actually gives you</span>
+  </div>
+  <div class="body">
+    <p>
+      Once SCF converges, the immediate outputs are the <em>total energy</em>
+      of the system, the <em>forces</em> on every atom (how much each atom wants
+      to move), and the <em>stress tensor</em> on the simulation cell (how
+      much the box wants to expand, contract, or shear).
+    </p>
+    <p>
+      From those three primitives, almost everything physically interesting
+      follows:
+    </p>
+    <ul>
+      <li><strong>Equilibrium lattice constant</strong> &mdash; vary the box size, find the volume that minimises the energy.</li>
+      <li><strong>Cohesive energy</strong> &mdash; compare the energy of the crystal to isolated atoms; how much energy holds the solid together.</li>
+      <li><strong>Bulk modulus &amp; equation of state</strong> &mdash; how stiff the material is under uniform compression.</li>
+      <li><strong>Elastic constants</strong> &mdash; apply small strains, read off the resulting stresses, get the full stiffness tensor.</li>
+      <li><strong>Formation energies of alloys and compounds</strong> &mdash; compare the energy of a binary phase to its constituent elements; tells you whether the phase prefers to exist.</li>
+      <li><strong>Phonons, vacancy energies, surface energies, reaction barriers</strong> &mdash; all derived from the same underlying energies and forces.</li>
+    </ul>
+    <div class="tip"><strong>In this project:</strong> DFT provides the reference data (a&#8320;, cohesive energy, bulk modulus, C&#8321;&#8321; / C&#8321;&#8322;, binary formation energies) that initialises the MEAM interatomic potentials before NN refinement.</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" id="s10">
+  <div class="slide-header">
+    <span class="badge">10</span>
+    <span class="slide-title">Where DFT struggles</span>
+  </div>
+  <div class="body">
+    <p>
+      DFT is not magic; it has well-known limitations worth knowing before you
+      trust a result.
+    </p>
+    <ul>
+      <li><strong>Ground state only.</strong> Standard DFT describes the electronic ground state. Excited states, optical spectra, transport &mdash; these need extensions (TDDFT, GW, Bethe&ndash;Salpeter) or different machinery entirely.</li>
+      <li><strong>Cost scales steeply.</strong> Roughly with the cube of the number of electrons. A few hundred atoms is routine; tens of thousands is a research project on a supercomputer.</li>
+      <li><strong>The XC functional matters.</strong> No approximate functional is uniformly best. Reaction barriers, van der Waals forces, strongly correlated systems (transition-metal oxides, f-electron materials) often need special treatment or higher-rung functionals.</li>
+      <li><strong>Dispersion is missing by default.</strong> Plain LDA/GGA don't capture van der Waals interactions properly. You add empirical dispersion corrections when they matter (layered materials, molecular crystals).</li>
+      <li><strong>Strong correlation is a blind spot.</strong> Systems where electrons are highly localised and entangled (Mott insulators, some magnets) are not well described by standard DFT &mdash; that's where DFT+U or beyond-DFT methods come in.</li>
+    </ul>
+    <p>
+      For metallic alloys at equilibrium volumes &mdash; the regime this project
+      lives in &mdash; standard PBE-DFT is well-calibrated and trusted. It's the
+      <em>reference standard</em> against which faster surrogates (interatomic
+      potentials, neural networks) are validated.
+    </p>
+  </div>
+</section>
+
+<footer>
+  PHYS&nbsp;400 &middot; conceptual DFT primer &middot; companion to the NNIP pipeline documentation
+</footer>
+
+</main>
+
+</body>
+</html>
