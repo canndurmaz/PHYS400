@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MEAM On-Demand MD</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <h1>MEAM On-Demand MD Predictor</h1>
+  <p class="subtitle">
+    Runs a fresh LAMMPS strain sweep against the optimized MEAM in
+    <code>EAM/optimized/</code>. Companion to the ML surrogate at
+    <a href="http://127.0.0.1:5000">:5000</a>.
+  </p>
+
+  <form id="predict-form">
+    <fieldset>
+      <legend>Composition (mole fractions, will be normalized)</legend>
+      <table class="comp-table">
+        {% for el in elements %}
+        <tr>
+          <td><label for="el-{{ el }}">{{ el }}</label></td>
+          <td><input id="el-{{ el }}" name="{{ el }}" type="number"
+                     step="0.001" min="0" max="1" value=""></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </fieldset>
+
+    <details>
+      <summary>Advanced MD knobs</summary>
+      <table class="knobs-table">
+        <tr><td><label for="box_size_m">box_size_m (m)</label></td>
+            <td><input id="box_size_m" type="number" step="1e-10"
+                       value="{{ defaults.box_size_m }}"></td></tr>
+        <tr><td><label for="temperature">temperature (K)</label></td>
+            <td><input id="temperature" type="number" step="1"
+                       value="{{ defaults.temperature }}"></td></tr>
+        <tr><td><label for="total_steps">total_steps</label></td>
+            <td><input id="total_steps" type="number" step="1"
+                       value="{{ defaults.total_steps }}"></td></tr>
+        <tr><td><label for="thermo_interval">thermo_interval</label></td>
+            <td><input id="thermo_interval" type="number" step="1"
+                       value="{{ defaults.thermo_interval }}"></td></tr>
+        <tr><td><label for="dump_interval">dump_interval</label></td>
+            <td><input id="dump_interval" type="number" step="1"
+                       value="{{ defaults.dump_interval }}"></td></tr>
+      </table>
+    </details>
+
+    <label class="viz-toggle">
+      <input id="do_viz" type="checkbox"> Include OVITO render
+    </label>
+
+    <button type="submit">Run MD</button>
+  </form>
+
+  <div id="status" class="status"></div>
+
+  <section id="result" hidden>
+    <h2>Result</h2>
+    <div class="cards">
+      <div class="card"><span class="label">C<sub>11</sub></span>
+        <span id="r-c11">—</span> GPa</div>
+      <div class="card"><span class="label">C<sub>12</sub></span>
+        <span id="r-c12">—</span> GPa</div>
+      <div class="card"><span class="label">E</span>
+        <span id="r-e">—</span> GPa</div>
+      <div class="card"><span class="label">ν</span>
+        <span id="r-nu">—</span></div>
+    </div>
+    <p id="r-warning" class="warning" hidden></p>
+
+    <details>
+      <summary>LAMMPS log tail</summary>
+      <pre id="r-log"></pre>
+    </details>
+
+    <details>
+      <summary>Thermo trace (last 50 records)</summary>
+      <pre id="r-thermo"></pre>
+    </details>
+
+    <img id="r-render" alt="OVITO render of relaxed supercell" hidden>
+  </section>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
