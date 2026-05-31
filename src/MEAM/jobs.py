@@ -170,3 +170,65 @@ class JobStore:
         with self._lock:
             ids = list(reversed(self._order))[:limit]
             return [dict(self._jobs[i]) for i in ids]
+
+
+class ValidationError(ValueError):
+    """Bad form payload — propagated to HTTP 400."""
+
+
+def validate_payload(
+    payload: dict,
+    all_elements: list[str],
+    defaults: dict,
+) -> tuple[dict, dict, bool]:
+    """Return (composition_normalised, knobs_with_defaults, do_viz).
+
+    Mirrors the validation rules in ``src/ML/app.py``'s ``/api/predict``,
+    plus rejects elements outside the 12-element basis (the optimized MEAM
+    covers exactly those; anything else can't be assigned a LAMMPS type).
+    """
+    raw_comp = payload.get("composition")
+    if not isinstance(raw_comp, dict) or not raw_comp:
+        raise ValidationError("Provide a non-empty 'composition' object.")
+
+    allowed = set(all_elements)
+    comp: dict[str, float] = {}
+    for el, val in raw_comp.items():
+        if el not in allowed:
+            raise ValidationError(
+                f"Unsupported element {el!r}. Supported: "
+                + ", ".join(all_elements)
+            )
+        if val in (None, "", "null"):
+            continue
+        try:
+            f = float(val)
+        except (TypeError, ValueError):
+            raise ValidationError(f"Fraction for {el} is not a number: {val!r}")
+        if f < 0:
+            raise ValidationError(f"Fraction for {el} is negative: {f}")
+        if f > 0:
+            comp[el] = f
+
+    if not comp:
+        raise ValidationError("At least one element must have a positive fraction.")
+
+    total = sum(comp.values())
+    if total <= 0:
+        raise ValidationError("Composition sums to zero.")
+    comp_norm = {el: f / total for el, f in comp.items()}
+
+    raw_knobs = payload.get("knobs") or {}
+    if not isinstance(raw_knobs, dict):
+        raise ValidationError("'knobs' must be an object if provided.")
+    knobs = dict(defaults)
+    for k, v in raw_knobs.items():
+        if k not in defaults:
+            raise ValidationError(f"Unknown knob {k!r}. Allowed: {sorted(defaults)}")
+        try:
+            knobs[k] = float(v) if isinstance(defaults[k], float) else int(v)
+        except (TypeError, ValueError):
+            raise ValidationError(f"Knob {k!r} is not numeric: {v!r}")
+
+    do_viz = bool(payload.get("do_viz", False))
+    return comp_norm, knobs, do_viz

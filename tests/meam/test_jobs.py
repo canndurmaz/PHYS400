@@ -109,3 +109,54 @@ def test_jobstore_recent_returns_newest_first():
     ids = [store.create({"Al": 1.0}, {"i": i}, False) for i in range(5)]
     recent = store.recent(limit=3)
     assert [r["id"] for r in recent] == list(reversed(ids))[:3]
+
+
+from jobs import validate_payload, ValidationError
+
+ALL = ["Al", "Co", "Cr", "Cu", "Fe", "Mg", "Mn", "Mo", "Ni", "Si", "Ti", "Zn"]
+DEFAULTS = {
+    "box_size_m": 5e-9, "temperature": 300.0,
+    "total_steps": 1000, "thermo_interval": 10, "dump_interval": 50,
+}
+
+
+def test_validate_payload_happy_path():
+    comp_norm, knobs, do_viz = validate_payload(
+        {"composition": {"Al": 0.5, "Cu": 0.5}, "knobs": {}, "do_viz": False},
+        ALL, DEFAULTS,
+    )
+    assert sum(comp_norm.values()) == pytest.approx(1.0)
+    assert knobs == DEFAULTS
+    assert do_viz is False
+
+
+def test_validate_payload_normalises_unnormalised_input():
+    comp_norm, *_ = validate_payload(
+        {"composition": {"Al": 2.0, "Cu": 2.0}},
+        ALL, DEFAULTS,
+    )
+    assert comp_norm == {"Al": 0.5, "Cu": 0.5}
+
+
+def test_validate_payload_rejects_empty_composition():
+    with pytest.raises(ValidationError, match="non-empty"):
+        validate_payload({"composition": {}}, ALL, DEFAULTS)
+
+
+def test_validate_payload_rejects_negative_fraction():
+    with pytest.raises(ValidationError, match="negative"):
+        validate_payload({"composition": {"Al": -0.1}}, ALL, DEFAULTS)
+
+
+def test_validate_payload_rejects_unsupported_element():
+    with pytest.raises(ValidationError, match="Unsupported element 'Xx'"):
+        validate_payload({"composition": {"Al": 0.5, "Xx": 0.5}}, ALL, DEFAULTS)
+
+
+def test_validate_payload_fills_missing_knobs_from_defaults():
+    _, knobs, _ = validate_payload(
+        {"composition": {"Al": 1.0}, "knobs": {"temperature": 500.0}},
+        ALL, DEFAULTS,
+    )
+    assert knobs["temperature"] == 500.0
+    assert knobs["box_size_m"] == DEFAULTS["box_size_m"]
