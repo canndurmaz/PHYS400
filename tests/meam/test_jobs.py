@@ -160,3 +160,40 @@ def test_validate_payload_fills_missing_knobs_from_defaults():
     )
     assert knobs["temperature"] == 500.0
     assert knobs["box_size_m"] == DEFAULTS["box_size_m"]
+
+
+def test_predict_returns_400_for_unsupported_element(monkeypatch):
+    # Don't let app.py try to import LAMMPS or check MEAM files
+    monkeypatch.setenv("MEAM_SKIP_BOOT_CHECK", "1")
+    from app import create_app
+    app = create_app(use_pool=False)
+    client = app.test_client()
+    resp = client.post("/api/predict", json={"composition": {"Xx": 1.0}})
+    assert resp.status_code == 400
+    assert "Unsupported" in resp.get_json()["error"]
+
+
+def test_predict_returns_cached_result_synchronously(monkeypatch, tmp_path):
+    monkeypatch.setenv("MEAM_SKIP_BOOT_CHECK", "1")
+    monkeypatch.setenv("MEAM_RUNS_PATH", str(tmp_path / "runs.json"))
+    monkeypatch.setenv("MEAM_FAKE_MEAM_MTIME", "1000.0")
+    from app import create_app, _cache
+    app = create_app(use_pool=False)
+
+    from jobs import cache_key
+    k = cache_key({"Al": 1.0}, {"box_size_m": 5e-9, "temperature": 300.0,
+                                "total_steps": 1000, "thermo_interval": 10,
+                                "dump_interval": 50},
+                  False, 1000.0)
+    _cache().put(k, {"result": {"C11_GPa": 99.0, "C12_GPa": 50.0,
+                                 "E_GPa": 70.0, "nu": 0.33,
+                                 "physical": True, "physical_reason": None},
+                     "render_path": None})
+
+    client = app.test_client()
+    resp = client.post("/api/predict", json={"composition": {"Al": 1.0}})
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["cached"] is True
+    assert body["status"] == "done"
+    assert body["result"]["C11_GPa"] == 99.0
