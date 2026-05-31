@@ -160,7 +160,10 @@ def _run_lammps(spec: dict, tmpdir: str) -> dict:
     library_elements = " ".join(e.meam_label for e in pot["elements"])
     active_elements  = " ".join(e.meam_label for e in sel)
 
-    L = lammps(cmdargs=["-log", "none", "-screen", "none"])
+    # Keep -log none (no on-disk log spam), but DROP -screen none so LAMMPS's
+    # thermo table reaches the contextlib-redirected stdout, where _TeeStdout
+    # captures it and _parse_thermo_line picks out step/pxx/pyy/pzz rows.
+    L = lammps(cmdargs=["-log", "none"])
     try:
         L.command("units metal")
         L.command("atom_style atomic")
@@ -183,6 +186,12 @@ def _run_lammps(spec: dict, tmpdir: str) -> dict:
         )
         for i, elem in enumerate(sel, start=1):
             L.command(f"mass {i} {elem.mass}")
+
+        # Emit thermo as 4 columns "step pxx pyy pzz" so the parent's
+        # _parse_thermo_line picks them up cleanly. ``thermo 10`` keeps the
+        # event rate moderate (LAMMPS minimize iterations can be very fast).
+        L.command("thermo_style custom step pxx pyy pzz")
+        L.command("thermo 10")
 
         print("Relaxing ground state (box + atoms)...")
         L.command("fix boxrelax all box/relax aniso 0.0 vmax 0.001")
