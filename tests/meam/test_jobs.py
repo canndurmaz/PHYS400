@@ -58,3 +58,54 @@ def test_runcache_corrupt_file_starts_empty(tmp_path, caplog):
     path.write_text("{ not valid json")
     cache = RunCache(str(path))
     assert cache.get("anything") is None
+
+
+from jobs import JobStore
+
+
+def test_jobstore_creates_with_queued_status():
+    store = JobStore()
+    job_id = store.create(composition={"Al": 1.0}, knobs={}, do_viz=False)
+    job = store.get(job_id)
+    assert job["status"] == "queued"
+    assert job["composition"] == {"Al": 1.0}
+    assert list(job["log_lines"]) == []
+    assert job["thermo"] == []
+    assert job["result"] is None
+    assert job["error"] is None
+
+
+def test_jobstore_state_transitions():
+    store = JobStore()
+    job_id = store.create({"Al": 1.0}, {}, False)
+    store.mark_running(job_id)
+    assert store.get(job_id)["status"] == "running"
+
+    store.append_log(job_id, "LAMMPS hello")
+    store.append_log(job_id, "step 0")
+    assert list(store.get(job_id)["log_lines"])[-2:] == ["LAMMPS hello", "step 0"]
+
+    store.append_thermo(job_id, {"step": 100, "pxx": -1.0})
+    assert store.get(job_id)["thermo"] == [{"step": 100, "pxx": -1.0}]
+
+    result = {"C11_GPa": 100.0, "C12_GPa": 50.0, "E_GPa": 75.0, "nu": 0.33}
+    store.mark_done(job_id, result, render_path=None)
+    job = store.get(job_id)
+    assert job["status"] == "done"
+    assert job["result"] == result
+
+
+def test_jobstore_marks_error():
+    store = JobStore()
+    job_id = store.create({"Al": 1.0}, {}, False)
+    store.mark_error(job_id, "boom", "Traceback...")
+    job = store.get(job_id)
+    assert job["status"] == "error"
+    assert job["error"] == {"message": "boom", "traceback": "Traceback..."}
+
+
+def test_jobstore_recent_returns_newest_first():
+    store = JobStore()
+    ids = [store.create({"Al": 1.0}, {"i": i}, False) for i in range(5)]
+    recent = store.recent(limit=3)
+    assert [r["id"] for r in recent] == list(reversed(ids))[:3]
