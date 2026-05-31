@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
-import multiprocessing as mp
+from concurrent.futures import ThreadPoolExecutor
 import os
 import subprocess
 import sys
@@ -57,7 +57,7 @@ def _meam_mtime() -> float:
 
 _STORE: Optional[JobStore] = None
 _CACHE: Optional[RunCache] = None
-_POOL: Optional[mp.pool.Pool] = None
+_POOL: Optional[ThreadPoolExecutor] = None
 
 
 def _store() -> JobStore:
@@ -136,7 +136,7 @@ def create_app(use_pool: bool = True) -> Flask:
     global _STORE, _CACHE, _POOL
     _STORE = JobStore()
     _CACHE = RunCache(os.environ.get("MEAM_RUNS_PATH", _DEFAULT_RUNS_PATH))
-    _POOL = mp.Pool(processes=1) if use_pool else None
+    _POOL = ThreadPoolExecutor(max_workers=1) if use_pool else None
 
     if os.environ.get("MEAM_SKIP_BOOT_CHECK") != "1":
         for p in (_OPTIMIZED_LIBRARY, _OPTIMIZED_PARAMS):
@@ -193,9 +193,9 @@ def create_app(use_pool: bool = True) -> Flask:
             )
             t.start()
         else:
-            _POOL.apply_async(
+            _POOL.submit(
                 _run_subprocess,
-                args=(spec, job_id, _store(), _cache(), k, mtime),
+                spec, job_id, _store(), _cache(), k, mtime,
             )
         return jsonify(job_id=job_id, status="queued", cached=False)
 
