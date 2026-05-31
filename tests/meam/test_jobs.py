@@ -29,3 +29,32 @@ def test_cache_key_changes_when_do_viz_changes():
     k1 = cache_key({"Al": 1.0}, {}, True, 1000.0)
     k2 = cache_key({"Al": 1.0}, {}, False, 1000.0)
     assert k1 != k2, "do_viz must produce distinct keys"
+
+
+from jobs import RunCache
+
+
+def test_runcache_roundtrip(tmp_path):
+    path = tmp_path / "runs.json"
+    cache = RunCache(str(path))
+    assert cache.get("abc") is None
+
+    payload = {"composition": {"Al": 1.0}, "result": {"C11_GPa": 100.0}}
+    cache.put("abc", payload)
+    assert cache.get("abc") == payload
+
+    # New instance must see the persisted entry
+    cache2 = RunCache(str(path))
+    assert cache2.get("abc") == payload
+
+
+def test_runcache_missing_file_starts_empty(tmp_path):
+    cache = RunCache(str(tmp_path / "does-not-exist.json"))
+    assert cache.get("anything") is None
+
+
+def test_runcache_corrupt_file_starts_empty(tmp_path, caplog):
+    path = tmp_path / "runs.json"
+    path.write_text("{ not valid json")
+    cache = RunCache(str(path))
+    assert cache.get("anything") is None
