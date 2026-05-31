@@ -37,3 +37,6 @@ reports/slideshow/tmp/
 # Per-run training splits (regenerated each ./run_nn.sh)
 /src/ML/results_train.json
 /src/ML/results_val.json
+
+# Git worktrees (isolated workspaces for in-flight feature work)
+/.worktrees/
