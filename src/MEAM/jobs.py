@@ -95,7 +95,12 @@ class JobStore:
     """Thread-safe in-memory table of job records.
 
     Mutations are serialized under a single lock; reads return shallow
-    copies so callers can iterate without holding the lock.
+    copies so callers can iterate without holding the lock. The returned
+    log_lines (deque) and thermo (list) are tail-only views — callers
+    must NOT mutate them; treat them as read-only snapshots.
+
+    All mutator methods (mark_running, mark_done, mark_error, append_log,
+    append_thermo) raise KeyError if the job_id is unknown.
     """
 
     LOG_TAIL = 200   # keep last N stdout lines per job
