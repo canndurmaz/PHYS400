@@ -2,88 +2,249 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MEAM On-Demand MD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MEAM // Elastic Runner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='4' y='4' width='16' height='16' fill='none' stroke='%23ffb347' stroke-width='2'/><circle cx='12' cy='12' r='3' fill='%237ec77b'/></svg>">
 </head>
-<body>
-  <h1>MEAM On-Demand MD Predictor</h1>
-  <p class="subtitle">
-    Runs a fresh LAMMPS strain sweep against the optimized MEAM in
-    <code>EAM/optimized/</code>. Companion to the ML surrogate at
-    <a href="http://127.0.0.1:5000">:5000</a>.
-  </p>
+<body data-state="standby">
 
-  <form id="predict-form">
-    <fieldset>
-      <legend>Composition (mole fractions, will be normalized)</legend>
-      <table class="comp-table">
-        {% for el in elements %}
-        <tr>
-          <td><label for="el-{{ el }}">{{ el }}</label></td>
-          <td><input id="el-{{ el }}" name="{{ el }}" type="number"
-                     step="0.001" min="0" max="1" value=""></td>
-        </tr>
-        {% endfor %}
-      </table>
-    </fieldset>
+  <div class="scan" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
 
-    <details>
-      <summary>Advanced MD knobs</summary>
-      <table class="knobs-table">
-        <tr><td><label for="box_size_m">box_size_m (m)</label></td>
-            <td><input id="box_size_m" type="number" step="1e-10"
-                       value="{{ defaults.box_size_m }}"></td></tr>
-        <tr><td><label for="temperature">temperature (K)</label></td>
-            <td><input id="temperature" type="number" step="1"
-                       value="{{ defaults.temperature }}"></td></tr>
-        <tr><td><label for="total_steps">total_steps</label></td>
-            <td><input id="total_steps" type="number" step="1"
-                       value="{{ defaults.total_steps }}"></td></tr>
-        <tr><td><label for="thermo_interval">thermo_interval</label></td>
-            <td><input id="thermo_interval" type="number" step="1"
-                       value="{{ defaults.thermo_interval }}"></td></tr>
-        <tr><td><label for="dump_interval">dump_interval</label></td>
-            <td><input id="dump_interval" type="number" step="1"
-                       value="{{ defaults.dump_interval }}"></td></tr>
-      </table>
-    </details>
-
-    <label class="viz-toggle">
-      <input id="do_viz" type="checkbox"> Include OVITO render
-    </label>
-
-    <button type="submit">Run MD</button>
-  </form>
-
-  <div id="status" class="status"></div>
-
-  <section id="result" hidden>
-    <h2>Result</h2>
-    <div class="cards">
-      <div class="card"><span class="label">C<sub>11</sub></span>
-        <span id="r-c11">—</span> GPa</div>
-      <div class="card"><span class="label">C<sub>12</sub></span>
-        <span id="r-c12">—</span> GPa</div>
-      <div class="card"><span class="label">E</span>
-        <span id="r-e">—</span> GPa</div>
-      <div class="card"><span class="label">ν</span>
-        <span id="r-nu">—</span></div>
+  <header class="rail">
+    <div class="rail__brand">
+      <span class="led led--big" data-led aria-hidden="true"></span>
+      <div class="rail__txt">
+        <span class="rail__sys">MEAM // ELASTIC RUNNER</span>
+        <span class="rail__sub">LAMMPS &middot; optimized 12-element MEAM &middot; on-demand strain sweep</span>
+      </div>
     </div>
-    <p id="r-warning" class="warning" hidden></p>
+    <div class="rail__telemetry">
+      <div class="tape" aria-label="Mission status">
+        <span class="tape__lbl">STATE</span>
+        <span class="tape__val" id="state-val">STANDBY</span>
+      </div>
+      <div class="tape" aria-label="Mission clock">
+        <span class="tape__lbl">T+</span>
+        <span class="tape__val tape__val--mono" id="clock">00:00.0</span>
+      </div>
+      <div class="tape" aria-label="Last job id">
+        <span class="tape__lbl">RUN</span>
+        <span class="tape__val tape__val--mono" id="job-id">———————</span>
+      </div>
+      <div class="tape tape--alt" aria-label="Build">
+        <span class="tape__lbl">BUILD</span>
+        <span class="tape__val tape__val--mono">v1 &middot; 12B</span>
+      </div>
+    </div>
+  </header>
 
-    <details>
-      <summary>LAMMPS log tail</summary>
-      <pre id="r-log"></pre>
-    </details>
+  <main class="deck">
 
-    <details>
-      <summary>Thermo trace (last 50 records)</summary>
-      <pre id="r-thermo"></pre>
-    </details>
+    <!-- ─── LEFT: CONTROLS ───────────────────────────────────────────── -->
+    <section class="bay bay--input">
+      <header class="bay__head">
+        <span class="bay__idx">01</span>
+        <h2 class="bay__title">Composition</h2>
+        <span class="bay__hint">mole fractions &middot; auto-normalised on launch</span>
+        <span class="bay__corner bay__corner--tl" aria-hidden="true"></span>
+        <span class="bay__corner bay__corner--tr" aria-hidden="true"></span>
+      </header>
 
-    <img id="r-render" alt="OVITO render of relaxed supercell" hidden>
-  </section>
+      <form id="predict-form" class="bay__body" autocomplete="off" novalidate>
 
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
+        <div class="elgrid" role="group" aria-label="Element fractions">
+          {% for el in elements %}
+          <label class="el" data-el="{{ el }}" style="--i: {{ loop.index0 }}">
+            <span class="el__slot">{{ '%02d'|format(loop.index) }}</span>
+            <span class="el__sym">{{ el }}</span>
+            <input
+              class="el__input"
+              id="el-{{ el }}"
+              type="number"
+              name="{{ el }}"
+              min="0"
+              max="1"
+              step="0.01"
+              inputmode="decimal"
+              placeholder=".00"
+              aria-label="Fraction of {{ el }}"
+            >
+            <span class="el__fill" aria-hidden="true"></span>
+          </label>
+          {% endfor %}
+        </div>
+
+        <div class="sumbar">
+          <div class="sumbar__row">
+            <span class="sumbar__lbl">&Sigma; f<sub>i</sub></span>
+            <span class="sumbar__val" id="sum-val">0.0000</span>
+            <span class="sumbar__delta" id="sum-delta">&Delta; &minus;1.0000</span>
+          </div>
+          <div class="sumbar__track"><div class="sumbar__fill" id="sum-fill"></div><span class="sumbar__tick" title="target = 1.0"></span></div>
+        </div>
+
+        <header class="bay__head bay__head--inset">
+          <span class="bay__idx">02</span>
+          <h2 class="bay__title">Cell</h2>
+          <span class="bay__hint">advanced &middot; defaults from src/MD/config.py</span>
+        </header>
+
+        <div class="knobs">
+          <label class="knob"><span class="knob__lbl">box_size_m</span><input id="box_size_m" type="number" step="1e-10" value="{{ defaults.box_size_m }}"><span class="knob__unit">m</span></label>
+          <label class="knob"><span class="knob__lbl">temperature</span><input id="temperature" type="number" step="1" value="{{ defaults.temperature }}"><span class="knob__unit">K</span></label>
+          <label class="knob"><span class="knob__lbl">total_steps</span><input id="total_steps" type="number" step="1" value="{{ defaults.total_steps }}"><span class="knob__unit">&nbsp;</span></label>
+          <label class="knob"><span class="knob__lbl">thermo_interval</span><input id="thermo_interval" type="number" step="1" value="{{ defaults.thermo_interval }}"><span class="knob__unit">&nbsp;</span></label>
+          <label class="knob"><span class="knob__lbl">dump_interval</span><input id="dump_interval" type="number" step="1" value="{{ defaults.dump_interval }}"><span class="knob__unit">&nbsp;</span></label>
+          <label class="knob knob--check">
+            <input id="do_viz" type="checkbox">
+            <span class="knob__lbl">OVITO render</span>
+            <span class="knob__unit">PNG</span>
+          </label>
+        </div>
+
+        <div class="launch">
+          <button class="launch__btn" id="btn-launch" type="submit">
+            <span class="launch__bracket">&#9696;</span>
+            <span class="launch__label">LAUNCH</span>
+            <span class="launch__bracket">&#9697;</span>
+          </button>
+          <div class="launch__row">
+            <button class="ghost-btn" id="btn-preset-al" type="button">PRESET: pure Al</button>
+            <button class="ghost-btn" id="btn-preset-al7075" type="button">AA7075</button>
+            <button class="ghost-btn" id="btn-clear" type="button">clear</button>
+          </div>
+          <div class="notice" id="notice" hidden></div>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ─── RIGHT: TELEMETRY ─────────────────────────────────────────── -->
+    <section class="bay bay--out">
+      <header class="bay__head">
+        <span class="bay__idx">03</span>
+        <h2 class="bay__title">Telemetry</h2>
+        <span class="bay__hint">live channel &middot; runner.py &rarr; JSON-line</span>
+        <span class="bay__corner bay__corner--tl" aria-hidden="true"></span>
+        <span class="bay__corner bay__corner--tr" aria-hidden="true"></span>
+      </header>
+
+      <div class="bay__body">
+
+        <div class="status-strip" id="status-strip" data-state="standby">
+          <span class="status-strip__led" aria-hidden="true"></span>
+          <span class="status-strip__lbl" id="status-strip-lbl">SYSTEM READY</span>
+          <span class="status-strip__sub" id="status-strip-sub">Awaiting composition.</span>
+          <span class="status-strip__corner status-strip__corner--bl" aria-hidden="true"></span>
+          <span class="status-strip__corner status-strip__corner--br" aria-hidden="true"></span>
+        </div>
+
+        <div class="scope" id="scope">
+          <header class="scope__head">
+            <span class="scope__lbl">SCOPE &middot; pressure tensor / step</span>
+            <ul class="scope__legend">
+              <li><span class="ld ld--xx"></span>p<sub>xx</sub></li>
+              <li><span class="ld ld--yy"></span>p<sub>yy</sub></li>
+              <li><span class="ld ld--zz"></span>p<sub>zz</sub></li>
+            </ul>
+            <span class="scope__counts">
+              <span id="scope-count">0</span> pts
+            </span>
+          </header>
+          <div class="scope__plot">
+            <svg id="scope-svg" viewBox="0 0 600 220" preserveAspectRatio="none" aria-hidden="true">
+              <g class="scope__grid">
+                <line x1="0"   y1="55"  x2="600" y2="55"></line>
+                <line x1="0"   y1="110" x2="600" y2="110"></line>
+                <line x1="0"   y1="165" x2="600" y2="165"></line>
+                <line x1="120" y1="0"   x2="120" y2="220"></line>
+                <line x1="240" y1="0"   x2="240" y2="220"></line>
+                <line x1="360" y1="0"   x2="360" y2="220"></line>
+                <line x1="480" y1="0"   x2="480" y2="220"></line>
+              </g>
+              <g class="scope__zero"><line x1="0" y1="110" x2="600" y2="110"></line></g>
+              <polyline id="trace-xx" class="trace trace--xx" points=""></polyline>
+              <polyline id="trace-yy" class="trace trace--yy" points=""></polyline>
+              <polyline id="trace-zz" class="trace trace--zz" points=""></polyline>
+              <g class="scope__cursor" id="scope-cursor" style="display:none">
+                <line x1="0" y1="0" x2="0" y2="220"></line>
+              </g>
+            </svg>
+            <div class="scope__empty" id="scope-empty">no signal &mdash; launch a run to populate</div>
+          </div>
+          <footer class="scope__foot">
+            <span><b id="scope-step">step —</b></span>
+            <span>p<sub>xx</sub> <span id="scope-pxx">—</span> bar</span>
+            <span>p<sub>yy</sub> <span id="scope-pyy">—</span> bar</span>
+            <span>p<sub>zz</sub> <span id="scope-pzz">—</span> bar</span>
+          </footer>
+        </div>
+
+        <div class="terminal" id="terminal">
+          <header class="terminal__head">
+            <span class="terminal__lbl">LOG &middot; LAMMPS stdout</span>
+            <span class="terminal__counts"><span id="log-count">0</span> lines</span>
+            <button class="terminal__btn" id="btn-wrap" type="button">wrap: off</button>
+          </header>
+          <pre class="terminal__body" id="terminal-body" data-wrap="off">> awaiting boot...
+</pre>
+        </div>
+
+        <div class="readout" id="readout" hidden>
+          <header class="readout__head">
+            <span class="readout__lbl">READOUT &middot; elastic constants</span>
+            <span class="readout__src" id="readout-src">live</span>
+          </header>
+          <div class="readout__grid">
+            <article class="dial" data-key="C11">
+              <span class="dial__sym">C<sub>11</sub></span>
+              <span class="dial__num" id="r-c11">———.——</span>
+              <span class="dial__unit">GPa</span>
+            </article>
+            <article class="dial" data-key="C12">
+              <span class="dial__sym">C<sub>12</sub></span>
+              <span class="dial__num" id="r-c12">———.——</span>
+              <span class="dial__unit">GPa</span>
+            </article>
+            <article class="dial" data-key="E">
+              <span class="dial__sym">E</span>
+              <span class="dial__num" id="r-e">———.——</span>
+              <span class="dial__unit">GPa</span>
+            </article>
+            <article class="dial" data-key="nu">
+              <span class="dial__sym">&nu;</span>
+              <span class="dial__num" id="r-nu">—.————</span>
+              <span class="dial__unit">&mdash;</span>
+            </article>
+          </div>
+          <p class="warning" id="r-warning" hidden></p>
+          <figure class="render" id="render-fig" hidden>
+            <figcaption class="render__cap">OVITO &middot; relaxed supercell snapshot</figcaption>
+            <img id="r-render" alt="OVITO render of relaxed supercell">
+          </figure>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="rail rail--bot">
+    <div class="rail__brand">
+      <span class="dot"></span>
+      <span class="rail__sys">PHYS &middot; 400 &middot; Durmaz</span>
+    </div>
+    <div class="rail__telemetry rail__telemetry--small">
+      <code>C<sub>11</sub>, C<sub>12</sub> &rarr; (E, &nu;)</code>
+      <code>E = (C<sub>11</sub>&minus;C<sub>12</sub>)(C<sub>11</sub>+2C<sub>12</sub>) / (C<sub>11</sub>+C<sub>12</sub>)</code>
+      <code>&nu; = C<sub>12</sub> / (C<sub>11</sub>+C<sub>12</sub>)</code>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </body>
 </html>
