@@ -198,6 +198,47 @@ EOF
     log "stage_venv: complete"
 }
 
+final_verify() {
+    log "final_verify: running smoke checks"
+    local all_pass=true
+    local label cmd
+
+    _check() {
+        local label="$1" cmd="$2"
+        if eval "$cmd" >/dev/null 2>&1; then
+            printf '  \033[1;32mPASS\033[0m  %s\n' "$label"
+        else
+            printf '  \033[1;31mFAIL\033[0m  %s\n' "$label"
+            all_pass=false
+        fi
+    }
+
+    _check "liblammps.so present" \
+        "test -f '$INSTALL_PREFIX/lib/liblammps.so'"
+    _check "pw.x executable" \
+        "test -x '$QE_SRC/bin/pw.x'"
+    _check "venv python imports lammps, numpy, ase" \
+        "'$VENV_DIR/bin/python3' -c 'import lammps, numpy, ase'"
+    _check "venv python can load custom liblammps" \
+        "LD_LIBRARY_PATH='$INSTALL_PREFIX/lib' '$VENV_DIR/bin/python3' -c 'from lammps import lammps; lammps()'"
+
+    local py_ver lmp_tag qe_ver
+    py_ver=$("$VENV_DIR/bin/python3" --version 2>&1 || echo unknown)
+    lmp_tag=$(git -C "$LAMMPS_SRC" describe --tags --abbrev=0 2>/dev/null || echo unknown)
+    qe_ver=$(grep -oE "version_number = '[^']+'" "$QE_SRC/include/qe_version.h" 2>/dev/null \
+             | sed "s/.*'\\(.*\\)'/\\1/" || echo unknown)
+
+    echo
+    echo "== PHYS400 setup complete =="
+    echo "LAMMPS:  $INSTALL_PREFIX/lib/liblammps.so  (tag $lmp_tag)"
+    echo "QE:      $QE_SRC/bin/pw.x  (v$qe_ver)"
+    echo "venv:    $VENV_DIR  ($py_ver)"
+    echo
+    echo "To activate: source phys/bin/activate"
+
+    $all_pass || die "final_verify: one or more smoke checks failed"
+}
+
 main() {
     parse_args "$@"
     log "PHYS400 bootstrap starting"
@@ -210,6 +251,7 @@ main() {
     stage_lammps
     stage_qe
     stage_venv
+    final_verify
 }
 
 main "$@"
