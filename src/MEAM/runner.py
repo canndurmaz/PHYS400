@@ -16,7 +16,6 @@ imports anything LAMMPS-related.
 
 from __future__ import annotations
 
-import contextlib
 import json
 import math
 import os
@@ -38,9 +37,15 @@ NU_FILTER_MAX = 0.48     # mirror src/MD/lmp.py
 
 
 def _emit(obj: dict) -> None:
-    """Write one JSON object as a single line, flush immediately."""
-    sys.stdout.write(json.dumps(obj) + "\n")
-    sys.stdout.flush()
+    """Write one JSON object as a single line, flush immediately.
+
+    Writes to ``sys.__stdout__`` (the *original* stdout) rather than
+    ``sys.stdout`` so it can never recurse through any user-installed
+    redirector. The parent process reads this stream as the newline-
+    delimited JSON-line protocol.
+    """
+    sys.__stdout__.write(json.dumps(obj) + "\n")
+    sys.__stdout__.flush()
 
 
 def _parse_thermo_line(line: str) -> dict | None:
@@ -60,29 +65,6 @@ def _parse_thermo_line(line: str) -> dict | None:
     except ValueError:
         return None
     return {"step": step, "pxx": pxx, "pyy": pyy, "pzz": pzz}
-
-
-class _TeeStdout:
-    """Capture LAMMPS prints, emit each line as a {"type":"log"} progress
-    object, and also try to parse it as a thermo record."""
-
-    def __init__(self) -> None:
-        self._buf = ""
-
-    def write(self, chunk: str) -> int:
-        self._buf += chunk
-        while "\n" in self._buf:
-            line, self._buf = self._buf.split("\n", 1)
-            _emit({"type": "log", "line": line})
-            thermo = _parse_thermo_line(line)
-            if thermo is not None:
-                _emit({"type": "thermo", **thermo})
-        return len(chunk)
-
-    def flush(self) -> None:
-        if self._buf:
-            _emit({"type": "log", "line": self._buf})
-            self._buf = ""
 
 
 def _render_png(composition, selected, traj_file: str, output_path: str) -> None:
@@ -160,10 +142,12 @@ def _run_lammps(spec: dict, tmpdir: str) -> dict:
     library_elements = " ".join(e.meam_label for e in pot["elements"])
     active_elements  = " ".join(e.meam_label for e in sel)
 
-    # Keep -log none (no on-disk log spam), but DROP -screen none so LAMMPS's
-    # thermo table reaches the contextlib-redirected stdout, where _TeeStdout
-    # captures it and _parse_thermo_line picks out step/pxx/pyy/pzz rows.
-    L = lammps(cmdargs=["-log", "none"])
+    # Capture LAMMPS's screen output into a file in tmpdir. After the run we
+    # read this file and emit each line as a {"type":"log"} progress event
+    # (and parse out thermo rows). This avoids fighting Python stdout
+    # redirection — LAMMPS writes to libc stdout which doesn't honor it.
+    screen_path = os.path.join(tmpdir, "lammps.screen")
+    L = lammps(cmdargs=["-log", "none", "-screen", screen_path])
     try:
         L.command("units metal")
         L.command("atom_style atomic")
@@ -193,13 +177,22 @@ def _run_lammps(spec: dict, tmpdir: str) -> dict:
         L.command("thermo_style custom step pxx pyy pzz")
         L.command("thermo 10")
 
-        print("Relaxing ground state (box + atoms)...")
+        _emit({"type": "log", "line": "Relaxing ground state (box + atoms)..."})
         L.command("fix boxrelax all box/relax aniso 0.0 vmax 0.001")
         L.command("minimize 1.0e-6 1.0e-8 1000 10000")
         L.command("unfix boxrelax")
         L.command("minimize 1.0e-6 1.0e-8 200 2000")
 
-        E, nu, C11, C12 = get_elastic_moduli(L)
+        # get_elastic_moduli has print() calls that would corrupt the JSON-line
+        # protocol on stdout. Redirect sys.stdout to stderr for that call so
+        # its diagnostic prints go to the error stream instead. _emit is safe
+        # because it writes to sys.__stdout__ directly.
+        _saved_stdout = sys.stdout
+        sys.stdout = sys.stderr
+        try:
+            E, nu, C11, C12 = get_elastic_moduli(L)
+        finally:
+            sys.stdout = _saved_stdout
 
         if not all(math.isfinite(x) for x in (E, nu, C11, C12)):
             raise RuntimeError(
@@ -238,9 +231,27 @@ def _run_lammps(spec: dict, tmpdir: str) -> dict:
                             spec["render_output_path"])
                 render_path = spec["render_output_path"]
             except Exception as exc:
-                print(f"OVITO render failed (continuing without): {exc}")
+                _emit({"type": "log", "line": f"OVITO render failed: {exc}"})
     finally:
         L.close()
+
+    # Now that LAMMPS has flushed its screen buffer, drain the captured log
+    # line by line, emitting each as a log/thermo event in chronological
+    # order. Reading after the run keeps this simple (no background thread)
+    # and the UI receives the full trace on the next poll.
+    try:
+        with open(screen_path) as f:
+            for line in f:
+                line = line.rstrip("\n")
+                _emit({"type": "log", "line": line})
+                thermo = _parse_thermo_line(line)
+                if thermo is not None:
+                    _emit({"type": "thermo", **thermo})
+    except OSError:
+        # If for some reason LAMMPS didn't write a screen file, we just
+        # don't have a log trace — the elastic constants are still in the
+        # result. Don't fail the run for cosmetic output.
+        pass
 
     return {
         "C11_GPa": float(C11),
@@ -262,15 +273,11 @@ def main() -> int:
         return 2
 
     with tempfile.TemporaryDirectory(prefix="meam-job-") as tmpdir:
-        tee = _TeeStdout()
         try:
-            with contextlib.redirect_stdout(tee):
-                result = _run_lammps(spec, tmpdir)
-            tee.flush()
+            result = _run_lammps(spec, tmpdir)
             _emit({"type": "result", **result})
             return 0
         except Exception as exc:
-            tee.flush()
             _emit({"type": "error", "message": str(exc),
                    "traceback": traceback.format_exc()})
             return 1
