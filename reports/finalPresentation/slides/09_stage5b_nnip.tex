@@ -1,0 +1,93 @@
+% =====================================================================
+% Slide 18: Stage 5b -- NN-MEAM optimization + training loss
+% =====================================================================
+\begin{frame}{Stage 5b: NN-Driven MEAM Parameter Optimization}
+\begin{columns}[T]
+\column{0.46\textwidth}
+\textbf{The closed loop.}
+\begin{enumerate}\small
+  \item A \emph{differentiable NN surrogate} learns
+        $\bigl(\text{MEAM params}\bigr) \to (C_{11},C_{12})$
+        from a Sobol/active-learning sample of LAMMPS runs.
+  \item An L-BFGS optimizer~\citep{liu1989lbfgs} minimises
+        $\sum_\mathrm{alloy} \mathcal{L}_\delta\bigl(
+          \hat C_{ij}, C_{ij}^{\mathrm{MD}}\bigr)$
+        \emph{through the NN}.
+  \item Periodically: the optimised parameters are
+        plugged back into LAMMPS, new MD samples appended,
+        the surrogate re-trained.
+\end{enumerate}
+
+\textbf{Training corpus.} 70\,/\,30 train\,/\,val split of
+$\sim\!100$ k-medoid representatives from the
+$\sim\!7800$-alloy database.
+
+\textbf{Resumable.} Atomic checkpoint after every accepted LAMMPS
+sample; killing and re-running picks up where it stopped.
+
+\column{0.52\textwidth}
+\centering
+\includegraphics[width=0.99\linewidth]{figures/nnip_training_loss.png}\\[-0.4em]
+\scriptsize NN-surrogate training-loss decay over 10{,}000 steps
+($\delta\!=\!1$). The loss is on \emph{scaled} $C_{ij}$ ---
+end value $0.16$ corresponds to a residual surrogate RMSE
+of order $10$--$15$\,GPa on $C_{11}$.
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% Slide 19: Stage 5b -- compute cost
+% =====================================================================
+\begin{frame}{Stage 5b: Where Did the 114 Wall-Clock Hours Go?}
+\centering
+\includegraphics[height=4.6cm]{figures/nnip_stage_timings.png}
+
+\vspace{0.15em}
+\scriptsize
+\begin{itemize}\itemsep0.0em\leftskip=0pt\itemindent=0pt
+  \item \textbf{NN optimization dominates} ($98.7\,\%$ of total wall-clock):
+        every L-BFGS line-search evaluation triggers a full LAMMPS
+        strain protocol over the 30 verification alloys.
+  \item DFT and MEAM-init are effectively free at this scale --- the
+        cached DFT reference is reused, MEAM-init is $70$\,ms.
+  \item This compute imbalance motivates an \emph{active-learning
+        sampler}: the next MD batch is selected by ensemble
+        disagreement, rather than running LAMMPS blindly across a
+        dense Sobol grid.
+\end{itemize}
+\end{frame}
+
+% =====================================================================
+% Slide 20: Stage 5b -- honest verification
+% =====================================================================
+\begin{frame}{Stage 5b: Honest Verification on 30 Held-Out Alloys}
+\centering
+\includegraphics[height=3.9cm]{figures/nnip_verification_errors.png}
+
+\vspace{0.1em}
+\begin{columns}[T]
+\column{0.50\textwidth}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.92}
+\begin{tabular}{lr}
+\toprule
+Quantity                                            & Value \\
+\midrule
+Held-out alloys                                      & 30 \\
+NNIP outputs passing the physicality filter          & 11 \\
+\hspace{0.8em}within $20\,\%$ of MD on $E$             & 4 \\
+\hspace{0.8em}within $20\,\%$ of MD on $\nu$           & 4 \\
+Median $E$-error (physical subset)                   & $\sim\!23\,\%$ \\
+Median $\nu$-error (physical subset)                 & $\sim\!26\,\%$ \\
+\bottomrule
+\end{tabular}
+
+\column{0.48\textwidth}
+\scriptsize\textit{The NNIP-optimized MEAM is, on the current
+12-element corpus, \textbf{not yet a usable potential}:
+\textbf{19 of 30} held-out predictions fall outside the
+mechanical-stability region, and of the 11 that survive only
+$\sim\!4$ are within the 20\,\% engineering target.}
+\end{columns}
+\end{frame}

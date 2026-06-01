@@ -1,0 +1,29 @@
+% =====================================================================
+% Slide 9: Stage 1 generator
+% =====================================================================
+\begin{frame}{Stage 1: Random Alloy Generator}
+\begin{columns}[T]
+\column{0.50\textwidth}
+A Python generator draws compositions $\{c_i\}$ uniformly on the
+simplex $\sum_i c_i = 1$ over the 12 admissible elements, with
+\textbf{Al-dominant bias} (Al weight inflated when present)
+to oversample the engineering-relevant aluminium-alloy corner.
+
+\medskip
+\textbf{Output schema.} Each composition is persisted as a structured
+record (element $\to$ mass-fraction map) at $10^{-4}$ precision,
+fully consumable by the downstream stages.
+
+\medskip
+\textbf{Coverage.} $\sim\!7900$ compositions generated; after the
+Stage-2 physicality filter, $7815$ survive.
+
+\column{0.50\textwidth}
+\begin{block}{Element coverage}
+\centering
+\includegraphics[width=0.95\linewidth]{figures/element_frequency.png}\\[-0.2em]
+\scriptsize Element frequency over the surviving 7815 alloys;
+Al dominates by design.
+\end{block}
+\end{columns}
+\end{frame}

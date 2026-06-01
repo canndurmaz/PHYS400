@@ -1,0 +1,47 @@
+% =====================================================================
+% Slide 15: Stage 4 -- MEAM initialization
+% =====================================================================
+\begin{frame}{Stage 4: MEAM Single-Element Initialization}
+\begin{columns}[T]
+\column{0.45\textwidth}
+The MEAM screening exponent $\alpha$ is recovered from each
+element's DFT triple
+$\bigl(a_0, E_{\mathrm{coh}}, B\bigr)$ via
+\begin{equation*}
+  \alpha \;=\; a_0 \,\sqrt{\frac{9\,B\,\Omega}{E_{\mathrm{coh}}}},
+\end{equation*}
+where $\Omega$ is the primitive cell volume.
+
+\smallskip
+This populates a single-element MEAM block per element, which
+then feeds the cross-term refitter of Stage~5.
+
+\smallskip
+\textbf{Mn caveat.} The original EOS scan for $\alpha$-Mn did not
+converge; values shown below are from a relaxed BCC approximation
+and the corresponding cross-terms inherit the higher uncertainty.
+
+\column{0.53\textwidth}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{llrrrr}
+\toprule
+Element & Lat. & $a_0$ (\AA) & $E_\mathrm{coh}$ & $\Omega$ (\AA$^3$) & $\alpha$ \\
+\midrule
+Al & FCC     & 4.047 & 3.611 & 16.57 & 4.470 \\
+Cu & FCC     & 3.639 & 3.857 & 12.05 & 4.930 \\
+Si & DIAMOND & 5.471 & 5.130 & 20.46 & 4.473 \\
+Ti & HCP     & 2.915 & 6.284 & 35.02 & 5.987 \\
+Zn & HCP     & 2.766 & 0.964 & 29.93 &10.921 \\
+Cr & BCC     & 2.848 & 3.964 & 11.55 & 5.906 \\
+Fe & BCC     & 2.806 & 6.834 & 11.05 & 6.179 \\
+Mg & HCP     & 3.177 & 1.483 & 45.36 & 9.063 \\
+Mn & BCC     & 2.803 & 3.728 & 11.01 & 6.120 \\
+Mo & BCC     & 3.169 &10.353 & 15.91 & 4.924 \\
+\bottomrule
+\end{tabular}\\[0.2em]
+\textit{\scriptsize $E_\mathrm{coh}$ in eV/atom.}
+\end{columns}
+\end{frame}

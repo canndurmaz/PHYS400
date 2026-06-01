@@ -1,0 +1,100 @@
+% =====================================================================
+% Slide 7: Limitations of existing MEAM libraries
+% =====================================================================
+\begin{frame}{Limitations of Existing MEAM Libraries}
+Published MEAM libraries cover \emph{disjoint subsets} of elements; no
+single file spans the nine elements specified by Al\,7075
+(Al, Cr, Cu, Fe, Mg, Mn, Si, Ti, Zn).
+
+\vspace{0.5em}
+\centering\small
+\begin{tabular}{l|cccccccccccc}
+\toprule
+\textbf{Library File} & Al & Co & Cr & Cu & Fe & Mg & Mn & Mo & Ni & Si & Ti & Zn \\
+\midrule
+AlMgZn           & \checkmark &   &   &   &   & \checkmark &   &   &   &   &   & \checkmark \\
+AlSiCuMgFe       & \checkmark &   &   & \checkmark & \checkmark & \checkmark &   &   &   & \checkmark &   &   \\
+CuMo             &   &   &   & \checkmark &   &   &   & \checkmark &   &   &   &   \\
+FeMnNiTiCuCrCoAl & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &   & \checkmark &   & \checkmark &   & \checkmark &   \\
+\midrule
+\textbf{Merged (this work)} &
+  \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &
+  \checkmark & \checkmark & \checkmark & \checkmark & \checkmark &
+  \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.7em}
+\raggedright
+\begin{itemize}\small
+  \item \textbf{Cross-interaction parameters} between elements drawn
+        from distinct libraries are undefined; naive merging produces a
+        potential that cannot be evaluated.
+  \item \textbf{Purely data-driven MLIPs}~\citep{behler2007,shapeev2016,mishin2021}\footnote{\tiny MLIP =
+        Machine-Learning Interatomic Potential.} avoid the coverage
+        problem but require very large training corpora ($10^5$ DFT
+        configurations) and forgo the physical interpretability of
+        MEAM.
+  \item This work fills the gap by \emph{merging} the existing
+        libraries and \emph{refitting} cross-terms from DFT references.
+\end{itemize}
+\end{frame}
+
+% =====================================================================
+% Slide 8: Pipeline overview
+% =====================================================================
+\begin{frame}{Methodology: Five-Stage Pipeline}
+\centering
+\begin{tikzpicture}[
+    node distance=0.4cm and 0.30cm,
+    stage/.style={rectangle, rounded corners, draw=darkred, fill=darkred!10,
+                  text width=2.4cm, minimum height=1.0cm, align=center,
+                  font=\scriptsize\bfseries},
+    aux/.style={rectangle, rounded corners, draw=deepblue, dashed, fill=blue!6,
+                  text width=2.4cm, minimum height=0.9cm, align=center,
+                  font=\scriptsize\bfseries},
+    arrow/.style={-{Stealth[length=2.5mm]}, thick, darkred},
+    auxarrow/.style={-{Stealth[length=2.5mm]}, thick, dashed, deepblue},
+    label/.style={font=\tiny, text=darkred!70!black, align=center},
+    auxlabel/.style={font=\tiny, text=deepblue, align=center},
+  ]
+  \node[stage] (s1) {Stage 1\\Configurations};
+  \node[stage, right=of s1] (s2) {Stage 2\\MD: $C_{11}, C_{12}$};
+  \node[stage, right=of s2] (s3) {Stage 3\\DFT};
+  \node[stage, right=of s3] (s4) {Stage 4\\MEAM init};
+  \node[stage, right=of s4] (s5) {Stage 5\\NN optim};
+
+  \draw[arrow] (s1) -- (s2);
+  \draw[arrow] (s2) -- (s3);
+  \draw[arrow] (s3) -- (s4);
+  \draw[arrow] (s4) -- (s5);
+
+  \node[label, below=0.10cm of s1] {composition\\records};
+  \node[label, below=0.10cm of s2] {elastic\\database};
+  \node[label, below=0.10cm of s3] {DFT\\reference};
+  \node[label, below=0.10cm of s4] {merged MEAM\\library};
+  \node[label, below=0.10cm of s5] {refitted MEAM\\parameters};
+
+  \node[aux, above=0.9cm of s3] (ml) {Stage 5a\\composition NN};
+  \draw[auxarrow] (s2.north) |- (ml.west);
+  \draw[auxarrow] (ml.east) -| (s5.north);
+  \node[auxlabel, right=0.15cm of ml] (mlnote)
+      {sanity-check surrogate:\\composition $\to (C_{11}, C_{12})$};
+\end{tikzpicture}
+\vspace{0.4em}
+
+\small
+\begin{tabular}{clll}
+\toprule
+\textbf{Stage} & \textbf{Description} & \textbf{Framework} & \textbf{Status} \\
+\midrule
+1 & Random alloy configuration generation   & Python                  & Complete \\
+2 & MD elastic-property evaluation          & LAMMPS Python API       & Complete \\
+3 & DFT reference calculations              & Quantum Espresso + ASE  & Complete \\
+4 & MEAM initialization \& library merging  & Python                  & Complete \\
+5a & Composition NN surrogate (auxiliary)   & TensorFlow + Keras      & Complete \\
+5b & NN-driven MEAM parameter optimization  & TF + SciPy + LAMMPS     & \emph{Work in progress} \\
+\bottomrule
+\end{tabular}
+\let\thefootnote\relax\footnotetext{\tiny MD = Molecular Dynamics;\ \ DFT = Density-Functional Theory;\ \ NN = Neural Network.}
+\end{frame}

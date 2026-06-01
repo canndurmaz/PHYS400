@@ -1,0 +1,66 @@
+% =====================================================================
+% Slide 2: Talk roadmap
+% =====================================================================
+\begin{frame}{Roadmap}
+\begin{columns}[t]
+\column{0.49\textwidth}
+\textbf{1. Motivation \& engineering context}
+\begin{itemize}\small
+  \item Why elastic constants govern alloy design
+  \item Young's modulus $E$ for mechanical engineers
+  \item Poisson's ratio $\nu$ for mechanical engineers
+  \item From $C_{11}, C_{12}$ to $(E,\nu)$
+\end{itemize}
+\textbf{2. The MEAM gap}
+\begin{itemize}\small
+  \item Existing libraries, coverage limits
+  \item Pipeline overview
+\end{itemize}
+
+\column{0.49\textwidth}
+\textbf{3. The five-stage pipeline}
+\begin{itemize}\small
+  \item Stage 1 --- Configuration generator
+  \item Stage 2 --- LAMMPS molecular dynamics
+  \item Stage 3 --- Quantum Espresso DFT
+  \item Stage 4 --- MEAM initialization
+  \item Stage 5 --- Neural-network optimization
+\end{itemize}
+\textbf{4. Results \& honest discussion}
+\begin{itemize}\small
+  \item Composition surrogate (working)
+  \item NNIP verification (work-in-progress)
+  \item Failure analysis \& outlook
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% Slide 3: Motivation
+% =====================================================================
+\begin{frame}{Motivation: Why Elastic Constants Drive Alloy Design}
+\begin{itemize}
+  \item Structural alloys (Al\,7075, Inconel, Ti\,6Al--4V, $\dots$) are
+        selected on the basis of their \textbf{stiffness}, \textbf{ductility} and
+        \textbf{Poisson response}, all of which derive from a small set of
+        elastic constants.
+  \item Direct experimental measurement is costly: a single
+        single-crystal tensile + ultrasonic characterization
+        requires weeks of sample preparation.
+  \item Classical \textbf{molecular dynamics} (MD) can compute the full
+        elastic tensor in minutes per composition, but \emph{only if
+        an accurate interatomic potential is available}.
+  \item For metallic systems the \textbf{Modified Embedded Atom
+        Method} (MEAM)~\citep{baskes1992,lee2001}\footnote{\tiny MEAM = Modified Embedded Atom
+        Method --- a semi-empirical formalism that adds angular
+        dependence to the EAM embedding function.} remains the
+        de-facto formalism.
+\end{itemize}
+
+\vspace{0.4em}
+\begin{block}{Objective}
+Build MEAM potentials \emph{automatically} for arbitrary subsets of
+elements, with no manual parameter fitting and no experimental input ---
+a closed loop from first principles to molecular dynamics.
+\end{block}
+\end{frame}

@@ -1,0 +1,111 @@
+% =====================================================================
+% Slide 12: Stage 3 -- Quantum Espresso framework
+% =====================================================================
+\begin{frame}{Stage 3: The Quantum Espresso Framework}
+\textbf{Quantum Espresso}~\citep{giannozzi2009}\footnote{\tiny QE = Quantum Espresso --- open-source plane-wave DFT.}
+solves Kohn--Sham DFT~\citep{kohn1965} in a \emph{plane-wave +
+pseudopotential} basis; QE\,7.5 is driven through the
+\textbf{Atomic Simulation Environment} (ASE)~\citep{ase2017}
+Python interface, so single-shot SCFs, EOS scans and elastic
+calculations are dispatched from a single process pool.
+
+\medskip
+\begin{columns}[T]
+\column{0.49\textwidth}
+\textbf{Computational settings}
+\begin{itemize}\small
+  \item Plane-wave cut-off: $E_{\mathrm{cut}} = 40$\,Ry
+        (charge $= 320$\,Ry)
+  \item Marzari--Vanderbilt smearing~\citep{marzari1999}, width $0.02$\,Ry
+  \item Monkhorst--Pack mesh~\citep{monkhorst1976}: $6\!\times\!6\!\times\!6$
+  \item Spin-polarised auto-on for Fe, Cr, Mn
+  \item Pseudopotentials drawn from the official QE library on demand
+\end{itemize}
+
+\column{0.49\textwidth}
+\textbf{Per-element computation}
+\begin{enumerate}\small
+  \item Seven-point EOS scan
+        $\to$ $a_0, E_{\mathrm{coh}}, B$ via
+        \textbf{Birch--Murnaghan} fit~\citep{birch1947,birch}.
+  \item Isolated-atom reference $\to$ true $E_{\mathrm{coh}}$.
+  \item Strain protocol $\to$ $C_{11}, C_{12}$ (same as LAMMPS).
+\end{enumerate}
+\textbf{Per binary pair.} A single SCF on the
+$L1_2$/$B2$ reference structure $\to$ formation energy
+$E_{\mathrm{form}}(i,j)$.
+
+\medskip
+\textbf{Validation.} QE--ASE coupling sanity-checked on bulk FCC
+Al: $E \in [-540,-530]$\,eV, $|F| < 0.01$\,eV/\AA,
+diagonal-only stress. All pass.
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% Slide 13: Stage 3 -- DFT elemental results
+% =====================================================================
+\begin{frame}{Stage 3: DFT Elemental References}
+\begin{columns}[T]
+\column{0.46\textwidth}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{llrrr}
+\toprule
+Element & Lat. & $a_0$ (\AA) & $E_\mathrm{coh}$ & $B$ (GPa) \\
+\midrule
+Al & FCC     & 4.047 & 3.611 &  77.5 \\
+Cu & FCC     & 3.639 & 3.857 & 138.5 \\
+Si & DIAMOND & 5.471 & 5.130 &  89.3 \\
+Ti & HCP     & 2.915 & 6.284 & 114.5 \\
+Zn & HCP     & 2.766 & 0.964 &  68.4 \\
+Cr & BCC     & 2.848 & 3.964 & 213.1 \\
+Fe & BCC     & 2.806 & 6.834 & 420.5 \\
+Mg & HCP     & 3.177 & 1.483 &  47.8 \\
+Mn & BCC     & 2.803 & 3.728 & 225.7 \\
+Mo & BCC     & 3.169 &10.353 & 280.8 \\
+\bottomrule
+\end{tabular}\\[0.2em]
+\scriptsize\textit{$E_\mathrm{coh}$ in eV/atom; $B$ from Birch--Murnaghan
+fit to the seven-point EOS scan.}
+
+\column{0.53\textwidth}
+\centering
+\includegraphics[height=5.8cm,keepaspectratio]{figures/eos_curves.png}\\[-0.2em]
+\scriptsize Birch--Murnaghan fits to seven-point QE EOS scans.
+The fitted minimum determines $a_0$ and $E_{\mathrm{coh}}$;
+the curvature determines $B$.
+\end{columns}
+\end{frame}
+
+% =====================================================================
+% Slide 14: Stage 3 -- formation energy heatmap
+% =====================================================================
+\begin{frame}{Stage 3: Binary Formation Energies}
+\begin{columns}[T]
+\column{0.58\textwidth}
+\centering
+\includegraphics[height=6.0cm,keepaspectratio]{figures/formation_energy_heatmap.png}
+
+\column{0.40\textwidth}
+\scriptsize
+$E_{\mathrm{form}}(i,j)$ in eV/atom from $L1_2$/$B2$ SCF
+references for the ten elements with a converged elemental
+calculation.
+
+\medskip
+\textbf{Negative (blue)} $\Rightarrow$ exothermic mixing
+(e.g.\ Al--Ti, Cu--Ti --- compatible $sd$/$sp$ pairs).
+
+\medskip
+\textbf{Strongly positive (red)} $\Rightarrow$ poor mutual
+solubility (notably Mg and Zn against most transition metals;
+Fe--Mo also stands out).
+
+\medskip
+These signed values seed the cross-term $E_c(i,j)$ entries of
+the merged MEAM library directly, with no further fitting.
+\end{columns}
+\end{frame}

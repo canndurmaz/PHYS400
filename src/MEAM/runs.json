@@ -1,0 +1,26 @@
+{
+  "6d19f116c5b129d6847e1d7893bae1d5f1ae0e6f": {
+    "composition": {
+      "Al": 1.0
+    },
+    "knobs": {
+      "box_size_m": 8e-10,
+      "temperature": 300.0,
+      "total_steps": 50,
+      "thermo_interval": 10,
+      "dump_interval": 50
+    },
+    "do_viz": false,
+    "result": {
+      "C11_GPa": 112.10708306498582,
+      "C12_GPa": 60.303737988576586,
+      "E_GPa": 69.92248243292757,
+      "nu": 0.3497677095908161,
+      "physical": true,
+      "physical_reason": null
+    },
+    "render_path": null,
+    "completed_at": "2026-06-01T19:48:46+00:00",
+    "meam_mtime": 1780222146.6215544
+  }
+}
