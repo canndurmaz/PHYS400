@@ -44,6 +44,35 @@ parse_args() {
     done
 }
 
+APT_PKGS=(
+    build-essential cmake gfortran libopenmpi-dev libfftw3-dev
+    libblas-dev liblapack-dev git curl python3-venv python3-pip
+)
+
+stage_apt_deps() {
+    if $NO_APT; then
+        log "stage_apt_deps: skipped (--no-apt)"
+        return 0
+    fi
+
+    local missing=()
+    local pkg
+    for pkg in "${APT_PKGS[@]}"; do
+        if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+            missing+=("$pkg")
+        fi
+    done
+
+    if [[ ${#missing[@]} -eq 0 ]]; then
+        log "stage_apt_deps: all packages satisfied"
+        return 0
+    fi
+
+    log "stage_apt_deps: installing ${missing[*]}"
+    sudo apt-get update
+    sudo apt-get install -y "${missing[@]}"
+}
+
 main() {
     parse_args "$@"
     log "PHYS400 bootstrap starting"
@@ -52,6 +81,7 @@ main() {
     log "  LAMMPS_SRC=$LAMMPS_SRC"
     log "  QE_SRC=$QE_SRC"
     log "  VENV_DIR=$VENV_DIR"
+    stage_apt_deps
 }
 
 main "$@"
