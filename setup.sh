@@ -161,6 +161,43 @@ stage_qe() {
     log "stage_qe: complete"
 }
 
+ACTIVATE_SENTINEL="# PHYS400 env wiring"
+
+stage_venv() {
+    if [[ -f "$VENV_DIR/pyvenv.cfg" ]] && ! $FORCE; then
+        log "stage_venv: skipped (venv already at $VENV_DIR)"
+        return 0
+    fi
+
+    if $FORCE && [[ -d "$VENV_DIR" ]]; then
+        log "stage_venv: --force, removing existing $VENV_DIR"
+        rm -rf "$VENV_DIR"
+    fi
+
+    # 1. Create venv with system site packages (needed for ase, scipy, etc. via apt)
+    log "stage_venv: creating venv at $VENV_DIR"
+    python3 -m venv --system-site-packages "$VENV_DIR"
+
+    # 2. Wire env vars into activate (once)
+    local activate="$VENV_DIR/bin/activate"
+    if ! grep -qF "$ACTIVATE_SENTINEL" "$activate"; then
+        log "stage_venv: appending PHYS400 env wiring to activate"
+        cat >> "$activate" <<EOF
+
+$ACTIVATE_SENTINEL
+export LD_LIBRARY_PATH="\$HOME/.local/lib:\${LD_LIBRARY_PATH:-}"
+PATH="\$VIRTUAL_ENV/bin:$WORKSPACES/qe/bin:\$PATH"
+EOF
+    fi
+
+    # 3. Install requirements
+    log "stage_venv: installing pip requirements"
+    "$VENV_DIR/bin/pip" install --upgrade pip
+    "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
+
+    log "stage_venv: complete"
+}
+
 main() {
     parse_args "$@"
     log "PHYS400 bootstrap starting"
@@ -172,6 +209,7 @@ main() {
     stage_apt_deps
     stage_lammps
     stage_qe
+    stage_venv
 }
 
 main "$@"
