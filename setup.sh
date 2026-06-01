@@ -105,6 +105,27 @@ stage_lammps() {
         grep -q 'constexpr int maxelt = 20;' "$meam_h" \
             || die "MEAM patch failed — upstream meam.h may have changed line format"
     fi
+
+    # 3. CMake configure
+    log "stage_lammps: cmake configure"
+    cmake -S "$LAMMPS_SRC/cmake" -B "$LAMMPS_SRC/build" \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DBUILD_SHARED_LIBS=yes \
+        -DBUILD_MPI=ON \
+        -DBUILD_OMP=ON \
+        -DPKG_MEAM=yes \
+        -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX"
+
+    # 4. Build + install
+    log "stage_lammps: building (this takes several minutes)"
+    cmake --build "$LAMMPS_SRC/build" -j"$(nproc)"
+    log "stage_lammps: installing to $INSTALL_PREFIX"
+    cmake --install "$LAMMPS_SRC/build"
+
+    # 5. Verify
+    [[ -f "$INSTALL_PREFIX/lib/liblammps.so" ]] \
+        || die "stage_lammps: liblammps.so not produced at $INSTALL_PREFIX/lib"
+    log "stage_lammps: complete"
 }
 
 main() {
