@@ -128,6 +128,39 @@ stage_lammps() {
     log "stage_lammps: complete"
 }
 
+stage_qe() {
+    if [[ -x "$QE_SRC/bin/pw.x" ]] && ! $FORCE; then
+        log "stage_qe: skipped (pw.x already at $QE_SRC/bin)"
+        return 0
+    fi
+
+    # 1. Download + extract
+    if [[ ! -d "$QE_SRC" ]]; then
+        local url="https://gitlab.com/QEF/q-e/-/archive/qe-${QE_VERSION}/q-e-qe-${QE_VERSION}.tar.gz"
+        log "stage_qe: downloading QE $QE_VERSION from $url"
+        local tmp
+        tmp=$(mktemp -d)
+        curl -fL "$url" | tar -xz -C "$tmp"
+        mv "$tmp/q-e-qe-${QE_VERSION}" "$QE_SRC"
+        rmdir "$tmp"
+    else
+        log "stage_qe: reusing existing $QE_SRC"
+    fi
+
+    # 2. Configure (auto-detects mpif90, gfortran, FFTW3, BLAS, LAPACK)
+    log "stage_qe: configure"
+    (cd "$QE_SRC" && ./configure)
+
+    # 3. Build pw.x only (skip CPV, PHonon, EPW, etc.)
+    log "stage_qe: building pw.x (this takes several minutes)"
+    make -C "$QE_SRC" -j"$(nproc)" pw
+
+    # 4. Verify
+    [[ -x "$QE_SRC/bin/pw.x" ]] \
+        || die "stage_qe: pw.x not produced at $QE_SRC/bin"
+    log "stage_qe: complete"
+}
+
 main() {
     parse_args "$@"
     log "PHYS400 bootstrap starting"
@@ -138,6 +171,7 @@ main() {
     log "  VENV_DIR=$VENV_DIR"
     stage_apt_deps
     stage_lammps
+    stage_qe
 }
 
 main "$@"
