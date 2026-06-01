@@ -73,6 +73,40 @@ stage_apt_deps() {
     sudo apt-get install -y "${missing[@]}"
 }
 
+stage_lammps() {
+    if [[ -f "$INSTALL_PREFIX/lib/liblammps.so" ]] && ! $FORCE; then
+        log "stage_lammps: skipped (liblammps.so already at $INSTALL_PREFIX/lib)"
+        return 0
+    fi
+
+    # 1. Clone (or reuse existing tree)
+    if [[ ! -d "$LAMMPS_SRC" ]]; then
+        log "stage_lammps: cloning LAMMPS $LAMMPS_TAG into $LAMMPS_SRC"
+        git clone --depth 1 --branch "$LAMMPS_TAG" \
+            https://github.com/lammps/lammps.git "$LAMMPS_SRC"
+    else
+        local actual_tag
+        actual_tag=$(git -C "$LAMMPS_SRC" describe --tags --abbrev=0 2>/dev/null || echo "<unknown>")
+        if [[ "$actual_tag" != "$LAMMPS_TAG" ]]; then
+            warn "stage_lammps: $LAMMPS_SRC is at '$actual_tag', expected '$LAMMPS_TAG' — reusing as-is"
+        else
+            log "stage_lammps: reusing $LAMMPS_SRC at $actual_tag"
+        fi
+    fi
+
+    # 2. Patch MEAM/meam.h for maxelt = 20
+    local meam_h="$LAMMPS_SRC/src/MEAM/meam.h"
+    [[ -f "$meam_h" ]] || die "MEAM header not found at $meam_h"
+    if grep -q 'constexpr int maxelt = 20;' "$meam_h"; then
+        log "stage_lammps: MEAM patch already applied"
+    else
+        log "stage_lammps: applying MEAM maxelt=20 patch"
+        sed -i 's/constexpr int maxelt = 10;/constexpr int maxelt = 20;/' "$meam_h"
+        grep -q 'constexpr int maxelt = 20;' "$meam_h" \
+            || die "MEAM patch failed — upstream meam.h may have changed line format"
+    fi
+}
+
 main() {
     parse_args "$@"
     log "PHYS400 bootstrap starting"
@@ -82,6 +116,7 @@ main() {
     log "  QE_SRC=$QE_SRC"
     log "  VENV_DIR=$VENV_DIR"
     stage_apt_deps
+    stage_lammps
 }
 
 main "$@"
