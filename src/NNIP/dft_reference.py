@@ -46,38 +46,67 @@ ELEMENT_DATA = {
     "Ti": ("hcp", 2.95, "Ti.pbe-spn-kjpaw_psl.1.0.0.UPF"),
     "Cr": ("bcc", 2.91, "Cr.pbe-spn-kjpaw_psl.1.0.0.UPF"),
     "Mn": ("bcc", 2.89, "Mn.pbe-spn-kjpaw_psl.0.3.1.UPF"),  # δ-Mn/γ-Mn BCC proxy (α-Mn is 29-atom non-collinear)
+    "Co": ("hcp", 2.51, "Co.pbe-spn-kjpaw_psl.0.3.1.UPF"),  # FM HCP, lit moment ~1.6 μB
+    "Ni": ("fcc", 3.52, "Ni.pbe-spn-kjpaw_psl.1.0.0.UPF"),  # FM FCC, lit moment ~0.6 μB
     "Si": ("diamond", 5.43, "Si.pbe-n-kjpaw_psl.1.0.0.UPF"),
     "Au": ("fcc", 4.08, "Au.pz-rrkjus_aewfc.UPF"),
     "Mo": ("bcc", 3.15, "Mo-PBE.upf"),
 }
 
 # Elements requiring spin-polarized calculation
-MAGNETIC_ELEMENTS = {"Fe", "Cr", "Mn"}
+MAGNETIC_ELEMENTS = {"Fe", "Cr", "Mn", "Co", "Ni"}
 
-# Initial magnetic moments (μ_B) for SCF symmetry-breaking. Cr uses an
-# alternating-sign pattern across the supercell to seed G-AFM ordering; Fe and
-# Mn use ferromagnetic starts (Mn α-phase is non-collinear AFM in reality,
-# but a small FM seed converges to the closest collinear minimum).
+# Initial magnetic moments (μ_B) for SCF symmetry-breaking. Cr and Mn use
+# alternating-sign G-AFM seeds (their experimental ground states are AFM);
+# Fe/Co/Ni use a ferromagnetic seed.
+# Cr was bumped 0.6 → 1.5: the 0.6 seed collapsed to NM in the 8-atom EOS
+# (BCC-Cr's AFM is only ~10 meV/atom below NM, so the SCF needs a stronger
+# kick to land in the AFM basin).
 ELEMENTAL_MAGMOM = {
     "Fe": 2.5,
-    "Cr": 0.6,
-    "Mn": 2.0,
+    "Cr": 1.5,
+    "Mn": 3.5,
+    "Co": 1.7,
+    "Ni": 0.7,
 }
+
+# Per-atom fixed-moment constraint for FM elements. When set, every EOS-scan
+# SCF is forced to the same total moment via pw.x's tot_magnetization
+# Lagrange multiplier, eliminating the magnetic-state flips that produced
+# wavy E(V) curves in the previous run (Fe B=52 vs lit. 170 GPa; Ni's BM
+# fit silently fell back to the default 70). Values are lit. ground-state
+# moments — close enough to the observed equilibrium-volume moment that
+# the constraint doesn't add appreciable strain to the SCF, while strict
+# enough to prevent a state flip at any single strain point.
+# AFM elements are intentionally absent: their total is zero by sublattice
+# symmetry; forcing tot_magnetization=0 doesn't distinguish AFM from NM,
+# so the AFM-collapse fix is the boosted seed in ELEMENTAL_MAGMOM, not a
+# constraint.
+_FM_TOT_MAG_PER_ATOM = {
+    "Fe": 2.2,
+    "Co": 1.7,
+    "Ni": 0.6,
+}
+
+# Elements seeded with G-AFM (alternating sign per sublattice). Each gets its
+# own counter so independent sublattices don't interfere in mixed-element cells.
+_AFM_ELEMENTS = {"Cr", "Mn"}
 
 
 def _initial_magmoms(symbols):
     """Per-atom initial magnetic moments for a list of atomic symbols.
 
-    Cr atoms get alternating signs (G-AFM seed); other magnetic elements get a
-    constant ferromagnetic seed; non-magnetic species get 0.
+    AFM elements (_AFM_ELEMENTS) get alternating signs across their own
+    sublattice (G-AFM seed); other magnetic elements get a constant
+    ferromagnetic seed; non-magnetic species get 0.
     """
     moms = []
-    cr_count = 0
+    afm_counts = {s: 0 for s in _AFM_ELEMENTS}
     for s in symbols:
         m = ELEMENTAL_MAGMOM.get(s, 0.0)
-        if s == "Cr":
-            m *= (-1) ** cr_count
-            cr_count += 1
+        if s in _AFM_ELEMENTS:
+            m *= (-1) ** afm_counts[s]
+            afm_counts[s] += 1
         moms.append(m)
     return moms
 
@@ -97,22 +126,58 @@ _BINARY_LATTICE = {
 }
 
 
-def _make_calculator(pseudopotentials, directory, magnetic=False, kpts=(6, 6, 6)):
-    """Create an Espresso calculator for SCF."""
+def _make_calculator(pseudopotentials, directory, magnetic=False, kpts=(6, 6, 6),
+                     tight_scf=False, isolated_atom=False, tot_mag_per_cell=None):
+    """Create an Espresso calculator for SCF.
+
+    For magnetic systems we use a smaller smearing (0.01 Ry vs 0.02) so the
+    exchange splitting around E_F is not washed out — at 0.02 Ry ≈ 272 meV the
+    spin-up/spin-down densities of magnetic 3d metals partially mix at the
+    Fermi level, which collapses the moment for borderline cases (Mn was hit
+    by this in the prior run). ``tight_scf=True`` uses 1e-8 conv_thr for
+    elastic-constant calculations where the stress difference between
+    baseline and strained cells is sensitive to incompletely-converged
+    magnetic states. ``isolated_atom=True`` swaps to settings appropriate
+    for a single atom in a vacuum box: Gaussian smearing with much smaller
+    width (atomic levels are discrete; MV smearing at 0.01 Ry oscillates),
+    higher mixing β (the level structure converges in fewer iterations),
+    and a higher electron_maxstep so we don't time out before the SCF
+    settles. Co's isolated-atom run hit the QE default 100-iter cap in
+    the prior attempt.
+    """
     profile = EspressoProfile(command=QE_BIN, pseudo_dir=PSEUDO_DIR)
     input_data = {
         "control": {"tprnfor": True, "tstress": True},
         "system": {
             "ecutwfc": 40,
             "ecutrho": 320,
-            "occupations": "smearing",
-            "smearing": "mv",
-            "degauss": 0.02,
         },
-        "electrons": {"conv_thr": 1.0e-6},
+        "electrons": {"conv_thr": 1.0e-8 if tight_scf else 1.0e-6,
+                      "electron_maxstep": 200},
     }
+    if isolated_atom:
+        input_data["system"]["occupations"] = "smearing"
+        input_data["system"]["smearing"] = "gauss"
+        input_data["system"]["degauss"] = 0.005
+        input_data["electrons"]["mixing_beta"] = 0.7
+    else:
+        input_data["system"]["occupations"] = "smearing"
+        input_data["system"]["smearing"] = "mv"
+        input_data["system"]["degauss"] = 0.01 if magnetic else 0.02
+        input_data["electrons"]["mixing_beta"] = 0.3 if magnetic else 0.7
     if magnetic:
         input_data["system"]["nspin"] = 2
+        if tot_mag_per_cell is not None:
+            # Fixed-moment SCF: forces every strain point in an EOS scan to
+            # the same total moment, killing the state-flip noise that gave
+            # wavy E(V) curves for FM elements in the previous run.
+            input_data["system"]["tot_magnetization"] = tot_mag_per_cell
+        # Thomas-Fermi screening damps spin-charge oscillation that plain
+        # mixing can't kill for FM 3d metals (Ni's elastic_base spent 50+
+        # iters at ~0.2 Ry scf accuracy with plain + beta=0.3).
+        input_data["electrons"]["mixing_mode"] = "local-TF"
+        input_data["electrons"]["diagonalization"] = "david"
+        input_data["electrons"]["diago_david_ndim"] = 4
     return Espresso(
         profile=profile,
         pseudopotentials=pseudopotentials,
@@ -134,7 +199,8 @@ def _isolated_atom_energy(symbol, pseudo, calc_dir, magnetic):
         atoms.set_initial_magnetic_moments(_initial_magmoms([symbol]))
     # Γ-only is exact for a single atom in a non-periodic box; default 6×6×6
     # samples 216 redundant k-points and dominates the per-element wall time.
-    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic, kpts=(1, 1, 1))
+    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic,
+                                  kpts=(1, 1, 1), isolated_atom=True)
     try:
         t0 = time.time()
         e = atoms.get_potential_energy()
@@ -152,9 +218,21 @@ def _run_eos_point(symbol, pseudo, ase_lat, a, calc_dir, magnetic, strain_idx):
     """Run a single EOS strain point. Returns (strain_idx, volume, energy) or (strain_idx, None, None)."""
     try:
         atoms = bulk(symbol, ase_lat, a=a) * (2, 2, 2)
+        tot_mag = None
         if magnetic:
             atoms.set_initial_magnetic_moments(_initial_magmoms(atoms.get_chemical_symbols()))
-        atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic, kpts=(3, 3, 3))
+            per_atom = _FM_TOT_MAG_PER_ATOM.get(symbol)
+            if per_atom is not None:
+                tot_mag = per_atom * len(atoms)
+        # Denser k-mesh for magnetic elements: a sparse 3×3×3 on the 2×2×2
+        # supercell lets the Fermi surface topology shift between EOS strain
+        # points, so adjacent points can converge to *different* magnetic
+        # states. The Birch–Murnaghan fit then reads B as the envelope of
+        # mixed phases (Fe came out 31.5 vs. lit. ~170 GPa). 5×5×5 keeps
+        # the magnetic state consistent across the EOS sweep.
+        eos_kpts = (5, 5, 5) if magnetic else (3, 3, 3)
+        atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic,
+                                      kpts=eos_kpts, tot_mag_per_cell=tot_mag)
         t0 = time.time()
         e = atoms.get_potential_energy()
         v = atoms.get_volume()
@@ -192,6 +270,13 @@ def _eos_fit(symbol, work_dir, n_workers=4):
         ase_lat = lat
         a_guess_ase = a_guess
 
+    # ±4 % window for all elements. The previous magnetic-specific ±2 %
+    # window was a workaround for magnetic-state flips between strain
+    # points — that noise source is now controlled by the FM
+    # tot_magnetization constraint and the stronger AFM seed, so we can
+    # use the wider window everywhere. ±2 % was also too narrow for Mn:
+    # its true a0 (~2.82) fell off the bottom of the ±2 % window centered
+    # at a_guess=2.89, forcing the BM solver to extrapolate.
     strains = np.linspace(0.96, 1.04, 7)
     eos_workers = min(n_workers, 7)
     logger.info(f"  [EOS]   Running 7 SCF points in parallel ({eos_workers} workers)...")
@@ -228,6 +313,24 @@ def _eos_fit(symbol, work_dir, n_workers=4):
     eos = EquationOfState(volumes, energies, "birchmurnaghan")
     v0, e0, B = eos.fit()
     logger.debug(f"  [EOS]   V0={v0:.3f} A^3, E0={e0:.4f} eV, B_raw={B:.6f} eV/A^3")
+
+    # Guard against degenerate fits. Three failure modes seen in practice:
+    #   (1) NaN v0/e0/B  — happens when SCF failed for ≥1 point and the BM
+    #       solver tries to extrapolate; ASE then propagates NaN.
+    #   (2) v0 ≤ 0        — fit landed in the unphysical compression branch.
+    #   (3) B ≤ 0         — wavy E(V) (Co's magnetic-relaxation noise) lets
+    #       the fit pass shape sanity but with negative curvature at v0,
+    #       i.e. a *mechanically unstable* mock minimum.
+    # In all cases, silently passing the bad numbers downstream pollutes
+    # dft_results.json with a_lat / E_coh / B garbage. Fall back to
+    # a_guess and a noted-as-failed entry instead.
+    B_GPa_provisional = B / 0.00624 if np.isfinite(B) else float("nan")
+    if not (np.isfinite(v0) and np.isfinite(e0) and np.isfinite(B)
+            and v0 > 0 and B_GPa_provisional > 1.0):
+        logger.warning(f"  [EOS]   BM fit returned non-physical result "
+                       f"(V0={v0}, E0={e0}, B={B_GPa_provisional:.1f} GPa); "
+                       f"falling back to a_guess")
+        return a_guess, 3.0, 70.0, {"volumes": volumes, "energies": energies}, 0.0
 
     # 2×2×2 supercell of primitive cells:
     #   FCC: 1×8 = 8 atoms, V_super = 8 × a^3/4 = 2a^3  →  a = (V/2)^(1/3)
@@ -288,7 +391,8 @@ def _elastic_constants(symbol, a0, work_dir):
     if magnetic:
         atoms.set_initial_magnetic_moments(_initial_magmoms(atoms.get_chemical_symbols()))
     calc_dir = os.path.join(work_dir, "elastic_base")
-    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic, kpts=(3, 3, 3))
+    atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic,
+                                  kpts=(3, 3, 3), tight_scf=True)
 
     try:
         t0 = time.time()
@@ -308,7 +412,9 @@ def _elastic_constants(symbol, a0, work_dir):
     if magnetic:
         atoms_strained.set_initial_magnetic_moments(_initial_magmoms(atoms_strained.get_chemical_symbols()))
     calc_dir_s = os.path.join(work_dir, "elastic_strain")
-    atoms_strained.calc = _make_calculator({symbol: pseudo}, calc_dir_s, magnetic=magnetic, kpts=(3, 3, 3))
+    atoms_strained.calc = _make_calculator({symbol: pseudo}, calc_dir_s,
+                                           magnetic=magnetic, kpts=(3, 3, 3),
+                                           tight_scf=True)
 
     try:
         t0 = time.time()
@@ -318,9 +424,22 @@ def _elastic_constants(symbol, a0, work_dir):
         logger.warning(f"  [ELASTIC]   Strained FAILED: {exc}", exc_info=True)
         return None, None
 
+    # Stress convention: ASE returns σ in eV/Å³ with σ_ij = (1/V)∂E/∂ε_ij and
+    # tension-positive sign. With ε_xx = +δ > 0 (cell stretched along x), the
+    # restoring stress should also be positive — so dσ/dε > 0 for any
+    # stable cubic crystal. A negative value here is a red flag: either the
+    # SCF magnetic state flipped between baseline and strained runs, or the
+    # cell is mechanically unstable in this lattice (e.g. NM/FM-BCC Mn).
     to_GPa = 1.0 / 0.00624
-    C11 = abs((stress1[0] - stress0[0]) / delta * to_GPa)
-    C12 = abs((stress1[1] - stress0[1]) / delta * to_GPa)
+    C11 = (stress1[0] - stress0[0]) / delta * to_GPa
+    C12 = (stress1[1] - stress0[1]) / delta * to_GPa
+
+    if C11 < 0 or C12 < 0 or C11 < C12:
+        logger.warning(
+            f"  [ELASTIC]   Non-physical result for {symbol}: "
+            f"C11={C11:.1f}, C12={C12:.1f} GPa. "
+            "Likely magnetic-state flip between baseline and strained SCFs, "
+            "or the assumed lattice is mechanically unstable for this element.")
 
     logger.info(f"  [ELASTIC] === Result: C11={C11:.1f} GPa, C12={C12:.1f} GPa ===")
     return C11, C12
@@ -416,7 +535,8 @@ def _run_binary_pair(sym_i, sym_j, work_dir, e_per_atom):
 
 # ── Main entry point ─────────────────────────────────────────────────────────
 
-def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=4):
+def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=4,
+                           include_elastic=True):
     """Run DFT calculations for selected elements and generate reference data.
 
     Args:
@@ -424,6 +544,10 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
         output_path: path for output JSON (default: dft_results.json next to this file)
         work_dir: scratch directory for QE calculations
         n_workers: max parallel pw.x processes (default: 4)
+        include_elastic: run the C11/C12 elastic stage (default True). When
+            False, only EOS + isolated-atom + binary-pair SCFs run; C_ij can
+            be backfilled from B isotropically via fill_elastic_constants.py.
+            The MEAM seeder (dft_to_meam.py) does not consume DFT C_ij.
 
     Returns:
         dict with DFT reference data
@@ -450,9 +574,10 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
     logger.info(f"  Valid elements:  {valid}")
 
     n_eos = len(valid) * 7
-    n_elastic = sum(1 for e in valid if ELEMENT_DATA[e][0] in ("fcc", "bcc")) * 2
+    n_elastic = sum(1 for e in valid if ELEMENT_DATA[e][0] in ("fcc", "bcc")) * 2 if include_elastic else 0
     n_binary = len(valid) * (len(valid) - 1) // 2
-    logger.info(f"\n  Planned: {n_eos} EOS + {n_elastic} elastic + {n_binary} binary = ~{n_eos+n_elastic+n_binary} SCF runs")
+    elastic_note = f"{n_elastic} elastic" if include_elastic else "0 elastic (--no-elastic)"
+    logger.info(f"\n  Planned: {n_eos} EOS + {elastic_note} + {n_binary} binary = ~{n_eos+n_elastic+n_binary} SCF runs")
     logger.info(f"  EOS runs parallelized ({min(n_workers, 7)} at a time per element)")
     logger.info(f"  Binary pairs parallelized ({min(n_workers, n_binary)} at a time)")
     logger.info(f"{'='*60}\n")
@@ -502,10 +627,11 @@ def generate_dft_reference(elements, output_path=None, work_dir=None, n_workers=
             "e_bulk_per_atom": e_bulk,
         }
 
-        C11, C12 = _elastic_constants(sym, a0, elem_dir)
-        if C11 is not None:
-            entry["C11"] = round(C11, 1)
-            entry["C12"] = round(C12, 1)
+        if include_elastic:
+            C11, C12 = _elastic_constants(sym, a0, elem_dir)
+            if C11 is not None:
+                entry["C11"] = round(C11, 1)
+                entry["C12"] = round(C12, 1)
 
         results["elements"][sym] = entry
         logger.info(f"  Element {sym} done in {time.time()-t_elem_start:.1f}s")
@@ -595,6 +721,12 @@ if __name__ == "__main__":
     parser.add_argument("--output", default=None, help="Output JSON path")
     parser.add_argument("--work-dir", default=None, help="Scratch directory")
     parser.add_argument("--parallel", type=int, default=4, help="Max parallel pw.x processes (default: 4)")
+    parser.add_argument("--no-elastic", action="store_true",
+                        help="Skip C11/C12 elastic stage. The MEAM seeder does not "
+                             "consume DFT C_ij; fill_elastic_constants.py can backfill "
+                             "from B isotropically if downstream code needs them.")
     args = parser.parse_args()
 
-    generate_dft_reference(args.elements, args.output, args.work_dir, n_workers=args.parallel)
+    generate_dft_reference(args.elements, args.output, args.work_dir,
+                           n_workers=args.parallel,
+                           include_elastic=not args.no_elastic)

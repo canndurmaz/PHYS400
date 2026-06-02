@@ -92,7 +92,7 @@ def _stage4_complete(summary_path):
 def run_pipeline(elements=None, skip_dft=False, n_perturbations=150,
                  skip_optimize=False, skip_verify=False, n_parallel=4,
                  no_plots=False, resume=False,
-                 k_representatives=100, val_frac=0.3, split_seed=0,
+                 k_representatives=200, val_frac=0.3, split_seed=0,
                  full_set_validation=False,
                  sampling_mode="random", seed_size=20, batch_size=5,
                  ensemble_size=5, pool_size=500, sampling_seed=0):
@@ -481,8 +481,8 @@ def main():
         help="Auto-detect completed stages and resume from where the pipeline left off"
     )
     parser.add_argument(
-        "--k-representatives", type=int, default=100,
-        help="k-means medoids picked from results.json before train/val split (default: 100)"
+        "--k-representatives", type=int, default=200,
+        help="k-means medoids picked from results.json before train/val split (default: 200)"
     )
     parser.add_argument(
         "--val-frac", type=float, default=0.3,

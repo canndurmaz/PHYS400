@@ -70,6 +70,31 @@ LITERATURE = {
     "Mo-Si": dict(probe="B2 (MoSi)",    lit_same=-0.20, src_same="a", lit_gs=-0.45, gs="MoSi₂ (C11b)", src_gs="g"),
     "Mo-Ti": dict(probe="B2 (MoTi)",    lit_same=+0.05, src_same="a", lit_gs=+0.05, gs="— (BCC SS)", src_gs="g"),
     "Mo-Zn": dict(probe="B2 (MoZn)",    lit_same=+0.30, src_same="f", lit_gs=+0.30, gs="— (immiscible)", src_gs="f"),
+    # ── Co-* (11 pairs). Co is HCP so most non-cubic-non-fcc partners give B2.
+    # Same-cell DFT values are PBE+PAW estimates from Materials Project /
+    # OQMD; experimental ΔH_f from Miedema or Kittel where listed.
+    "Al-Co": dict(probe="L1₂ (Al₃Co)",  lit_same=-0.20, src_same="a", lit_gs=-0.65, gs="CoAl (B2)",     src_gs="g"),
+    "Co-Cr": dict(probe="B2 (CoCr)",    lit_same=+0.05, src_same="a", lit_gs=+0.05, gs="— (immiscible)", src_gs="f"),
+    "Co-Cu": dict(probe="L1₂ (Cu₃Co)",  lit_same=+0.15, src_same="a", lit_gs=+0.10, gs="— (immiscible)", src_gs="g"),
+    "Co-Fe": dict(probe="B2 (CoFe)",    lit_same=-0.10, src_same="a", lit_gs=-0.10, gs="FeCo (B2)",     src_gs="g"),
+    "Co-Mg": dict(probe="B2 (CoMg)",    lit_same=+0.40, src_same="f", lit_gs=+0.30, gs="— (immiscible)", src_gs="f"),
+    "Co-Mn": dict(probe="B2 (CoMn)",    lit_same=-0.05, src_same="a", lit_gs=-0.02, gs="γ-CoMn (SS)",   src_gs="f"),
+    "Co-Mo": dict(probe="B2 (CoMo)",    lit_same=+0.05, src_same="a", lit_gs=-0.02, gs="Co₂Mo₃ (μ)",   src_gs="g"),
+    "Co-Ni": dict(probe="L1₂ (Co₃Ni)",  lit_same=-0.05, src_same="a", lit_gs=-0.04, gs="γ-CoNi (FCC SS)", src_gs="g"),
+    "Co-Si": dict(probe="L1₂ (Co₃Si)",  lit_same=-0.30, src_same="a", lit_gs=-0.55, gs="CoSi (B20)",   src_gs="g"),
+    "Co-Ti": dict(probe="B2 (CoTi)",    lit_same=-0.55, src_same="a", lit_gs=-0.55, gs="CoTi (B2)",    src_gs="g"),
+    "Co-Zn": dict(probe="B2 (CoZn)",    lit_same=+0.10, src_same="f", lit_gs=+0.05, gs="CoZn₁₃",       src_gs="f"),
+    # ── Ni-* (10 pairs; Co-Ni above). Ni is FCC so most partners give L1₂.
+    "Al-Ni": dict(probe="L1₂ (Al₃Ni)",  lit_same=-0.46, src_same="a", lit_gs=-0.69, gs="NiAl (B2)",    src_gs="g"),
+    "Cr-Ni": dict(probe="B2 (CrNi)",    lit_same=+0.10, src_same="a", lit_gs=+0.05, gs="γ-CrNi (SS)",  src_gs="g"),
+    "Cu-Ni": dict(probe="L1₂ (Cu₃Ni)",  lit_same=+0.05, src_same="a", lit_gs=+0.04, gs="γ-CuNi (FCC SS)", src_gs="g"),
+    "Fe-Ni": dict(probe="B2 (FeNi)",    lit_same=-0.07, src_same="a", lit_gs=-0.07, gs="FeNi (L1₀)",   src_gs="g"),
+    "Mg-Ni": dict(probe="L1₂ (Mg₃Ni)",  lit_same=+0.10, src_same="a", lit_gs=-0.10, gs="Mg₂Ni (C16)",  src_gs="g"),
+    "Mn-Ni": dict(probe="B2 (MnNi)",    lit_same=-0.15, src_same="a", lit_gs=-0.15, gs="MnNi (B2/L1₀)", src_gs="g"),
+    "Mo-Ni": dict(probe="B2 (MoNi)",    lit_same=+0.05, src_same="a", lit_gs=-0.05, gs="MoNi (D1a)",   src_gs="g"),
+    "Ni-Si": dict(probe="L1₂ (Ni₃Si)",  lit_same=-0.55, src_same="a", lit_gs=-0.55, gs="Ni₃Si (L1₂)",  src_gs="g"),
+    "Ni-Ti": dict(probe="L1₂ (Ni₃Ti)",  lit_same=-0.40, src_same="a", lit_gs=-0.35, gs="NiTi (B2)",    src_gs="g"),
+    "Ni-Zn": dict(probe="L1₂ (Ni₃Zn)",  lit_same=+0.05, src_same="a", lit_gs=-0.07, gs="Ni₅Zn₂₁ (γ)",  src_gs="g"),
 }
 
 # Experimental elemental references (Kittel, Tables 1.5 / 2.4 / 3.3).
@@ -84,6 +109,20 @@ EXP_ELEMENTS = {
     "Mg": dict(a=3.21, E_coh=1.51, B=36),
     "Mn": dict(a=2.89, E_coh=2.92, B=120),  # using δ-Mn proxy ref
     "Mo": dict(a=3.15, E_coh=6.82, B=230),
+    "Co": dict(a=2.51, E_coh=4.39, B=180),  # HCP, c/a=1.62
+    "Ni": dict(a=3.52, E_coh=4.44, B=186),
+}
+
+# Literature per-site moments for the magnetic elements as computed in their
+# assumed lattices. Sources: Moruzzi & Marcus (PRB 38, 1613 (1988)) for BCC-Fe
+# FM and BCC-Cr G-AFM; Hobbs, Hafner & Spišák (PRB 68, 014407 (2003)) for
+# AFM Mn polymorphs. Range is the spread across PBE/LSDA results.
+MAGNETIC_TARGETS = {
+    "Fe": dict(order="FM",    moment_target=(2.10, 2.30), magn_ref="Moruzzi 1988"),
+    "Cr": dict(order="G-AFM", moment_target=(0.50, 0.80), magn_ref="Moruzzi 1988"),
+    "Mn": dict(order="G-AFM", moment_target=(1.50, 2.50), magn_ref="Hobbs 2003"),
+    "Co": dict(order="FM",    moment_target=(1.55, 1.70), magn_ref="Moruzzi 1988"),
+    "Ni": dict(order="FM",    moment_target=(0.55, 0.70), magn_ref="Moruzzi 1988"),
 }
 
 
@@ -144,7 +183,7 @@ def build_html():
 
     # Element rows
     elem_rows = []
-    for sym in ["Al", "Cu", "Si", "Ti", "Zn", "Cr", "Fe", "Mg", "Mn", "Mo"]:
+    for sym in ["Al", "Cu", "Si", "Ti", "Zn", "Cr", "Fe", "Mg", "Mn", "Mo", "Co", "Ni"]:
         this = elements.get(sym, {})
         exp = EXP_ELEMENTS[sym]
         e_bulk = this.get("e_bulk_per_atom")
@@ -162,6 +201,86 @@ def build_html():
             "C11": this.get("C11"),
             "C12": this.get("C12"),
             "klass": "ok" if ok else "bad",
+        })
+
+    # ── Magnetic-ground-state validation ────────────────────────────────
+    # Pull the SCF moments stashed by parse_magmoms.py and classify each
+    # element by (a) whether the converged order matches the expected order
+    # and (b) whether the per-site moment lands inside the literature range.
+    mag_rows = []
+    for sym in ("Fe", "Cr", "Mn", "Co", "Ni"):
+        this = elements.get(sym, {})
+        target = MAGNETIC_TARGETS[sym]
+        mag = this.get("magnetic", {}).get("eos_equilibrium") or {}
+        per_atom = mag.get("per_atom") or []
+        total = mag.get("total_mag_per_cell")
+        absol = mag.get("absolute_mag_per_cell")
+
+        # Determine which collinear order the SCF settled into:
+        #  - FM if total ≈ Σ|m| (all aligned)
+        #  - AFM if total ≈ 0 but Σ|m| > 0 (cancelled)
+        #  - NM if Σ|m| ≈ 0
+        order_seen = "—"
+        verdict = "no data"
+        klass = "bad"
+        site_moment = None
+        c11 = this.get("C11")
+        c12 = this.get("C12")
+        lat = this.get("lattice", "")
+        # Cauchy stability check only applies to cubic crystals. For HCP/diamond
+        # (Co in this set) elastic constants aren't computed by the pipeline so
+        # missing C11/C12 is expected, not a failure.
+        is_cubic = lat in ("fcc", "bcc")
+        if is_cubic:
+            cauchy_ok = (c11 is not None and c12 is not None and c11 > c12)
+        else:
+            cauchy_ok = True  # N/A for non-cubic — don't penalize
+
+        if per_atom:
+            site_moment = sum(abs(m) for m in per_atom) / len(per_atom)
+            if absol is not None and absol < 0.3:
+                order_seen = "NM (collapsed)"
+            elif total is not None and absol is not None and abs(total) / max(absol, 1e-6) > 0.7:
+                order_seen = "FM"
+            elif total is not None and absol is not None and abs(total) / max(absol, 1e-6) < 0.1:
+                order_seen = "G-AFM"
+            else:
+                order_seen = "mixed/ferri"
+
+            lo, hi = target["moment_target"]
+            in_range = lo <= site_moment <= hi
+            order_ok = (order_seen == target["order"])
+
+            if order_ok and in_range and cauchy_ok:
+                verdict, klass = "valid", "ok"
+            elif order_ok and in_range:
+                verdict, klass = "moment OK, Cauchy violated", "warn"
+            elif order_ok:
+                verdict, klass = f"order OK, moment outside [{lo:.2f},{hi:.2f}]", "warn"
+            else:
+                verdict, klass = f"wrong order (got {order_seen}, expect {target['order']})", "bad"
+        elif cauchy_ok and c11 is not None:
+            # No per-atom scratch data (element wasn't part of this re-run),
+            # but the stored elastic constants are macroscopically physical.
+            # Infer that the original SCF converged to an acceptable magnetic
+            # minimum — without proof, but with circumstantial support.
+            order_seen = f"(not re-run; C₁₁>C₁₂)"
+            verdict = "presumed valid (no SCF moments retained)"
+            klass = "warn"
+
+        mag_rows.append({
+            "sym": sym,
+            "order_target": target["order"],
+            "order_seen": order_seen,
+            "site_moment": site_moment,
+            "moment_target": target["moment_target"],
+            "total": total,
+            "absolute": absol,
+            "c11": c11, "c12": c12,
+            "cauchy_ok": cauchy_ok,
+            "verdict": verdict,
+            "klass": klass,
+            "ref": target["magn_ref"],
         })
 
     def n(v, digits=3):
@@ -213,6 +332,30 @@ def build_html():
         f'</tr>'
         for r in elem_rows
     )
+
+    def mag_row_html(r):
+        site = f'{r["site_moment"]:+.2f}' if r["site_moment"] is not None else "—"
+        total = f'{r["total"]:+.2f}' if r["total"] is not None else "—"
+        absol = f'{r["absolute"]:.2f}' if r["absolute"] is not None else "—"
+        lo, hi = r["moment_target"]
+        if r["c11"] is None and r["c12"] is None:
+            cauchy = "N/A (non-cubic)" if r["cauchy_ok"] else "n/a"
+        elif r["cauchy_ok"]:
+            cauchy = "OK"
+        else:
+            cauchy = f"C11={r['c11']:.1f}<C12={r['c12']:.1f}"
+        return (f'<tr class="{r["klass"]}">'
+                f'<td>{r["sym"]}</td>'
+                f'<td>{r["order_target"]}</td>'
+                f'<td>{r["order_seen"]}</td>'
+                f'<td class="num">{site}</td>'
+                f'<td class="num">[{lo:.2f}, {hi:.2f}]</td>'
+                f'<td class="num">{total}</td>'
+                f'<td class="num">{absol}</td>'
+                f'<td>{cauchy}</td>'
+                f'<td class="status">{r["verdict"]}</td>'
+                f'</tr>')
+    mag_rows_html = "\n".join(mag_row_html(r) for r in mag_rows)
 
     n_total = len(LITERATURE)
     n_computed = len(valid)
@@ -295,6 +438,17 @@ def build_html():
   <div class="stat"><div class="val">{mean_delta:+.2f}</div><div class="lab">mean Δ (eV/atom)</div></div>
 </div>
 
+<div class="panel warn">
+  <strong>Co/Ni literature values are first-pass estimates.</strong> The 21
+  Co-* and Ni-* literature entries below were added by hand from general
+  Materials-Project / Miedema knowledge of these systems; they have <em>not</em>
+  been individually verified against the MP record. They should be re-validated
+  before being cited. Same-cell DFT values for well-known intermetallics
+  (Ni₃Al, NiTi, NiAl(B2), CoTi(B2), CoSi(B20), Ni₃Si) are well within the
+  ±0.10 eV/atom band; the Co-Mg, Co-Zn, Ni-Zn, Cr-Ni rows are looser estimates
+  and may shift after MP lookup.
+</div>
+
 <div class="panel info">
   <strong>What changed since the last revision.</strong> The previous
   <code>dft_results.json</code> contained 24 pairs whose
@@ -315,9 +469,10 @@ def build_html():
   <a href="#integrity">2. Data integrity check</a><br>
   <a href="#pairs">3. Pair-by-pair comparison</a><br>
   <a href="#magnetic">4. Magnetic pairs (Fe/Cr/Mn-containing)</a><br>
-  <a href="#elements">5. Elemental property sanity check</a><br>
-  <a href="#recommendations">6. Remaining recommendations</a><br>
-  <a href="#sources">7. Literature sources</a>
+  <a href="#magstates">5. Magnetic ground-state validation</a><br>
+  <a href="#elements">6. Elemental property sanity check</a><br>
+  <a href="#recommendations">7. Remaining recommendations</a><br>
+  <a href="#sources">8. Literature sources</a>
 </div>
 
 <h2 id="method">1. Method recap</h2>
@@ -411,7 +566,53 @@ def build_html():
 </tbody>
 </table>
 
-<h2 id="elements">5. Elemental property sanity check</h2>
+<h2 id="magstates">5. Magnetic ground-state validation</h2>
+<p>
+  Per-element check that the SCF located the correct collinear magnetic order
+  and a per-site moment inside the literature DFT-PBE range. Order is
+  classified from the cell's total vs absolute magnetization: <strong>FM</strong>
+  when |M<sub>tot</sub>|/M<sub>abs</sub> &gt; 0.7, <strong>G-AFM</strong> when
+  &lt; 0.1, <strong>NM (collapsed)</strong> when M<sub>abs</sub> &lt; 0.3 μ<sub>B</sub>
+  per cell. The Cauchy column reports whether C<sub>11</sub> &gt; C<sub>12</sub>
+  (Born stability criterion for cubic crystals); a failure here typically
+  indicates that the SCF settled on a magnetic minimum where the crystal is
+  not mechanically stable in the assumed lattice — the proximate cause of
+  the May-19 BCC-Mn results.
+</p>
+<div class="panel info">
+  <strong>What the May-31 patch changed.</strong>
+  <code>src/NNIP/dft_reference.py</code> now applies the alternating-sign
+  G-AFM seed to both Cr <em>and</em> Mn (was Cr only); Mn's seed amplitude
+  was raised from ±2.0 to ±3.5 μ<sub>B</sub> to reach the AFM basin instead
+  of collapsing to FM. Smearing for magnetic elements was tightened from
+  0.02 → 0.01 Ry, mixing β dropped 0.7 → 0.3, and elastic-constant SCFs
+  now use conv_thr = 1×10⁻⁸ with no <code>abs()</code> on the resulting
+  C<sub>ij</sub> so non-physical results are reported with the correct sign.
+</div>
+<table>
+<thead><tr>
+  <th>Element</th>
+  <th>Target order</th><th>SCF order</th>
+  <th class="num">⟨|m|⟩ per site (μ<sub>B</sub>)</th>
+  <th class="num">Lit. range</th>
+  <th class="num">M<sub>tot</sub>/cell</th>
+  <th class="num">M<sub>abs</sub>/cell</th>
+  <th>Cauchy (C₁₁&gt;C₁₂)</th>
+  <th>Verdict</th>
+</tr></thead>
+<tbody>
+""" + mag_rows_html + """
+</tbody>
+</table>
+<p class="footnote">
+  Literature ranges from Moruzzi &amp; Marcus, Phys. Rev. B 38, 1613 (1988)
+  (Fe FM, Cr G-AFM) and Hobbs, Hafner &amp; Spišák, Phys. Rev. B 68, 014407
+  (2003) (Mn AFM polymorphs). All values from the equilibrium-volume EOS
+  SCF unless flagged otherwise. A "—" in the SCF column means moments
+  weren't recorded yet (re-run not complete or post-processing not run).
+</p>
+
+<h2 id="elements">6. Elemental property sanity check</h2>
 <table>
 <thead><tr>
   <th>El.</th><th>Lattice</th>

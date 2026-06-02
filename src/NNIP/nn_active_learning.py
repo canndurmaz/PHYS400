@@ -40,9 +40,11 @@ logger = logging.getLogger("nn_optimizer")
 
 # ── Candidate generation ─────────────────────────────────────────────────────
 
-# Default per-dimension perturbation magnitude (matches the historical
-# nn_optimizer setting of `pert = 1.0 + (rand - 0.5) * 0.2` → ±10 %).
-PERT_RANGE = 0.2
+# Default per-dimension perturbation magnitude. 0.1 → ±5 % per parameter.
+# Tightened from the historical ±10 % box once the basis expanded to
+# refractory metals (Mo, Cr); at ±10 % the acquisition rejected nearly
+# every candidate because Mo/Cr-rich compositions left the stable basin.
+PERT_RANGE = 0.1
 
 
 def _scale_unit_box(unit_samples: np.ndarray, initial_vec: np.ndarray,
@@ -67,7 +69,7 @@ def generate_candidates(initial_vec: np.ndarray, mode: str, n: int,
         n: number of candidates to return.
         seed: RNG / sampler seed (passed straight through to numpy / scipy).
         pert_range: fractional half-width of the perturbation box
-                    (default ``PERT_RANGE`` = 0.2, i.e. ±10 %).
+                    (default ``PERT_RANGE`` = 0.1, i.e. ±5 %).
 
     Returns:
         array of shape ``(n, d)``.

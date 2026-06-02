@@ -79,6 +79,11 @@ NU_FILTER_MAX = 0.48
 # that gated whether a perturbed parameter sample is accepted into the
 # training set).
 C_REJECT_MIN = 30.0
+# Upper bound on physically plausible C11 for metals/intermetallics. Diamond
+# is ~1080 GPa, refractory carbides hit ~500. Anything above this from a
+# LAMMPS minimize on an alloy is a numerical blow-up from a high-strain
+# metastable state — discard rather than train on it.
+C_REJECT_MAX = 600.0
 # Huber transition point in normalised loss units.
 HUBER_DELTA = 1.0
 
@@ -136,12 +141,13 @@ def get_elastic_moduli(L, delta=1e-3):
         return 0.0, 0.5
 
 
-def _run_lammps_composition(lib_path, params_path, composition):
+def _run_lammps_composition(lib_path, params_path, composition, worker_id=""):
     """Run LAMMPS for a single composition dict and return (E_GPa, nu).
 
     Uses element info directly from the library file rather than relying
     on element.py's POTENTIALS dict, so it works with any generated MEAM file.
     """
+    tag = f"[w{worker_id}] " if worker_id else ""
     comp = {sym: frac for sym, frac in composition.items() if frac > 0}
 
     # Read element info directly from the library file
@@ -151,7 +157,7 @@ def _run_lammps_composition(lib_path, params_path, composition):
     # Check all composition elements exist in this library
     missing = set(comp.keys()) - set(lib_elements)
     if missing:
-        logger.warning(f"Elements {missing} not in library {lib_path}")
+        logger.warning(f"{tag}Elements {missing} not in library {lib_path}")
         return 0.0, 0.5
 
     # Active elements in library-file order (preserves index correspondence)
@@ -197,36 +203,44 @@ def _run_lammps_composition(lib_path, params_path, composition):
         L.command("minimize 1e-6 1e-8 100 1000")
         dt_min = time.time() - t_min
         if dt_min > 10:
-            logger.warning(f"    LAMMPS minimize took {dt_min:.1f}s for {comp_str}")
+            logger.warning(f"    {tag}LAMMPS minimize took {dt_min:.1f}s for {comp_str}")
 
         t_elastic = time.time()
         E, nu = get_elastic_moduli(L)
         dt_elastic = time.time() - t_elastic
         if dt_elastic > 10:
-            logger.warning(f"    get_elastic_moduli took {dt_elastic:.1f}s for {comp_str}")
+            logger.warning(f"    {tag}get_elastic_moduli took {dt_elastic:.1f}s for {comp_str}")
+
+        C11_chk, C12_chk = _e_nu_pair_to_cij(E, nu)
+        if (C11_chk < C_REJECT_MIN or C11_chk > C_REJECT_MAX
+                or C12_chk < 0.0 or C12_chk > C11_chk):
+            logger.debug(f"    {tag}rejected y-output: C11={C11_chk:.1f} "
+                         f"C12={C12_chk:.1f} for {comp_str}")
+            return 0.0, 0.5
 
         return E, nu
     except Exception:
-        logger.warning(f"_run_lammps_composition failed for {comp_str}", exc_info=True)
+        logger.warning(f"{tag}_run_lammps_composition failed for {comp_str}", exc_info=True)
         return 0.0, 0.5
     finally:
         L.close()
 
 
-def eval_all_entries(vec, names, base_lib, base_params, entries, tmp_dir):
+def eval_all_entries(vec, names, base_lib, base_params, entries, tmp_dir, worker_id=""):
     """Evaluate LAMMPS for all results.json entries. Returns list of (E, nu) pairs."""
     lib_path, params_path = vector_to_files(vec, names, base_lib, base_params, tmp_dir)
     results = []
     n = len(entries)
+    tag = f"[w{worker_id}] " if worker_id else ""
     for idx, (entry_name, entry_data) in enumerate(entries.items(), 1):
         comp = entry_data["composition"]
         comp_str = " ".join(f"{sym}:{frac:.3f}" for sym, frac in comp.items() if frac > 0)
-        logger.info(f"    [{idx}/{n}] {entry_name} ({comp_str})")
+        logger.info(f"    {tag}[{idx}/{n}] {entry_name} ({comp_str})")
         t0 = time.time()
-        E, nu = _run_lammps_composition(lib_path, params_path, comp)
+        E, nu = _run_lammps_composition(lib_path, params_path, comp, worker_id=worker_id)
         dt = time.time() - t0
-        status = "OK" if E > 10 else "FAILED"
-        logger.info(f"           E={E:.2f} GPa, nu={nu:.3f} — {status} ({dt:.1f}s)")
+        status = "OK" if (E > 10 and 0.0 < nu < NU_FILTER_MAX) else "FAILED"
+        logger.info(f"           {tag}E={E:.2f} GPa, nu={nu:.3f} — {status} ({dt:.1f}s)")
         results.append((E, nu))
     return results
 
@@ -258,7 +272,9 @@ def _eval_sample_worker(args):
     old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.alarm(SAMPLE_TIMEOUT_SEC)
     try:
-        results = eval_all_entries(vec, names, base_lib, base_params, entries, worker_dir)
+        worker_id = worker_dir.rsplit("_", 1)[-1]
+        results = eval_all_entries(vec, names, base_lib, base_params, entries, worker_dir,
+                                   worker_id=worker_id)
         # Flatten as [C11_1, C12_1, C11_2, C12_2, ...]; unphysical (E, nu)
         # entries become (0, 0) so the dispatcher's rejection logic can
         # treat them as failed.
@@ -886,7 +902,12 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
                 logger.info(f"  Target loss reached at epoch {epoch} (loss={loss:.6f}, {elapsed:.0f}s)")
                 self.model.stop_training = True
 
-    history = model.fit(X_norm, y_norm, epochs=10000, verbose=0, callbacks=[ProgressCallback()])
+    early_stop = tf.keras.callbacks.EarlyStopping(
+        monitor="loss", patience=200, min_delta=1e-4,
+        restore_best_weights=True, verbose=0,
+    )
+    history = model.fit(X_norm, y_norm, epochs=10000, verbose=0,
+                        callbacks=[ProgressCallback(), early_stop])
     training_loss_history = history.history.get("loss", [])
     final_loss = model.evaluate(X_norm, y_norm, verbose=0)
     n_epochs = len(training_loss_history)

@@ -26,6 +26,67 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 
+# Ground-state crystal structures for the 12 alloying elements supported by
+# the pipeline. Used as a fallback when dft_results.json hasn't computed a
+# reference for an element yet (e.g. Co/Ni absent from a partial DFT run);
+# without this, the lattice filter would silently treat unknown-lattice
+# elements as "compatible with anything" and let mixed-lattice alloys through.
+_FALLBACK_LATTICE = {
+    "Al": "fcc", "Co": "hcp", "Cr": "bcc", "Cu": "fcc",
+    "Fe": "bcc", "Mg": "hcp", "Mn": "bcc", "Mo": "bcc",
+    "Ni": "fcc", "Si": "diamond", "Ti": "hcp", "Zn": "hcp",
+}
+
+
+def _load_lattice_map():
+    """Element -> natural lattice string. DFT-derived values take precedence
+    over the literature fallback; the fallback covers elements that haven't
+    been computed yet so the filter can still make a decision."""
+    lattice = dict(_FALLBACK_LATTICE)
+    dft_path = os.path.join(os.path.dirname(__file__), "dft_results.json")
+    if os.path.isfile(dft_path):
+        with open(dft_path) as f:
+            dft = json.load(f)
+        for el, data in dft.get("elements", {}).items():
+            if "lattice" in data:
+                lattice[el] = data["lattice"]
+    return lattice
+
+
+def _filter_lattice_coherent(results, min_frac=0.05, lattice_map=None):
+    """Drop alloys whose elements with fraction ≥ min_frac span >1 lattice type.
+
+    The LAMMPS evaluation in ``nn_optimizer._run_lammps_composition`` builds the
+    simulation box from the *dominant* element's lattice only. When the minority
+    elements have incompatible natural lattices (e.g. BCC Fe forced onto Al's FCC
+    sites), the minimize either fails to converge or settles in a high-strain
+    metastable state, producing E=0 / ν=0.5 garbage or C11>1000 GPa blow-ups.
+    Filtering these alloys at training-set construction prevents that signal
+    from poisoning the surrogate.
+    """
+    if lattice_map is None:
+        lattice_map = _load_lattice_map()
+    if not lattice_map:
+        print("WARN lattice filter: dft_results.json unavailable, skipping",
+              file=sys.stderr)
+        return results
+    kept = {}
+    dropped = 0
+    for name, entry in results.items():
+        comp = entry.get("composition", {})
+        majority = {e for e, f in comp.items() if f >= min_frac}
+        lattices = {lattice_map.get(e) for e in majority}
+        lattices.discard(None)
+        if len(lattices) <= 1:
+            kept[name] = entry
+        else:
+            dropped += 1
+    if dropped:
+        print(f"Lattice filter: dropped {dropped}/{len(results)} mixed-lattice "
+              f"alloys ({len(kept)} retained)", file=sys.stderr)
+    return kept
+
+
 def _composition_matrix(results):
     """Return (names, elements, N x E fraction matrix)."""
     names = list(results.keys())
@@ -97,12 +158,16 @@ def split_train_val(names, val_frac=0.3, seed=0):
     return [names[i] for i in train_idx], [names[i] for i in val_idx]
 
 
-def build_subset(results, k=100, val_frac=0.3, seed=0):
-    """End-to-end: k-means medoids + 70/30 split. Returns (train, val) dicts."""
-    medoids = select_representatives(results, k, seed)
+def build_subset(results, k=200, val_frac=0.3, seed=0):
+    """End-to-end: lattice filter + k-means medoids + 70/30 split.
+
+    Returns (train, val) dicts.
+    """
+    filtered = _filter_lattice_coherent(results)
+    medoids = select_representatives(filtered, k, seed)
     train_names, val_names = split_train_val(medoids, val_frac, seed)
-    train = {n: results[n] for n in train_names}
-    val = {n: results[n] for n in val_names}
+    train = {n: filtered[n] for n in train_names}
+    val = {n: filtered[n] for n in val_names}
     return train, val
 
 
@@ -118,8 +183,8 @@ def main():
                     help=f"Training subset output (default: {default_train})")
     ap.add_argument("--val-out", default=default_val,
                     help=f"Validation subset output (default: {default_val})")
-    ap.add_argument("-k", type=int, default=100,
-                    help="Total representatives selected before split (default 100)")
+    ap.add_argument("-k", type=int, default=200,
+                    help="Total representatives selected before split (default 200)")
     ap.add_argument("--val-frac", type=float, default=0.3,
                     help="Fraction of representatives held out for validation (default 0.3)")
     ap.add_argument("--seed", type=int, default=0,
