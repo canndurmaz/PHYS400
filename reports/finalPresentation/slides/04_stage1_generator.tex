@@ -1,29 +1,24 @@
 % =====================================================================
-% Slide 9: Stage 1 generator
+% Slide 7: Stage 1 -- random alloy generator
 % =====================================================================
-\begin{frame}{Stage 1: Random Alloy Generator}
+\begin{frame}{Stage 1: Alloy Configuration Generation}
 \begin{columns}[T]
-\column{0.50\textwidth}
-A Python generator draws compositions $\{c_i\}$ uniformly on the
-simplex $\sum_i c_i = 1$ over the 12 admissible elements, with
-\textbf{Al-dominant bias} (Al weight inflated when present)
-to oversample the engineering-relevant aluminium-alloy corner.
+\column{0.42\textwidth}
+\textbf{Sampling.}\\
+Uniform draws on the 12-element composition simplex\\
+(Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, Zn);\\
+Al-weighted to oversample the aluminium-alloy region.
 
-\medskip
-\textbf{Output schema.} Each composition is persisted as a structured
-record (element $\to$ mass-fraction map) at $10^{-4}$ precision,
-fully consumable by the downstream stages.
+\bigskip
+\textbf{Corpus statistics.}\\
+$\sim\!7900$ configurations generated;\\[0.15em]
+\textbf{7815 retained} after the physicality filter\\
+\scriptsize ($E > 0$,\ $0 < \nu < 0.48$,\ $C_{11} > C_{12}$).
 
-\medskip
-\textbf{Coverage.} $\sim\!7900$ compositions generated; after the
-Stage-2 physicality filter, $7815$ survive.
-
-\column{0.50\textwidth}
-\begin{block}{Element coverage}
+\column{0.57\textwidth}
 \centering
-\includegraphics[width=0.95\linewidth]{figures/element_frequency.png}\\[-0.2em]
-\scriptsize Element frequency over the surviving 7815 alloys;
-Al dominates by design.
-\end{block}
+\includegraphics[width=0.98\linewidth]{figures/element_frequency.png}\\[-0.2em]
+\scriptsize Element-occurrence distribution over the retained
+corpus.
 \end{columns}
 \end{frame}

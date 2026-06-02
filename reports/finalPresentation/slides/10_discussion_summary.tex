@@ -1,78 +1,45 @@
 % =====================================================================
-% Slide 21: failure analysis & path forward
+% Slide 13: Discussion of results
 % =====================================================================
-\begin{frame}{Failure Analysis \& Path Forward}
+\begin{frame}{Discussion and Outlook}
 \begin{columns}[T]
-\column{0.49\textwidth}
-\textbf{Why does Stage~5b fail today?}
-\begin{itemize}\small
-  \item \textbf{Identifiability.} The cross-term block of a
-        12-element MEAM exposes $\sim\!200$ free parameters
-        against $\le\!100$ medoid-selected
-        composition targets --- the inverse problem is
-        under-determined.
-  \item \textbf{Surrogate--LAMMPS mismatch.} The NN approximates
-        the LAMMPS-elastic map with residual RMSE
-        $\sim\!10\,$GPa; the L-BFGS optimizer chases artefacts of
-        this residual into MEAM regions where the true LAMMPS
-        gradient bends sharply.
-  \item \textbf{Bound-saturation.} Several optimized parameters
-        hit their box bounds (esp.\ $E_c(i,j)$, $\alpha(i,j)$),
-        which is a tell-tale of an objective that wants to leave
-        the physically meaningful region.
+\column{0.32\textwidth}
+\textbf{Contributions}
+\begin{itemize}\scriptsize
+  \item MD elastic database, 7815 alloys
+  \item DFT reference set, 10 elements
+  \item Merged 12-element MEAM library
+  \item Composition surrogate
+        ($R^{2}_{E} = 0.77$, deployed)
+  \item Resumable Stage~5b framework
 \end{itemize}
 
-\column{0.49\textwidth}
-\textbf{Planned next steps}
-\begin{itemize}\small
-  \item \textbf{Parameter-subset selection.} Freeze the
-        single-element blocks (initialised by Stage~4),
-        refit only the most-sensitive cross-terms identified by
-        Sobol sensitivity.
-  \item \textbf{Active learning expansion.}
-        \texttt{--sampling active} already implemented;
-        scale to 500+ medoids using ensemble-disagreement
-        acquisition.
-  \item \textbf{Physics-aware loss.} Add penalties for
-        $\nu \!\to\! 0.5$ and $C_{11}\!<\!C_{12}$
-        \emph{inside} the surrogate, not just at the
-        verification gate.
-  \item \textbf{Tighter QE coverage.} Add intermediate-composition
-        SQS~\citep{lewis1995} DFT points so the cross-term loss can be
-        evaluated against \emph{multiple} reference compositions per
-        pair.
+\column{0.32\textwidth}
+\textbf{Current limitations}
+\begin{itemize}\scriptsize
+  \item 4/30 predictions within tolerance
+  \item 19/30 violate Born--Cauchy
+  \item Cross-term parameters saturate bounds
+\end{itemize}
+
+\smallskip
+\textbf{Identified causes}
+\begin{itemize}\scriptsize
+  \item Under-determined inverse problem
+        ($\sim\!200$ parameters, $\le\!100$ targets)
+  \item Surrogate--LAMMPS residual mismatch
+  \item Stability constraints absent from the loss
+\end{itemize}
+
+\column{0.34\textwidth}
+\textbf{Planned extensions}
+\begin{itemize}\scriptsize
+  \item Restrict optimisation to single-element-anchored
+        cross-terms ranked by Sobol sensitivity
+  \item Active-learning expansion to $\ge\!500$ medoids
+  \item Physics-informed loss with stability penalties
+  \item SQS DFT references~\citep{lewis1995}
+        at intermediate compositions
 \end{itemize}
 \end{columns}
-\end{frame}
-
-% =====================================================================
-% Slide 22: Summary
-% =====================================================================
-\begin{frame}{Summary}
-\begin{block}{Delivered}
-\scriptsize
-\begin{itemize}\itemsep0.02em
-  \item \textbf{End-to-end pipeline} (Stages 1--4 + 5a):
-        random alloy $\to$ MD elastic $\to$ DFT reference $\to$
-        merged 12-element MEAM library $\to$ composition surrogate.
-  \item \textbf{Composition NN surrogate} with deep-ensemble
-        uncertainty, $R^2 \!\sim\! 0.65$ on held-out $C_{11}$,
-        $R^2\!\sim\!0.77$ on derived $E$, distributed as an
-        interactive predictor.
-  \item \textbf{Closed-loop NN-MEAM optimizer} (Stage 5b) with
-        atomic checkpointing, three sampling regimes (Sobol, Latin
-        hypercube, and active learning) and an honest verification
-        protocol.
-\end{itemize}
-\end{block}
-
-\begin{block}{Methodological contribution}
-\scriptsize
-A closed-loop framework in which a \emph{neural-network surrogate
-of the MEAM-to-stiffness map} is inverse-optimized against
-MD-measured targets --- enabling MEAM construction from
-first-principles input alone, with no manual fitting and no
-experimental data. Verification of the NN-driven Stage~5b on the
-current 12-element corpus is the open problem to attack next.
-\end{block}
 \end{frame}

@@ -1,109 +1,34 @@
 % =====================================================================
-% Slide 16: Stage 5a -- composition surrogate (intro + architecture)
+% Slide 11: Stage 5a -- composition NN surrogate
 % =====================================================================
-\begin{frame}{Stage 5a: Composition $\to C_{ij}$ Surrogate (ML Sanity Check)}
+\begin{frame}{Stage 5a: Composition $\to (E, \nu)$ Neural Surrogate}
 \begin{columns}[T]
-\column{0.48\textwidth}
-\textbf{Role.}
-A divergent ML branch that consumes the LAMMPS elastic database
-directly and never feeds back into MEAM fitting. \emph{Two purposes}:
-\begin{itemize}\small
-  \item Sanity-check the MD output --- if a composition-only NN
-        cannot recover $(C_{11}, C_{12})$, the dataset itself is
-        suspect.
-  \item Deliver a fast predictor for novel compositions
-        ($<\!1$\,ms per query).
-\end{itemize}
-
+\column{0.42\textwidth}
 \textbf{Architecture.}
-$12 \to 32 \to 20 \to 2$ MLP with ReLU; input is the
-12-element mass-fraction vector $\{c_i\}$, output is
-$\hat C_{11}, \hat C_{12}$.
+$12 \!\to\! 32 \!\to\! 20 \!\to\! 2$ fully-connected MLP\\
+with ReLU activation; Huber loss on $\hat C_{11}, \hat C_{12}$;\\
+deep ensemble of five seeds~\citep{lakshminarayanan2017}
+for epistemic uncertainty.
 
-\textbf{Loss.} Huber ($\delta = 1$, scaled units) on $C_{ij}$ ---
-bounds outlier gradients from Mg/Zn-rich points.
-
-\textbf{Deep ensemble~\citep{lakshminarayanan2017}.} Five networks
-trained with independent seeds; the predictor returns
-mean $\pm$ std for epistemic uncertainty quantification.
-
-\column{0.49\textwidth}
-\centering
-\includegraphics[width=0.96\linewidth]{figures/training_history.png}\\[-0.2em]
-\scriptsize Per-epoch training history of one ensemble member.
-Huber loss (top) decays monotonically; MAE on $(E,\nu)$ (bottom)
-falls below the 20\% mean-validation gate, which triggers
-early-stopping.
-\end{columns}
-\end{frame}
-
-% =====================================================================
-% Slide 17: Stage 5a -- ML results table + parity
-% =====================================================================
-\begin{frame}{Stage 5a: Composition Surrogate Results (N$=$7839)}
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4.5pt}
-\renewcommand{\arraystretch}{0.95}
-\begin{tabular}{lrrrrrr}
-\toprule
-Split / Target               &  MAE    &  RMSE   &  Bias  & $R^2$ & $r$   & MAPE \\
-\midrule
-Train, $C_{11}$ (GPa)        & 14.52   & 23.78   & $-$5.51 & 0.967 & 0.985 & 7.14\,\%  \\
-Train, $C_{12}$ (GPa)        & 10.09   & 18.81   & $-$2.52 & 0.963 & 0.982 & 14.51\,\% \\
-Train, $E$ (GPa, derived)    & 18.04   & 28.18   & $-$3.17 & 0.860 & 0.929 & 14.49\,\% \\
-Train, $\nu$ (derived)       &  0.025  &  0.036  &  0.001  & 0.693 & 0.833 & 10.32\,\% \\
-\midrule
-Val., $C_{11}$ (GPa)         & 19.74   & 64.15   & $-$5.46 & 0.646 & 0.822 & 8.56\,\%  \\
-Val., $C_{12}$ (GPa)         & 14.32   & 57.32   & $-$2.73 & 0.364 & 0.683 & 14.37\,\% \\
-Val., $E$ (GPa, derived)     & 20.44   & 34.98   & $-$2.88 & 0.770 & 0.878 & 16.27\,\% \\
-Val., $\nu$ (derived)        &  0.027  &  0.043  &  0.001  & 0.518 & 0.731 & 10.60\,\% \\
-\bottomrule
-\end{tabular}\\[0.2em]
-\textit{\scriptsize 70\,/\,30 split: train\,$=$\,5487, val\,$=$\,2352.}
-
-\vspace{0.3em}
-\begin{columns}[T]
-\column{0.48\textwidth}
-\centering
-\includegraphics[height=3.0cm]{figures/parity_validation_cij.png}\\[-0.15em]
-\scriptsize Held-out parity for $C_{11}$ (left), $C_{12}$ (right).
-
-\column{0.48\textwidth}
-\centering
-\includegraphics[height=3.0cm]{figures/parity_validation.png}\\[-0.15em]
-\scriptsize Derived $(E,\nu)$: $R^2_E\!=\!0.77$, $R^2_\nu\!=\!0.52$.
-\end{columns}
-\end{frame}
-
-% =====================================================================
-% Slide 18: Stage 5a -- deployed predictor (interactive UI)
-% =====================================================================
-\begin{frame}{Stage 5a: Deployed Predictor --- Interactive Composition UI}
-\begin{columns}[T]
-\column{0.62\textwidth}
-\centering
-\includegraphics[width=0.99\linewidth]{figures/ml_app.png}\\[-0.15em]
-\scriptsize Browser-based predictor: the user enters element mass
-fractions, the trained deep ensemble returns $\hat E,\hat\nu$
-with k-NN distance-based out-of-distribution flagging.
-
-\column{0.36\textwidth}
-\textbf{Validation on an Al\,7075-like composition.}
-
-\smallskip
-For the preset \emph{AA7075-like}\\(Al--Zn--Mg--Cu--Cr) the surrogate
-returns
+\bigskip
+\textbf{Held-out performance (30\,\% split):}
 \begin{itemize}\small
-  \item $\hat E = 75.5$\,GPa
-  \item $\hat \nu = 0.334$
+  \item $R^{2}_{E} = 0.77$
+  \item $R^{2}_{\nu} = 0.52$
 \end{itemize}
-in line with the published Al\,7075 range
-($E\!\sim\!71$--$72$\,GPa, $\nu\!\sim\!0.33$).
 
-\smallskip
-\textbf{Distribution.} Packaged as a portable AppImage so the
-trained ensemble runs on any modern Linux desktop with no Python
-or CUDA toolchain installed.
+\bigskip
+\textbf{Validation on the Al\,7075 preset:}\\
+$\hat E = 75.5$\,GPa,\ $\hat \nu = 0.334$\\
+\scriptsize (published reference: $71{-}72$\,GPa,\ $\nu \approx 0.33$).
+
+\bigskip
+\scriptsize\textit{Distributed as a portable application image.}
+
+\column{0.56\textwidth}
+\centering
+\includegraphics[width=0.99\linewidth]{figures/ml_app.png}\\[-0.2em]
+\scriptsize Interactive composition predictor with $k$-nearest-neighbour
+distance-based out-of-distribution flagging.
 \end{columns}
 \end{frame}

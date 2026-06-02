@@ -1,148 +1,50 @@
 % =====================================================================
-% Slide 4: Young's modulus E for mechanical engineers
+% Slide 4: Atomistic modelling -- interatomic potentials, MEAM, DFT
 % =====================================================================
-\begin{frame}{Young's Modulus $E$ --- The Mechanical Engineer's View}
+\begin{frame}{Atomistic Modelling: Interatomic Potentials and DFT}
 \begin{columns}[T]
-\column{0.55\textwidth}
-\textbf{Definition.} In uniaxial loading,
-$E = \dfrac{\sigma}{\varepsilon}$ --- axial stress per unit axial
-strain (units: GPa).
+\column{0.49\textwidth}
+\textbf{Interatomic potential.}
+Closed-form approximation of the many-body potential energy
+$U(\{\mathbf{r}_{i}\})$;
+forces obtained as $\mathbf{F}_{i} = -\nabla_{i}U$.
 
-\medskip
-\textbf{Where $E$ appears in design:}
-\begin{itemize}\small
-  \item \textbf{Beam deflection.} Cantilever tip deflection
-        $\delta = \dfrac{F L^3}{3 E I}$ --- a $2\times$ change in
-        $E$ doubles tip rigidity for the same beam.
-  \item \textbf{Buckling load.} Euler $P_{\mathrm{cr}} =
-        \dfrac{\pi^2 E I}{(KL)^2}$ --- compression-member capacity
-        scales linearly with $E$.
-  \item \textbf{Natural frequency.} For a clamped beam
-        $\omega_n \propto \sqrt{E/\rho}$ --- vibration design,
-        modal analysis, NVH (noise-vibration-harshness).
-  \item \textbf{Hertz contact stress.} Bearing/gear contact area
-        and pressure depend on the effective $E^{*}$ of mating
-        bodies.
-\end{itemize}
-
-\column{0.43\textwidth}
-\begin{block}{Typical engineering ranges}
-\small
-\begin{tabular}{lr}
-\toprule
-Material           & $E$ (GPa) \\
-\midrule
-Polymers (PE, PP)  & 0.5 -- 3 \\
-Magnesium alloys   & 40 -- 45 \\
-\textbf{Aluminium 7075} & \textbf{70 -- 75} \\
-Titanium 6Al-4V    & 110 \\
-Steel (mild)       & 200 \\
-Tungsten           & 410 \\
-\bottomrule
-\end{tabular}
-\end{block}
-\vspace{0.3em}
-\small\textit{$E$ is what designers minimise when they want
-flexibility (springs, panels) and maximise when they want rigidity
-(machine frames, beams).}
-\end{columns}
-\end{frame}
-
-% =====================================================================
-% Slide 5: Poisson's ratio nu for mechanical engineers
-% =====================================================================
-\begin{frame}{Poisson's Ratio $\nu$ --- The Mechanical Engineer's View}
-\begin{columns}[T]
-\column{0.55\textwidth}
-\textbf{Definition.}
-$\nu = -\dfrac{\varepsilon_{\text{lateral}}}{\varepsilon_{\text{axial}}}$ ---
-the lateral contraction per unit axial extension (dimensionless).
-
-\medskip
-\textbf{Where $\nu$ appears in design:}
-\begin{itemize}\small
-  \item \textbf{Plane-strain vs plane-stress.} The transition
-        criterion in thin- vs thick-walled pressure vessels and
-        sheet-metal forming hinges on $\nu$.
-  \item \textbf{Volumetric vs deviatoric coupling.} Bulk modulus
-        $K = \dfrac{E}{3(1-2\nu)}$ diverges as $\nu \!\to\! 0.5$ ---
-        incompressible limit. Critical for rubber seals, soft
-        polymers, energy-absorbing foams (auxetic if $\nu<0$).
-  \item \textbf{Stress concentration.} Notch and hole stress
-        concentration factors at finite thickness depend on $\nu$
-        through the Lam\'e parameters.
-  \item \textbf{Fatigue \& fracture.} Plane-strain $K_{Ic}$ vs
-        plane-stress $K_c$ thresholds differ by a $(1-\nu^2)$
-        factor.
-\end{itemize}
-
-\column{0.43\textwidth}
-\begin{block}{Stability bounds (isotropic)}
-\small
-$-1 < \nu < 0.5$.
-\\[0.3em]
-For \emph{cubic} crystals, the Born--Cauchy criterion
-$C_{11} > C_{12}$ is the equivalent mechanical-stability bound;
-violating it gives a negative shear modulus.
-\end{block}
-\begin{block}{Typical ranges}
-\small
-\begin{tabular}{lr}
-\toprule
-Material         & $\nu$ \\
-\midrule
-Cork (auxetic-ish) & $\sim\!0.0$ \\
-\textbf{Al alloys} & \textbf{0.33} \\
-Steel              & 0.30 \\
-Rubber             & $\to\!0.5$ \\
-Beryllium          & 0.03 \\
-\bottomrule
-\end{tabular}
-\end{block}
-\end{columns}
-\end{frame}
-
-% =====================================================================
-% Slide 6: From C11, C12 to (E, nu) and stability
-% =====================================================================
-\begin{frame}{Why We Train on $C_{11}, C_{12}$, Not on $(E,\nu)$ Directly}
-\begin{columns}[T]
-\column{0.55\textwidth}
-For a cubic crystal the engineering moduli are recovered
-analytically from the two independent stiffness constants:
-\begin{equation*}
-  E = \frac{(C_{11}-C_{12})(C_{11}+2C_{12})}{C_{11}+C_{12}},
-  \qquad
-  \nu = \frac{C_{12}}{C_{11}+C_{12}}.
-\end{equation*}
-
-\vspace{0.4em}
-\textbf{The pitfall.}\;
-$\nu = C_{12}/(C_{11}+C_{12})$ is ill-conditioned ---
-a $5\,\%$ error on each $C_{ij}$ can blow up to a
-$30\,\%$ relative error on $\nu$ for Mg/Zn-rich compositions
-where the denominator is small.
-
-\vspace{0.5em}
-\textbf{Decision.} Both ML surrogates (composition NN and the
-NN-MEAM optimizer) train under Huber loss
-\emph{on $C_{11}$ and $C_{12}$}, and recover $(E,\nu)$
-\emph{after} prediction.
-
-\column{0.43\textwidth}
-\begin{block}{Physicality filter (applied everywhere)}
-\small
-A configuration is dropped if any of:
+\smallskip
+\textbf{Historical development:}
 \begin{itemize}\scriptsize
-  \item $E < 0$
-  \item $\nu < 0$
-  \item $\nu \ge 0.48$ (guard for $1\!-\!2\nu$ singularity)
-  \item $C_{11} < C_{12}$ (Born--Cauchy violation)
+  \item Pairwise (Lennard--Jones, Morse) ---
+        inadequate for metallic bonding.
+  \item Embedded Atom Method (Daw \& Baskes, 1984) ---
+        suitable for FCC metals.
+  \item \textbf{Modified EAM}~\citep{baskes1992,lee2001}: introduces
+        angular partial densities $\rho_{i}^{(l)}$, $l = 1{-}3$;
+        established formalism for BCC, HCP and mixed-bonding
+        metals.
 \end{itemize}
-The same filter is enforced in Stage 2 (LAMMPS),
-Stage 5a (composition NN), and Stage 5b (NN-MEAM optimizer)
-to keep training, validation, and verification on the same playing
-field.
+
+\column{0.49\textwidth}
+\textbf{Density-functional theory (DFT).}
+First-principles electronic-structure method, formulated via the
+Kohn--Sham equations~\citep{kohn1965} and implemented here with a
+plane-wave + pseudopotential basis (QE,
+\citealt{giannozzi2009}).
+
+\smallskip
+Quantities computed:
+\begin{itemize}\scriptsize
+  \item Cohesive energy $E_{\mathrm{coh}}$
+  \item Equilibrium lattice $a_{0}$, bulk modulus $B$
+  \item Binary formation energies $E_{\mathrm{form}}(i, j)$
+  \item Single-crystal elastic constants $C_{11}, C_{12}$
+\end{itemize}
+
+\smallskip
+\begin{block}{}
+\scriptsize\centering
+DFT: high accuracy, limited scale ($\le 10^{3}$ atoms).\\
+MEAM/MD: empirical, large scale ($\ge 10^{6}$ atoms).\\[0.2em]
+\emph{DFT provides the reference dataset against which the MEAM
+potential is calibrated.}
 \end{block}
 \end{columns}
 \end{frame}

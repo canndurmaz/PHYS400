@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Final Presentation Transcript — Can Durmaz (PHYS 400)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deepred: #8C1414;
+    --deepred-soft: #c47272;
+    --bg-block: #f4f4f4;
+    --bg-tip: #fef6e8;
+    --border-tip: #d9a441;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+    --serif: 'Source Serif 4', 'Source Serif Pro', Charter, 'Iowan Old Style', Georgia, serif;
+    --sans: 'Helvetica Neue', Arial, sans-serif;
+    --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 4rem 0;
+    background: #fafafa;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--deepred);
+    color: white;
+    padding: 0.9rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    z-index: 10;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  header .meta {
+    font-size: 0.85rem;
+    opacity: 0.92;
+    font-family: var(--mono);
+  }
+  main {
+    max-width: 820px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .intro {
+    background: white;
+    border-left: 4px solid var(--deepred);
+    padding: 1rem 1.25rem 1.05rem 1.25rem;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    border-radius: 0 4px 4px 0;
+  }
+  .intro .label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--deepred);
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+  .intro strong { color: var(--text); }
+  .intro.abbrev {
+    padding: 0.75rem 1.1rem 0.85rem 1.1rem;
+  }
+  .intro.abbrev .label { margin-bottom: 0.4rem; }
+  .intro.abbrev dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.15rem 0.85rem;
+    font-size: 0.74rem;
+    line-height: 1.4;
+  }
+  .intro.abbrev dt {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--deepred);
+    letter-spacing: 0.02em;
+    font-size: 0.72rem;
+  }
+  .intro.abbrev dd {
+    margin: 0;
+    color: var(--muted);
+  }
+  .slide {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-block);
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--deepred);
+    color: white;
+    font-weight: 700;
+    font-size: 0.82rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.7rem;
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+  .slide-title {
+    font-weight: 600;
+    color: var(--deepred);
+    flex-grow: 1;
+    font-size: 1.0rem;
+    letter-spacing: 0.005em;
+  }
+  .timing {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--muted);
+    background: white;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid #d8d8d8;
+    letter-spacing: 0.02em;
+  }
+  .transcript {
+    padding: 1.15rem 1.5rem 0.5rem 1.5rem;
+    font-family: var(--serif);
+    font-size: 1.12rem;
+    line-height: 1.7;
+    color: #181818;
+    font-variant-numeric: oldstyle-nums;
+  }
+  .transcript em {
+    color: var(--deepred);
+    font-style: italic;
+    font-weight: 500;
+  }
+  .transcript .pause {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.9em;
+    font-family: var(--sans);
+  }
+  .transcript .term {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+  .tip {
+    background: var(--bg-tip);
+    border-top: 1px solid #ecdcb3;
+    border-left: 3px solid var(--border-tip);
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    color: #5a4a1f;
+    margin: 0.6rem 1rem 1rem 1rem;
+    border-radius: 3px;
+    font-family: var(--sans);
+  }
+  .tip strong { color: #3a2f0d; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 2rem;
+    padding: 0 1rem;
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
+  }
+  @media print {
+    header { position: static; box-shadow: none; }
+    .slide { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Final Presentation Transcript &mdash; Can Durmaz</h1>
+  <div class="meta">PHYS&nbsp;400 &middot; jury version &middot; 13&nbsp;slides &middot; target&nbsp;~11:00</div>
+</header>
+
+<main>
+
+<div class="intro">
+  <span class="label">How to use this</span>
+  <strong>Format.</strong> Each slide carries a target time budget and approximate word count.
+  Words in <em>red italics</em> indicate emphasis. <span class="pause">(pause)</span> markers
+  denote short separations between argument segments. Small-caps mark
+  <span class="term">technical terms</span> on first introduction. The grey callouts beneath each
+  segment are procedural notes for the speaker, not part of the spoken text. The deck closes on
+  Slide&nbsp;13; the bibliography frame is shown silently while the jury formulates questions.
+</div>
+
+<div class="intro abbrev">
+  <span class="label">Abbreviations</span>
+  <dl>
+    <dt>MEAM</dt><dd>Modified Embedded Atom Method &mdash; semi-empirical interatomic potential for metals</dd>
+    <dt>MD</dt><dd>Molecular Dynamics &mdash; classical-mechanical simulation of atoms</dd>
+    <dt>DFT</dt><dd>Density-Functional Theory &mdash; quantum-mechanical electronic-structure method</dd>
+    <dt>NN</dt><dd>Neural Network &mdash; here, a small feed-forward surrogate</dd>
+    <dt>NNIP</dt><dd>Neural-Network Interatomic Potential &mdash; the NN-refit MEAM produced in Stage&nbsp;5b</dd>
+    <dt>MLIP</dt><dd>Machine-Learning Interatomic Potential &mdash; data-driven alternative to MEAM</dd>
+    <dt>LAMMPS</dt><dd>Large-scale Atomic/Molecular Massively Parallel Simulator &mdash; the MD engine used in Stage&nbsp;2</dd>
+    <dt>QE</dt><dd>Quantum Espresso &mdash; the plane-wave DFT code used in Stage&nbsp;3</dd>
+    <dt>EOS</dt><dd>Equation of State &mdash; energy-versus-volume curve, fitted with Birch&ndash;Murnaghan</dd>
+  </dl>
+</div>
+
+<!-- Slide 1 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">1</span>
+    <span class="slide-title">Title</span>
+    <span class="timing">~20&nbsp;s &middot; ~40&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Distinguished members of the jury, the title of this work is
+    &ldquo;<em>Automated Construction of Multi-Element MEAM Interatomic Potentials:
+    a DFT-Informed Neural-Network Optimisation Framework.</em>&rdquo; The presentation
+    summarises the methodology, the implementation, and the verification outcomes
+    obtained on a twelve-element corpus.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Maintain a neutral opening posture; await acknowledgement before advancing the slide.</div>
+</section>
+
+<!-- Slide 2 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">2</span>
+    <span class="slide-title">Motivation &mdash; Elastic Constants as Design Criteria</span>
+    <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    The selection of a structural alloy is principally governed by its elastic
+    response, which for an isotropic continuum is summarised by two constants:
+    <em>Young's modulus E</em> and <em>Poisson's ratio &nu;</em>. The table on
+    the right enumerates representative engineering domains in which these
+    quantities determine the design outcome &mdash; aerospace structures, turbine
+    components, biomedical implants, automotive structures, civil engineering,
+    and precision electromechanical devices.
+    <span class="pause">(pause)</span>
+    Direct experimental characterisation of these constants &mdash; via
+    single-crystal tensile testing combined with ultrasonic measurement &mdash;
+    remains costly in both time and sample preparation. Atomistic simulation
+    offers a substantially less expensive alternative, <em>provided that an
+    accurate interatomic potential is available</em> for the alloy system in
+    question. This condition motivates the entire framework presented here.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Reference the table by gesture; do not enumerate its rows.</div>
+</section>
+
+<!-- Slide 3 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">3</span>
+    <span class="slide-title">Role of (E, &nu;) in Mechanical Design</span>
+    <span class="timing">~55&nbsp;s &middot; ~130&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    A brief enumeration clarifies why these two constants warrant the
+    computational effort. Young's modulus enters the classical expressions for
+    <em>beam deflection, Euler buckling, natural frequency, and Hertzian contact
+    pressure</em>. Poisson's ratio determines the <em>bulk modulus</em> through
+    the relation <em>K = E divided by 3(1 &minus; 2&nu;)</em> &mdash; a quantity
+    that diverges as &nu; approaches one-half &mdash; together with the
+    plane-stress/plane-strain regime boundaries, stress concentration factors,
+    and fracture-toughness corrections.
+    <span class="pause">(pause)</span>
+    For a cubic crystal the two engineering constants reduce analytically to two
+    independent stiffness constants, <em>C<sub>11</sub></em> and
+    <em>C<sub>12</sub></em>, subject to the
+    <span class="term">Born&ndash;Cauchy</span> mechanical-stability criterion
+    <em>C<sub>11</sub>&nbsp;&gt;&nbsp;C<sub>12</sub></em>. This inequality
+    will recur as the principal verification gate in Stage&nbsp;5b.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> The Born&ndash;Cauchy inequality should be stated explicitly; it is the criterion invoked in the closing verification.</div>
+</section>
+
+<!-- Slide 4 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">4</span>
+    <span class="slide-title">Atomistic Modelling &mdash; Interatomic Potentials and DFT</span>
+    <span class="timing">~65&nbsp;s &middot; ~150&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    An <em>interatomic potential</em> is a closed-form approximation of the
+    many-body potential energy of a system of atoms; once specified, it yields
+    forces by differentiation and permits classical molecular-dynamics
+    simulation at scales inaccessible to first-principles methods. The
+    historical development proceeds from pairwise potentials &mdash; inadequate
+    for metallic bonding &mdash; through the <span class="term">Embedded Atom
+    Method</span> of Daw and Baskes, to the <em>Modified EAM</em>, which
+    introduces angular partial densities and constitutes the established
+    formalism for metallic systems of mixed bonding character.
+    <span class="pause">(pause)</span>
+    <span class="term">Density-functional theory</span> provides the
+    complementary first-principles route: a quantum-mechanical solver from
+    which cohesive energies, lattice constants, bulk moduli, and elastic
+    constants are obtained directly. DFT is of high accuracy but is limited to
+    systems of order one thousand atoms; MEAM is empirical but accommodates
+    six orders of magnitude more. The present work uses DFT as the reference
+    against which the MEAM potential is calibrated.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Underline the accuracy/scale trade-off explicitly &mdash; it is the rationale for the entire pipeline.</div>
+</section>
+
+<!-- Slide 5 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">5</span>
+    <span class="slide-title">The MEAM Coverage Problem</span>
+    <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    The principal obstacle addressed in this work is the fragmented coverage of
+    the published MEAM literature. The table summarises four representative
+    libraries; each is limited to a small element subset, and no single file
+    spans the nine elements of the Al\,7075 specification.
+    <span class="pause">(pause)</span>
+    Direct merging is not admissible: the
+    <span class="term">cross-interaction parameters</span> between elements
+    drawn from distinct libraries are undefined, and manual refitting does not
+    scale &mdash; twelve elements give sixty-six binary pairs.
+    The contemporary alternative &mdash; purely data-driven machine-learning
+    potentials of the Behler&ndash;Parrinello, GAP, or MTP families &mdash;
+    avoids the coverage problem but requires between ten thousand and one
+    hundred thousand DFT configurations and forfeits the physical
+    interpretability of MEAM. The present framework therefore retains the MEAM
+    formalism and constructs the missing parameters automatically.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Reference the table once by gesture; the &ldquo;merged&rdquo; row is the visual answer to the problem.</div>
+</section>
+
+<!-- Slide 6 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">6</span>
+    <span class="slide-title">Proposed Methodology &mdash; Five-Stage Pipeline</span>
+    <span class="timing">~75&nbsp;s &middot; ~170&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    The proposed methodology comprises five sequential stages.
+    <em>Stage&nbsp;1</em> generates random alloy compositions on the twelve-element
+    simplex. <em>Stage&nbsp;2</em> evaluates each composition by LAMMPS
+    molecular dynamics, yielding the cubic stiffness constants
+    <em>C<sub>11</sub></em> and <em>C<sub>12</sub></em> for the entire corpus.
+    <em>Stage&nbsp;3</em> performs Quantum-Espresso DFT calculations for each
+    element and each binary pair, producing first-principles cohesive energies,
+    lattice constants, bulk moduli, and formation energies.
+    <span class="pause">(pause)</span>
+    <em>Stage&nbsp;4</em> maps these reference values onto the MEAM parameter
+    space, yielding an initialised twelve-element library that includes the
+    previously undefined cross-terms. <em>Stage&nbsp;5</em> closes the loop: a
+    neural-network surrogate of the
+    <em>MEAM-parameters-to-stiffness</em> map is inverse-optimised, under
+    L-BFGS, against the Stage-2 targets. The dashed branch denotes
+    <em>Stage&nbsp;5a</em>, an auxiliary surrogate that maps composition
+    directly to the stiffness constants and is distributed as an interactive
+    predictor independent of the MEAM-refitting loop.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> The longest segment of the talk. Indicate each stage with the laser pointer in turn; do not return to earlier stages.</div>
+</section>
+
+<!-- Slide 7 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">7</span>
+    <span class="slide-title">Stage 1 &mdash; Alloy Configuration Generation</span>
+    <span class="timing">~35&nbsp;s &middot; ~80&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Stage&nbsp;1 draws compositions uniformly on the twelve-element simplex,
+    with the Al fraction weighted upwards to oversample the aluminium-alloy
+    region of engineering relevance. Approximately seven thousand nine hundred
+    configurations are generated; after the Stage-2 physicality filter, seven
+    thousand eight hundred and fifteen are retained. The histogram confirms
+    the intended Al weighting; the remaining elements are sampled at
+    comparable frequencies, preserving cross-term identifiability.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Brief slide; advance without lingering.</div>
+</section>
+
+<!-- Slide 8 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">8</span>
+    <span class="slide-title">Stage 2 &mdash; Molecular-Dynamics Elastic Database</span>
+    <span class="timing">~60&nbsp;s &middot; ~135&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Stage&nbsp;2 evaluates each configuration in LAMMPS. A custom build of the
+    code was required: the upstream distribution caps the number of MEAM
+    species at five, whereas the merged library produced in Stage&nbsp;4
+    contains twelve. The patched build raises the limit to twenty.
+    <span class="pause">(pause)</span>
+    For each configuration, a cubic supercell of approximately four nanometres
+    is constructed from the lattice constant of the dominant element; atom
+    types are then reassigned to the target mass fractions and the cell is
+    minimised under anisotropic strain. A small axial strain of magnitude
+    ten-to-the-minus-three is applied successively along each Cartesian
+    direction, and the resulting stresses are central-differenced to recover
+    <em>C<sub>11</sub></em> and <em>C<sub>12</sub></em>. The scatter on the
+    right shows that Mg- and Zn-rich compositions cluster near &nu; approaching
+    one-half, which motivates training the surrogate on the stiffness constants
+    rather than directly on (<em>E</em>,&nbsp;<em>&nu;</em>).
+  </div>
+  <div class="tip"><strong>Procedure:</strong> The Mg/Zn cluster justifies the choice of training targets &mdash; state it explicitly.</div>
+</section>
+
+<!-- Slide 9 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">9</span>
+    <span class="slide-title">Stage 3 &mdash; Quantum Espresso DFT References</span>
+    <span class="timing">~65&nbsp;s &middot; ~145&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Stage&nbsp;3 constitutes the first-principles reference layer. Quantum
+    Espresso version 7.5 is driven through the Atomic Simulation Environment;
+    a single process pool dispatches all self-consistent calculations,
+    equation-of-state scans, and elastic-constant evaluations. The plane-wave
+    cut-off is forty Rydberg, with Marzari&ndash;Vanderbilt smearing and a
+    six-by-six-by-six Monkhorst&ndash;Pack mesh; spin polarisation is
+    enabled automatically for iron, chromium, and manganese.
+    <span class="pause">(pause)</span>
+    For each element a seven-point <span class="term">equation-of-state</span>
+    scan is fitted with the Birch&ndash;Murnaghan equation, yielding the
+    equilibrium lattice constant, the cohesive energy, and the bulk modulus.
+    For each binary pair a single self-consistent calculation on the
+    <em>L1<sub>2</sub></em> or <em>B2</em> reference structure yields the
+    formation energy. The heat map summarises sixty-six binary pairs; signed
+    values seed the MEAM cross-term energies directly, without further
+    parameter fitting.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> The closing statement &mdash; seeding the cross-terms directly &mdash; is the formal hand-off from DFT to MEAM.</div>
+</section>
+
+<!-- Slide 10 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">10</span>
+    <span class="slide-title">Stage 4 &mdash; MEAM Single-Element Initialisation</span>
+    <span class="timing">~40&nbsp;s &middot; ~90&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Stage&nbsp;4 closes the formal gap between DFT and MEAM. For each element,
+    the MEAM <span class="term">screening exponent</span> &alpha; is recovered
+    analytically from the DFT triple &mdash; equilibrium lattice constant,
+    cohesive energy, and bulk modulus &mdash; through the closed-form
+    expression given on the left. Together with the DFT-seeded cross-term
+    energies of Stage&nbsp;3, these constants yield a complete twelve-element
+    MEAM library. The &alpha;-manganese equation of state did not converge
+    cleanly; a relaxed body-centred-cubic approximation is used in its place.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Do not derive the &alpha; expression on the board; cite its origin in MEAM convention.</div>
+</section>
+
+<!-- Slide 11 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">11</span>
+    <span class="slide-title">Stage 5a &mdash; Composition Surrogate</span>
+    <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Stage&nbsp;5a is an auxiliary branch of the pipeline: a small neural network
+    that consumes the LAMMPS elastic database directly and does not feed back
+    into the MEAM refitting. It serves two functions &mdash; a consistency
+    check on the molecular-dynamics output, and a fast interactive predictor
+    of <em>E</em> and <em>&nu;</em> from an arbitrary composition vector.
+    <span class="pause">(pause)</span>
+    The architecture is a fully-connected network with layers of twelve,
+    thirty-two, twenty, and two units, trained under Huber loss on
+    <em>C<sub>11</sub></em> and <em>C<sub>12</sub></em>, with a five-seed deep
+    ensemble for uncertainty quantification. On the thirty-percent held-out
+    split, the coefficient of determination for <em>E</em> is <em>0.77</em>
+    and for <em>&nu;</em> is <em>0.52</em>. On the Al\,7075 preset the surrogate
+    returns <em>75.5 gigapascals</em> and a Poisson's ratio of <em>0.334</em>,
+    consistent with the published reference range.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Reference the deployed application image; do not propose a live demonstration.</div>
+</section>
+
+<!-- Slide 12 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">12</span>
+    <span class="slide-title">Stage 5b &mdash; NN-Driven MEAM Parameter Optimisation</span>
+    <span class="timing">~65&nbsp;s &middot; ~150&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Stage&nbsp;5b constitutes the closed-loop core of the framework. A
+    differentiable neural-network surrogate is trained to map the MEAM
+    parameter vector onto the stiffness constants, with training data drawn
+    from either Sobol or active-learning samples evaluated in LAMMPS. The
+    L-BFGS optimiser minimises the Huber loss through the surrogate; the
+    optimised parameters are subsequently re-evaluated in LAMMPS, new samples
+    are appended, and the surrogate is retrained. Atomic checkpointing renders
+    the procedure resumable.
+    <span class="pause">(pause)</span>
+    The surrogate Huber loss decays from approximately unity to a residual
+    value of <em>0.16</em> over ten thousand training steps. Verification on
+    thirty held-out alloys reveals the current limitations: of these thirty,
+    only <em>eleven satisfy the Born&ndash;Cauchy stability criterion</em>; among
+    those eleven, <em>four lie within the twenty-percent engineering tolerance</em>
+    on both <em>E</em> and <em>&nu;</em>. The NN-optimised MEAM therefore does
+    not yet constitute a deployable potential on the present twelve-element
+    corpus.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> State the verification numbers without qualifying language; the closing slide addresses the interpretation.</div>
+</section>
+
+<!-- Slide 13 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">13</span>
+    <span class="slide-title">Discussion and Outlook</span>
+    <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    In summary, the contributions of the present work comprise the
+    molecular-dynamics elastic database of seven thousand eight hundred and
+    fifteen alloys, the DFT reference set covering ten elements, the merged
+    twelve-element MEAM library, the deployed composition surrogate with a
+    coefficient of determination of <em>0.77</em> on Young's modulus, and the
+    resumable Stage-5b optimisation framework.
+    <span class="pause">(pause)</span>
+    The current limitations of Stage&nbsp;5b are attributed to three causes:
+    an under-determined inverse problem, a residual mismatch between the
+    surrogate and the LAMMPS evaluator, and the absence of mechanical-stability
+    constraints from the training loss. The planned extensions address these
+    causes in turn: restricting optimisation to Sobol-sensitive cross-terms,
+    expanding the active-learning corpus, incorporating physics-informed
+    stability penalties, and introducing special-quasirandom-structure DFT
+    references at intermediate compositions. The architecture is established;
+    the remaining work is one of sampling and loss formulation.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Conclude on the closing sentence. Acknowledge the jury and yield the floor for questions.</div>
+</section>
+
+<footer>
+  total target ~11:00 &middot; ~1580 words &middot; pace ~145 WPM &middot; bibliography frame shown silently
+</footer>
+
+</main>
+</body>
+</html>

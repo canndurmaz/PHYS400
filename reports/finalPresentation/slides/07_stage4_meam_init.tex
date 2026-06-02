@@ -1,34 +1,36 @@
 % =====================================================================
-% Slide 15: Stage 4 -- MEAM initialization
+% Slide 10: Stage 4 -- MEAM single-element initialization
 % =====================================================================
-\begin{frame}{Stage 4: MEAM Single-Element Initialization}
+\begin{frame}{Stage 4: MEAM Single-Element Initialisation}
 \begin{columns}[T]
-\column{0.45\textwidth}
-The MEAM screening exponent $\alpha$ is recovered from each
-element's DFT triple
-$\bigl(a_0, E_{\mathrm{coh}}, B\bigr)$ via
+\column{0.42\textwidth}
+\textbf{Screening exponent from the DFT triple
+$(a_{0}, E_{\mathrm{coh}}, B)$:}
 \begin{equation*}
-  \alpha \;=\; a_0 \,\sqrt{\frac{9\,B\,\Omega}{E_{\mathrm{coh}}}},
+  \alpha = a_{0}\,\sqrt{\dfrac{9\,B\,\Omega}{E_{\mathrm{coh}}}}
 \end{equation*}
-where $\Omega$ is the primitive cell volume.
 
 \smallskip
-This populates a single-element MEAM block per element, which
-then feeds the cross-term refitter of Stage~5.
+$\Omega$: primitive-cell volume.
 
-\smallskip
-\textbf{Mn caveat.} The original EOS scan for $\alpha$-Mn did not
-converge; values shown below are from a relaxed BCC approximation
-and the corresponding cross-terms inherit the higher uncertainty.
+\bigskip
+Together with the DFT-seeded cross-term energies $E_{c}(i, j)$,
+these constants yield a complete 12-element MEAM library suitable
+for direct evaluation in LAMMPS.
 
-\column{0.53\textwidth}
+\bigskip
+\scriptsize\textit{Computational cost: $\sim\!70$\,ms once DFT
+references are cached. The $\alpha$-Mn equation of state did not
+converge; a relaxed BCC approximation is used.}
+
+\column{0.56\textwidth}
 \centering
 \scriptsize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
 \begin{tabular}{llrrrr}
 \toprule
-Element & Lat. & $a_0$ (\AA) & $E_\mathrm{coh}$ & $\Omega$ (\AA$^3$) & $\alpha$ \\
+Element & Lat. & $a_{0}$ (\AA) & $E_{\mathrm{coh}}$ & $\Omega$ (\AA$^{3}$) & $\alpha$ \\
 \midrule
 Al & FCC     & 4.047 & 3.611 & 16.57 & 4.470 \\
 Cu & FCC     & 3.639 & 3.857 & 12.05 & 4.930 \\
@@ -41,7 +43,6 @@ Mg & HCP     & 3.177 & 1.483 & 45.36 & 9.063 \\
 Mn & BCC     & 2.803 & 3.728 & 11.01 & 6.120 \\
 Mo & BCC     & 3.169 &10.353 & 15.91 & 4.924 \\
 \bottomrule
-\end{tabular}\\[0.2em]
-\textit{\scriptsize $E_\mathrm{coh}$ in eV/atom.}
+\end{tabular}
 \end{columns}
 \end{frame}
