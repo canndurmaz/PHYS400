@@ -46,7 +46,7 @@ ELEMENT_DATA = {
     "Ti": ("hcp", 2.95, "Ti.pbe-spn-kjpaw_psl.1.0.0.UPF"),
     "Cr": ("bcc", 2.91, "Cr.pbe-spn-kjpaw_psl.1.0.0.UPF"),
     "Mn": ("bcc", 2.89, "Mn.pbe-spn-kjpaw_psl.0.3.1.UPF"),  # δ-Mn/γ-Mn BCC proxy (α-Mn is 29-atom non-collinear)
-    "Co": ("hcp", 2.51, "Co.pbe-spn-kjpaw_psl.0.3.1.UPF"),  # FM HCP, lit moment ~1.6 μB
+    "Co": ("hcp", 2.48, "Co.pbe-spn-kjpaw_psl.0.3.1.UPF"),  # FM HCP, lit moment ~1.6 μB; PBE eq at 70 Ry cutoff
     "Ni": ("fcc", 3.52, "Ni.pbe-spn-kjpaw_psl.1.0.0.UPF"),  # FM FCC, lit moment ~0.6 μB
     "Si": ("diamond", 5.43, "Si.pbe-n-kjpaw_psl.1.0.0.UPF"),
     "Au": ("fcc", 4.08, "Au.pz-rrkjus_aewfc.UPF"),
@@ -59,12 +59,16 @@ MAGNETIC_ELEMENTS = {"Fe", "Cr", "Mn", "Co", "Ni"}
 # Initial magnetic moments (μ_B) for SCF symmetry-breaking. Cr and Mn use
 # alternating-sign G-AFM seeds (their experimental ground states are AFM);
 # Fe/Co/Ni use a ferromagnetic seed.
-# Cr was bumped 0.6 → 1.5: the 0.6 seed collapsed to NM in the 8-atom EOS
-# (BCC-Cr's AFM is only ~10 meV/atom below NM, so the SCF needs a stronger
-# kick to land in the AFM basin).
+# Cr is UNRESOLVED: seed 0.6 → 1.5 → 3.0 all collapse to NM during SCF
+# iteration (initial kick produces abs ≈ 24 μB, decays to ≈ 0.1 μB by iter
+# 14). BCC-Cr's AFM lies only ~10 meV/atom below NM and the current 0.01 Ry
+# smearing (≈ 136 meV) likely washes out the gap. Probable fixes: drop
+# Cr's smearing to 0.005 Ry, or apply DFT+U on Cr d states, or use a
+# fixed-moment per-sublattice constraint. Until then, Cr's B in
+# dft_results.json reflects the NM SCF (~256 GPa vs lit 160).
 ELEMENTAL_MAGMOM = {
     "Fe": 2.5,
-    "Cr": 1.5,
+    "Cr": 3.0,
     "Mn": 3.5,
     "Co": 1.7,
     "Ni": 0.7,
@@ -91,6 +95,42 @@ _FM_TOT_MAG_PER_ATOM = {
 # Elements seeded with G-AFM (alternating sign per sublattice). Each gets its
 # own counter so independent sublattices don't interfere in mixed-element cells.
 _AFM_ELEMENTS = {"Cr", "Mn"}
+
+# Per-element plane-wave cutoffs (ecutwfc, ecutrho) in Ry. The defaults below
+# satisfy each pseudopotential's "Suggested minimum cutoff" from its UPF header.
+# For 3d magnetic metals these are 50–90 % above the legacy 40/320 used for
+# every element. Co's debug session (2026-06-03) showed B = 1012 GPa at the
+# 40/320 default vs B = 220 GPa at 70/560 — a basis-set-incompleteness
+# artifact (under-converged plane-wave basis gives volume-dependent energy
+# errors that masquerade as enormous stiffness).
+_RECOMMENDED_CUTOFFS = {
+    "Al": (40, 320),
+    "Cu": (40, 320),
+    "Mg": (40, 320),
+    "Si": (40, 320),
+    "Ti": (40, 320),
+    "Zn": (40, 320),
+    "Mo": (40, 320),
+    "Au": (40, 320),
+    "Fe": (75, 600),   # pseudo recommends 71/496
+    "Cr": (60, 480),
+    "Mn": (50, 400),   # pseudo recommends 46/244; bumped for parity
+    "Co": (70, 560),   # pseudo recommends 60/445
+    "Ni": (80, 640),   # pseudo recommends 75/476
+}
+
+
+def _cutoffs_for_cell(symbols):
+    """Pick ecutwfc/ecutrho safe for a cell that contains the given elements.
+
+    For mixed-element cells the stricter cutoff wins so the 3d metal in a
+    binary pair doesn't get under-sampled. Falls back to the historical
+    40/320 for any unknown symbol.
+    """
+    uniq = set(symbols)
+    wfc = max(_RECOMMENDED_CUTOFFS.get(s, (40, 320))[0] for s in uniq)
+    rho = max(_RECOMMENDED_CUTOFFS.get(s, (40, 320))[1] for s in uniq)
+    return wfc, rho
 
 
 def _initial_magmoms(symbols):
@@ -127,7 +167,8 @@ _BINARY_LATTICE = {
 
 
 def _make_calculator(pseudopotentials, directory, magnetic=False, kpts=(6, 6, 6),
-                     tight_scf=False, isolated_atom=False, tot_mag_per_cell=None):
+                     tight_scf=False, isolated_atom=False, tot_mag_per_cell=None,
+                     ecutwfc=None, ecutrho=None):
     """Create an Espresso calculator for SCF.
 
     For magnetic systems we use a smaller smearing (0.01 Ry vs 0.02) so the
@@ -146,11 +187,18 @@ def _make_calculator(pseudopotentials, directory, magnetic=False, kpts=(6, 6, 6)
     the prior attempt.
     """
     profile = EspressoProfile(command=QE_BIN, pseudo_dir=PSEUDO_DIR)
+    # Cutoffs default to the safe-for-everything 40/320 only if caller did not
+    # pick element-aware values. _cutoffs_for_cell() should be used at every
+    # call site that knows which species are in the cell.
+    if ecutwfc is None:
+        ecutwfc = 40
+    if ecutrho is None:
+        ecutrho = 320
     input_data = {
         "control": {"tprnfor": True, "tstress": True},
         "system": {
-            "ecutwfc": 40,
-            "ecutrho": 320,
+            "ecutwfc": ecutwfc,
+            "ecutrho": ecutrho,
         },
         "electrons": {"conv_thr": 1.0e-8 if tight_scf else 1.0e-6,
                       "electron_maxstep": 200},
@@ -199,8 +247,10 @@ def _isolated_atom_energy(symbol, pseudo, calc_dir, magnetic):
         atoms.set_initial_magnetic_moments(_initial_magmoms([symbol]))
     # Γ-only is exact for a single atom in a non-periodic box; default 6×6×6
     # samples 216 redundant k-points and dominates the per-element wall time.
+    ecutwfc, ecutrho = _cutoffs_for_cell([symbol])
     atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic,
-                                  kpts=(1, 1, 1), isolated_atom=True)
+                                  kpts=(1, 1, 1), isolated_atom=True,
+                                  ecutwfc=ecutwfc, ecutrho=ecutrho)
     try:
         t0 = time.time()
         e = atoms.get_potential_energy()
@@ -227,12 +277,14 @@ def _run_eos_point(symbol, pseudo, ase_lat, a, calc_dir, magnetic, strain_idx):
         # Denser k-mesh for magnetic elements: a sparse 3×3×3 on the 2×2×2
         # supercell lets the Fermi surface topology shift between EOS strain
         # points, so adjacent points can converge to *different* magnetic
-        # states. The Birch–Murnaghan fit then reads B as the envelope of
-        # mixed phases (Fe came out 31.5 vs. lit. ~170 GPa). 5×5×5 keeps
-        # the magnetic state consistent across the EOS sweep.
-        eos_kpts = (5, 5, 5) if magnetic else (3, 3, 3)
+        # states. 5×5×5 (≈10×10×10 on primitive) was still too sparse for
+        # FM 3d metals — Co's debug session (2026-06-03) traced kinks in
+        # E(V) to k-point sampling noise, fixed by 9×9×9 here.
+        eos_kpts = (9, 9, 9) if magnetic else (3, 3, 3)
+        ecutwfc, ecutrho = _cutoffs_for_cell([symbol])
         atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic,
-                                      kpts=eos_kpts, tot_mag_per_cell=tot_mag)
+                                      kpts=eos_kpts, tot_mag_per_cell=tot_mag,
+                                      ecutwfc=ecutwfc, ecutrho=ecutrho)
         t0 = time.time()
         e = atoms.get_potential_energy()
         v = atoms.get_volume()
@@ -391,8 +443,11 @@ def _elastic_constants(symbol, a0, work_dir):
     if magnetic:
         atoms.set_initial_magnetic_moments(_initial_magmoms(atoms.get_chemical_symbols()))
     calc_dir = os.path.join(work_dir, "elastic_base")
+    ecutwfc, ecutrho = _cutoffs_for_cell([symbol])
+    elastic_kpts = (5, 5, 5) if magnetic else (3, 3, 3)
     atoms.calc = _make_calculator({symbol: pseudo}, calc_dir, magnetic=magnetic,
-                                  kpts=(3, 3, 3), tight_scf=True)
+                                  kpts=elastic_kpts, tight_scf=True,
+                                  ecutwfc=ecutwfc, ecutrho=ecutrho)
 
     try:
         t0 = time.time()
@@ -413,8 +468,9 @@ def _elastic_constants(symbol, a0, work_dir):
         atoms_strained.set_initial_magnetic_moments(_initial_magmoms(atoms_strained.get_chemical_symbols()))
     calc_dir_s = os.path.join(work_dir, "elastic_strain")
     atoms_strained.calc = _make_calculator({symbol: pseudo}, calc_dir_s,
-                                           magnetic=magnetic, kpts=(3, 3, 3),
-                                           tight_scf=True)
+                                           magnetic=magnetic, kpts=elastic_kpts,
+                                           tight_scf=True,
+                                           ecutwfc=ecutwfc, ecutrho=ecutrho)
 
     try:
         t0 = time.time()
@@ -514,7 +570,9 @@ def _run_binary_pair(sym_i, sym_j, work_dir, e_per_atom):
     pseudopotentials = {sym_i: pseudo_i, sym_j: pseudo_j}
     calc_dir = os.path.join(work_dir, f"binary_{sym_i}_{sym_j}")
     os.makedirs(calc_dir, exist_ok=True)
-    atoms.calc = _make_calculator(pseudopotentials, calc_dir, magnetic=magnetic)
+    ecutwfc, ecutrho = _cutoffs_for_cell([sym_i, sym_j])
+    atoms.calc = _make_calculator(pseudopotentials, calc_dir, magnetic=magnetic,
+                                  ecutwfc=ecutwfc, ecutrho=ecutrho)
 
     try:
         t0 = time.time()

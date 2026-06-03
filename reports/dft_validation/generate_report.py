@@ -463,6 +463,41 @@ def build_html():
   was replaced with 2.89 Å (δ-Mn/γ-Mn proxy).
 </div>
 
+<div class="panel ok">
+  <strong>Cutoff fix applied 2026-06-03 — magnetic-element B values
+  re-evaluated and tables below are POST-fix.</strong>
+  The Co bulk modulus issue (1012 GPa vs lit 180) traced to a basis-set
+  incompleteness artifact: the original
+  <code>ecutwfc = 40 Ry</code> / <code>ecutrho = 320 Ry</code> was well
+  below the recommended minimum for the 3d-magnetic pseudopotentials
+  (Co rec 60/445; Fe rec 71/496; Ni rec 75/476). The fix is committed in
+  <code>src/NNIP/dft_reference.py</code> as
+  <code>_RECOMMENDED_CUTOFFS</code> per element + magnetic EOS k-points
+  bumped 5×5×5 → 9×9×9 + Co <code>a_guess</code> 2.51 → 2.48. Magnetic
+  rows were regenerated; binary pairs containing any magnetic element
+  (45 pairs) were re-run with the new <code>e_bulk_per_atom</code>
+  references. Bulk-modulus improvements:
+  <table style="max-width:560px; margin:10px 0;">
+    <thead><tr><th>Element</th><th class="num">Pre-fix B</th><th class="num">Post-fix B</th><th class="num">Lit B</th><th class="num">Pre Δ%</th><th class="num">Post Δ%</th></tr></thead>
+    <tbody>
+      <tr class="ok"><td>Co</td><td class="num">1012</td><td class="num">222.6</td><td class="num">180</td><td class="num">+462%</td><td class="num">+24%</td></tr>
+      <tr class="ok"><td>Fe</td><td class="num">316</td><td class="num">221.6</td><td class="num">170</td><td class="num">+86%</td><td class="num">+30%</td></tr>
+      <tr class="ok"><td>Ni</td><td class="num">237</td><td class="num">200.3</td><td class="num">186</td><td class="num">+27%</td><td class="num">+8%</td></tr>
+      <tr class="warn"><td>Cr</td><td class="num">271</td><td class="num">256.7</td><td class="num">160</td><td class="num">+69%</td><td class="num">+60%</td></tr>
+      <tr class="warn"><td>Mn</td><td class="num">161</td><td class="num">166.1</td><td class="num">120</td><td class="num">+34%</td><td class="num">+38%</td></tr>
+    </tbody>
+  </table>
+  The residual ~20% B overshoot for Co/Fe/Ni vs experiment is intrinsic
+  PBE bias for 3d ferromagnets, not a parameter issue. Cr did not improve
+  meaningfully because its G-AFM SCF collapses to NM (per-atom moment
+  ±0.01 μ<sub>B</sub> vs target 0.5-0.8) even with seed amplitudes raised
+  to 3.0 μ<sub>B</sub>; the 0.01 Ry MV smearing likely exceeds Cr's ~10
+  meV/atom AFM stabilization. See Section 6 recommendation #1. Mn's small
+  change is consistent with its already-near-recommended cutoff (87% pre-fix). The 15 previously-missing magnetic-containing pairs
+  (Al-Co, Al-Cr, Al-Fe, Al-Mn, Al-Ni, Co-Cr, Co-Fe, Co-Mn, Cr-Fe, Cu-Fe,
+  Cu-Mn, Cu-Ni, Mg-Mn, Mg-Ni, Mo-Ni) are now populated.
+</div>
+
 <h2>Contents</h2>
 <div class="toc">
   <a href="#method">1. Method recap</a><br>
@@ -490,10 +525,17 @@ def build_html():
 </p>
 <p>
   Lattice parameter is fixed at the unrelaxed average
-  <em>a</em><sub>mix</sub> = (a<sub>i</sub> + a<sub>j</sub>) / 2. Plane-wave
-  cutoff 40 Ry, charge cutoff 320 Ry, MV smearing 0.02 Ry, 6×6×6
-  Monkhorst–Pack mesh. Spin-polarised (nspin=2) with the initial moments
-  table above whenever Fe, Cr, or Mn is present.
+  <em>a</em><sub>mix</sub> = (a<sub>i</sub> + a<sub>j</sub>) / 2.
+  Plane-wave cutoffs are <strong>per-element</strong>
+  (<code>_RECOMMENDED_CUTOFFS</code>): non-magnetics 40/320 Ry, Mn 50/400,
+  Cr 60/480, Co 70/560, Fe 75/600, Ni 80/640 — each at or above its
+  pseudopotential's "Suggested minimum cutoff". For mixed-element cells
+  the stricter cutoff wins. MV smearing 0.02 Ry (0.01 Ry for magnetic),
+  6×6×6 Monkhorst–Pack mesh for binary pairs, 9×9×9 for magnetic EOS,
+  5×5×5 for magnetic elastic. Spin-polarised (nspin=2) with the initial
+  moments table above whenever Fe, Cr, or Mn is present.
+  <strong>Tables and Δ statistics below are POST-fix as of the
+  2026-06-03 regeneration.</strong>
 </p>
 <div class="panel warn">
   <strong>Structural caveat that still applies.</strong> The cell is held at
@@ -636,6 +678,15 @@ def build_html():
 <h2 id="recommendations">6. Remaining recommendations</h2>
 <div class="panel ok">
 <ol>
+  <li><strong>Cr AFM lock — UNRESOLVED.</strong> Seed amplitudes 0.6,
+      1.5, and 3.0 μ<sub>B</sub> all collapsed to NM during SCF iteration
+      (initial response gives abs ≈ 24 μ<sub>B</sub>, decays to ≈ 0.1 by
+      iter 14). BCC-Cr's AFM lies only ~10 meV/atom below NM, and the
+      current 0.01 Ry MV smearing (≈ 136 meV) likely washes out the
+      stabilization gap. Next things to try: (a) drop Cr's smearing to
+      0.005 Ry, (b) DFT+U on Cr d states, (c) fixed-moment-per-sublattice
+      constraint. Until then, Cr's B in the table above reflects an NM
+      SCF (~256 GPa vs lit 160).</li>
   <li><strong>Add cell relaxation.</strong> Pairs with large volume mismatch
       (Cu-Zn, Cu-Ti, Al-Zn) still sit well above same-cell DFT literature
       because <em>a</em><sub>mix</sub> = (a<sub>i</sub>+a<sub>j</sub>)/2 is
