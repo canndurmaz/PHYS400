@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Final Presentation Transcript — Can Durmaz (PHYS 400)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
 <style>
   :root {
     --deepred: #8C1414;
@@ -203,7 +200,7 @@
 
 <header>
   <h1>Final Presentation Transcript &mdash; Can Durmaz</h1>
-  <div class="meta">PHYS&nbsp;400 &middot; jury version &middot; 13&nbsp;slides &middot; target&nbsp;~11:00</div>
+  <div class="meta">PHYS&nbsp;400 &middot; jury version &middot; 11&nbsp;slides &middot; target&nbsp;~10:15</div>
 </header>
 
 <main>
@@ -215,7 +212,7 @@
   denote short separations between argument segments. Small-caps mark
   <span class="term">technical terms</span> on first introduction. The grey callouts beneath each
   segment are procedural notes for the speaker, not part of the spoken text. The deck closes on
-  Slide&nbsp;13; the bibliography frame is shown silently while the jury formulates questions.
+  Slide&nbsp;11; the bibliography frame is shown silently while the jury formulates questions.
 </div>
 
 <div class="intro abbrev">
@@ -250,68 +247,54 @@
   <div class="tip"><strong>Procedure:</strong> Maintain a neutral opening posture; await acknowledgement before advancing the slide.</div>
 </section>
 
-<!-- Slide 2 -->
+<!-- Slide 2 (merged: former slides 2 + 3) -->
 <section class="slide">
   <div class="slide-header">
     <span class="badge">2</span>
-    <span class="slide-title">Motivation &mdash; Elastic Constants as Design Criteria</span>
-    <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
+    <span class="slide-title">Why Two Elastic Constants Govern Structural Design</span>
+    <span class="timing">~65&nbsp;s &middot; ~150&nbsp;words</span>
   </div>
   <div class="transcript">
     The selection of a structural alloy is principally governed by its elastic
-    response, which for an isotropic continuum is summarised by two constants:
-    <em>Young's modulus E</em> and <em>Poisson's ratio &nu;</em>. The table on
-    the right enumerates representative engineering domains in which these
-    quantities determine the design outcome &mdash; aerospace structures, turbine
-    components, biomedical implants, automotive structures, civil engineering,
-    and precision electromechanical devices.
+    response, summarised by two constants: <em>Young's modulus E</em> &mdash;
+    the stiffness &mdash; and <em>Poisson's ratio &nu;</em>. The table on the
+    right shows where these decide the design outcome: aerospace structures,
+    turbine components, biomedical implants, automotive structures, civil
+    engineering, and precision electromechanical devices. Between them, these
+    two numbers set beam deflection, buckling load, natural frequency, the bulk
+    modulus through <em>K = E / 3(1 &minus; 2&nu;)</em>, stress concentration,
+    and fracture toughness.
     <span class="pause">(pause)</span>
-    Direct experimental characterisation of these constants &mdash; via
-    single-crystal tensile testing combined with ultrasonic measurement &mdash;
-    remains costly in both time and sample preparation. Atomistic simulation
-    offers a substantially less expensive alternative, <em>provided that an
-    accurate interatomic potential is available</em> for the alloy system in
-    question. This condition motivates the entire framework presented here.
+    For a cubic crystal both reduce analytically to two independent stiffness
+    constants, <em>C<sub>11</sub></em> and <em>C<sub>12</sub></em> &mdash; the
+    quantities this work targets from first principles &mdash; subject to the
+    <span class="term">Born&ndash;Cauchy</span> stability criterion
+    <em>C<sub>11</sub>&nbsp;&gt;&nbsp;C<sub>12</sub></em>, which recurs as the
+    principal verification gate in Stage&nbsp;5b. Measuring these constants
+    experimentally is costly; atomistic simulation is far cheaper &mdash;
+    <em>provided an accurate interatomic potential exists</em> for the alloy.
+    That condition motivates the whole framework.
   </div>
-  <div class="tip"><strong>Procedure:</strong> Reference the table by gesture; do not enumerate its rows.</div>
+  <div class="tip"><strong>Procedure:</strong> Reference the table by gesture; do not enumerate rows. State the Born&ndash;Cauchy inequality explicitly &mdash; it is the closing verification gate.</div>
 </section>
 
 <!-- Slide 3 -->
 <section class="slide">
   <div class="slide-header">
     <span class="badge">3</span>
-    <span class="slide-title">Role of (E, &nu;) in Mechanical Design</span>
-    <span class="timing">~55&nbsp;s &middot; ~130&nbsp;words</span>
-  </div>
-  <div class="transcript">
-    A brief enumeration clarifies why these two constants warrant the
-    computational effort. Young's modulus enters the classical expressions for
-    <em>beam deflection, Euler buckling, natural frequency, and Hertzian contact
-    pressure</em>. Poisson's ratio determines the <em>bulk modulus</em> through
-    the relation <em>K = E divided by 3(1 &minus; 2&nu;)</em> &mdash; a quantity
-    that diverges as &nu; approaches one-half &mdash; together with the
-    plane-stress/plane-strain regime boundaries, stress concentration factors,
-    and fracture-toughness corrections.
-    <span class="pause">(pause)</span>
-    For a cubic crystal the two engineering constants reduce analytically to two
-    independent stiffness constants, <em>C<sub>11</sub></em> and
-    <em>C<sub>12</sub></em>, subject to the
-    <span class="term">Born&ndash;Cauchy</span> mechanical-stability criterion
-    <em>C<sub>11</sub>&nbsp;&gt;&nbsp;C<sub>12</sub></em>. This inequality
-    will recur as the principal verification gate in Stage&nbsp;5b.
-  </div>
-  <div class="tip"><strong>Procedure:</strong> The Born&ndash;Cauchy inequality should be stated explicitly; it is the criterion invoked in the closing verification.</div>
-</section>
-
-<!-- Slide 4 -->
-<section class="slide">
-  <div class="slide-header">
-    <span class="badge">4</span>
     <span class="slide-title">Atomistic Modelling &mdash; Interatomic Potentials and DFT</span>
-    <span class="timing">~65&nbsp;s &middot; ~150&nbsp;words</span>
+    <span class="timing">~60&nbsp;s &middot; ~140&nbsp;words</span>
   </div>
   <div class="transcript">
-    An <em>interatomic potential</em> is a closed-form approximation of the
+    Before the method, two terms for the jury. An <em>interatomic potential</em>
+    is simply a fast, approximate formula for the energy &mdash; and hence the
+    forces &mdash; between atoms; <em>MEAM</em> is one such formula, physically
+    tuned for metals. <span class="term">Density-functional theory</span>, or
+    DFT, is the slow but accurate quantum-mechanical alternative we trust as the
+    reference. The whole framework is about making the fast formula reproduce
+    the accurate one.
+    <span class="pause">(pause)</span>
+    More precisely, an <em>interatomic potential</em> is a closed-form approximation of the
     many-body potential energy of a system of atoms; once specified, it yields
     forces by differentiation and permits classical molecular-dynamics
     simulation at scales inaccessible to first-principles methods. The
@@ -332,10 +315,10 @@
   <div class="tip"><strong>Procedure:</strong> Underline the accuracy/scale trade-off explicitly &mdash; it is the rationale for the entire pipeline.</div>
 </section>
 
-<!-- Slide 5 -->
+<!-- Slide 4 -->
 <section class="slide">
   <div class="slide-header">
-    <span class="badge">5</span>
+    <span class="badge">4</span>
     <span class="slide-title">The MEAM Coverage Problem</span>
     <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
   </div>
@@ -343,7 +326,7 @@
     The principal obstacle addressed in this work is the fragmented coverage of
     the published MEAM literature. The table summarises four representative
     libraries; each is limited to a small element subset, and no single file
-    spans the nine elements of the Al\,7075 specification.
+    spans the nine elements of the Al&nbsp;7075 specification.
     <span class="pause">(pause)</span>
     Direct merging is not admissible: the
     <span class="term">cross-interaction parameters</span> between elements
@@ -359,10 +342,10 @@
   <div class="tip"><strong>Procedure:</strong> Reference the table once by gesture; the &ldquo;merged&rdquo; row is the visual answer to the problem.</div>
 </section>
 
-<!-- Slide 6 -->
+<!-- Slide 5 -->
 <section class="slide">
   <div class="slide-header">
-    <span class="badge">6</span>
+    <span class="badge">5</span>
     <span class="slide-title">Proposed Methodology &mdash; Five-Stage Pipeline</span>
     <span class="timing">~75&nbsp;s &middot; ~170&nbsp;words</span>
   </div>
@@ -389,10 +372,10 @@
   <div class="tip"><strong>Procedure:</strong> The longest segment of the talk. Indicate each stage with the laser pointer in turn; do not return to earlier stages.</div>
 </section>
 
-<!-- Slide 7 -->
+<!-- Slide 6 -->
 <section class="slide">
   <div class="slide-header">
-    <span class="badge">7</span>
+    <span class="badge">6</span>
     <span class="slide-title">Stage 1 &mdash; Alloy Configuration Generation</span>
     <span class="timing">~35&nbsp;s &middot; ~80&nbsp;words</span>
   </div>
@@ -408,10 +391,10 @@
   <div class="tip"><strong>Procedure:</strong> Brief slide; advance without lingering.</div>
 </section>
 
-<!-- Slide 8 -->
+<!-- Slide 7 -->
 <section class="slide">
   <div class="slide-header">
-    <span class="badge">8</span>
+    <span class="badge">7</span>
     <span class="slide-title">Stage 2 &mdash; Molecular-Dynamics Elastic Database</span>
     <span class="timing">~60&nbsp;s &middot; ~135&nbsp;words</span>
   </div>
@@ -435,58 +418,40 @@
   <div class="tip"><strong>Procedure:</strong> The Mg/Zn cluster justifies the choice of training targets &mdash; state it explicitly.</div>
 </section>
 
+<!-- Slide 8 (merged: former slides 9 + 10) -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">8</span>
+    <span class="slide-title">Stage 3&ndash;4 &mdash; DFT References &rarr; MEAM Initialisation</span>
+    <span class="timing">~70&nbsp;s &middot; ~155&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    Stage&nbsp;3 is the first-principles reference layer. Quantum Espresso 7.5,
+    driven through the Atomic Simulation Environment, runs all self-consistent
+    calculations, equation-of-state scans, and elastic-constant evaluations
+    &mdash; plane-wave cut-off forty Rydberg, Marzari&ndash;Vanderbilt smearing,
+    a six-cubed Monkhorst&ndash;Pack mesh, with spin polarisation for iron,
+    chromium, and manganese. For each element a seven-point
+    <span class="term">equation-of-state</span> scan, fitted with
+    Birch&ndash;Murnaghan, yields the lattice constant, cohesive energy, and
+    bulk modulus; for each binary pair a single calculation gives the formation
+    energy. The heat map summarises sixty-six pairs, whose signed values seed the
+    MEAM cross-terms directly.
+    <span class="pause">(pause)</span>
+    Stage&nbsp;4 then closes the formal gap: the MEAM
+    <span class="term">screening exponent</span> &alpha; follows analytically
+    from each element's DFT triple, by the expression in the box. Together with
+    the seeded cross-terms this gives a complete twelve-element library in about
+    seventy milliseconds. Only the &alpha;-manganese equation of state failed to
+    converge; a relaxed body-centred-cubic approximation stands in.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Seeding the cross-terms directly is the hand-off from DFT to MEAM. Do not derive &alpha; on the board &mdash; cite its MEAM origin.</div>
+</section>
+
 <!-- Slide 9 -->
 <section class="slide">
   <div class="slide-header">
     <span class="badge">9</span>
-    <span class="slide-title">Stage 3 &mdash; Quantum Espresso DFT References</span>
-    <span class="timing">~65&nbsp;s &middot; ~145&nbsp;words</span>
-  </div>
-  <div class="transcript">
-    Stage&nbsp;3 constitutes the first-principles reference layer. Quantum
-    Espresso version 7.5 is driven through the Atomic Simulation Environment;
-    a single process pool dispatches all self-consistent calculations,
-    equation-of-state scans, and elastic-constant evaluations. The plane-wave
-    cut-off is forty Rydberg, with Marzari&ndash;Vanderbilt smearing and a
-    six-by-six-by-six Monkhorst&ndash;Pack mesh; spin polarisation is
-    enabled automatically for iron, chromium, and manganese.
-    <span class="pause">(pause)</span>
-    For each element a seven-point <span class="term">equation-of-state</span>
-    scan is fitted with the Birch&ndash;Murnaghan equation, yielding the
-    equilibrium lattice constant, the cohesive energy, and the bulk modulus.
-    For each binary pair a single self-consistent calculation on the
-    <em>L1<sub>2</sub></em> or <em>B2</em> reference structure yields the
-    formation energy. The heat map summarises sixty-six binary pairs; signed
-    values seed the MEAM cross-term energies directly, without further
-    parameter fitting.
-  </div>
-  <div class="tip"><strong>Procedure:</strong> The closing statement &mdash; seeding the cross-terms directly &mdash; is the formal hand-off from DFT to MEAM.</div>
-</section>
-
-<!-- Slide 10 -->
-<section class="slide">
-  <div class="slide-header">
-    <span class="badge">10</span>
-    <span class="slide-title">Stage 4 &mdash; MEAM Single-Element Initialisation</span>
-    <span class="timing">~40&nbsp;s &middot; ~90&nbsp;words</span>
-  </div>
-  <div class="transcript">
-    Stage&nbsp;4 closes the formal gap between DFT and MEAM. For each element,
-    the MEAM <span class="term">screening exponent</span> &alpha; is recovered
-    analytically from the DFT triple &mdash; equilibrium lattice constant,
-    cohesive energy, and bulk modulus &mdash; through the closed-form
-    expression given on the left. Together with the DFT-seeded cross-term
-    energies of Stage&nbsp;3, these constants yield a complete twelve-element
-    MEAM library. The &alpha;-manganese equation of state did not converge
-    cleanly; a relaxed body-centred-cubic approximation is used in its place.
-  </div>
-  <div class="tip"><strong>Procedure:</strong> Do not derive the &alpha; expression on the board; cite its origin in MEAM convention.</div>
-</section>
-
-<!-- Slide 11 -->
-<section class="slide">
-  <div class="slide-header">
-    <span class="badge">11</span>
     <span class="slide-title">Stage 5a &mdash; Composition Surrogate</span>
     <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
   </div>
@@ -502,17 +467,17 @@
     <em>C<sub>11</sub></em> and <em>C<sub>12</sub></em>, with a five-seed deep
     ensemble for uncertainty quantification. On the thirty-percent held-out
     split, the coefficient of determination for <em>E</em> is <em>0.77</em>
-    and for <em>&nu;</em> is <em>0.52</em>. On the Al\,7075 preset the surrogate
+    and for <em>&nu;</em> is <em>0.52</em>. On the Al&nbsp;7075 preset the surrogate
     returns <em>75.5 gigapascals</em> and a Poisson's ratio of <em>0.334</em>,
     consistent with the published reference range.
   </div>
   <div class="tip"><strong>Procedure:</strong> Reference the deployed application image; do not propose a live demonstration.</div>
 </section>
 
-<!-- Slide 12 -->
+<!-- Slide 10 -->
 <section class="slide">
   <div class="slide-header">
-    <span class="badge">12</span>
+    <span class="badge">10</span>
     <span class="slide-title">Stage 5b &mdash; NN-Driven MEAM Parameter Optimisation</span>
     <span class="timing">~65&nbsp;s &middot; ~150&nbsp;words</span>
   </div>
@@ -538,10 +503,10 @@
   <div class="tip"><strong>Procedure:</strong> State the verification numbers without qualifying language; the closing slide addresses the interpretation.</div>
 </section>
 
-<!-- Slide 13 -->
+<!-- Slide 11 -->
 <section class="slide">
   <div class="slide-header">
-    <span class="badge">13</span>
+    <span class="badge">11</span>
     <span class="slide-title">Discussion and Outlook</span>
     <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
   </div>
@@ -567,7 +532,7 @@
 </section>
 
 <footer>
-  total target ~11:00 &middot; ~1580 words &middot; pace ~145 WPM &middot; bibliography frame shown silently
+  total target ~10:15 &middot; ~1395 words &middot; pace ~136 WPM &middot; bibliography frame shown silently
 </footer>
 
 </main>

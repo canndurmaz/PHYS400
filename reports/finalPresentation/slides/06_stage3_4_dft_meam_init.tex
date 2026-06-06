@@ -1,7 +1,8 @@
 % =====================================================================
-% Slide 9: Stage 3 -- Quantum Espresso DFT references
+% Slide 9: Stage 3-4 -- DFT references -> MEAM single-element init
+% (Stage 4's alpha table dropped: its a0/Ecoh duplicate the table below)
 % =====================================================================
-\begin{frame}{Stage 3: Quantum Espresso DFT References}
+\begin{frame}{Stage 3--4: DFT References $\to$ MEAM Initialisation}
 \begin{columns}[T]
 \column{0.45\textwidth}
 \centering
@@ -29,10 +30,19 @@ Mo & BCC     & 3.169 &10.353 & 280.8 \\
 
 \column{0.54\textwidth}
 \centering
-\includegraphics[height=5.7cm,keepaspectratio]{figures/formation_energy_heatmap.png}\\[-0.25em]
-\scriptsize Binary formation energies $E_{\mathrm{form}}(i, j)$
-(eV/atom). Negative values indicate exothermic mixing; positive
-values indicate limited mutual solubility. These references seed
-the MEAM cross-term parameters.
+\includegraphics[height=3.7cm,keepaspectratio]{figures/formation_energy_heatmap.png}\\[-0.3em]
+\scriptsize Binary formation energies $E_{\mathrm{form}}(i, j)$ (eV/atom):
+negative $=$ exothermic mixing, positive $=$ limited solubility ---
+these seed the MEAM cross-terms.
+
+\smallskip
+\begin{block}{Stage 4 --- single-element initialisation}
+\scriptsize
+Screening exponent from each DFT triple,\
+$\alpha = a_{0}\sqrt{9 B \Omega / E_{\mathrm{coh}}}$
+($\Omega$: cell volume)
+$\to$ complete 12-element MEAM library ($\sim\!70$\,ms, cached).
+$\alpha$-Mn EOS did not converge $\to$ relaxed-BCC approximation.
+\end{block}
 \end{columns}
 \end{frame}

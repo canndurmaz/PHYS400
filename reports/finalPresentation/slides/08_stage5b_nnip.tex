@@ -25,20 +25,18 @@ $10^{4}$ steps.
 \centering
 \includegraphics[width=0.96\linewidth]{figures/nnip_verification_errors.png}\\[-0.2em]
 
+\begin{block}{Result}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{0.88}
+\renewcommand{\arraystretch}{0.9}
 \begin{tabular}{lr}
-\toprule
-Held-out alloys / pass stability filter   & 30 / 11 \\
-Within 20\,\% of MD on $E$ / on $\nu$       & 4 / 4 \\
-Median error on $E$ / $\nu$ (physical)    & 23\,\% / 26\,\% \\
-\bottomrule
-\end{tabular}\\[0.25em]
-
-\textbf{Verification outcome.}\\
-\scriptsize Of the 30 held-out alloys, 19 violate the Born--Cauchy
-stability criterion. Among the 11 stable predictions, 4 satisfy
-the 20\,\% engineering tolerance on both $E$ and $\nu$.
+Held-out alloys $\to$ pass stability filter & 30 $\to$ 11 \\
+Within 20\,\% of MD on $E$ / on $\nu$         & 4 / 4 \\
+Median error on $E$ / $\nu$ (physical)        & 23\,\% / 26\,\% \\
+\end{tabular}\\[0.3em]
+\textbf{30 held-out $\to$ 11 stable $\to$ 4 within tolerance.}\\
+\scriptsize 19 of 30 violate the Born--Cauchy criterion --- the
+remaining gap motivates the Stage~5b extensions (next slide).
+\end{block}
 \end{columns}
 \end{frame}

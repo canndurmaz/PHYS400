@@ -1,93 +1,46 @@
 % =====================================================================
-% Slide 2: Motivation -- engineering significance of (E, nu)
+% Slide 2: Motivation -- why two elastic constants matter (merged)
 % =====================================================================
-\begin{frame}{Motivation: Elastic Constants as Primary Design Criteria}
+\begin{frame}{Why Two Elastic Constants Govern Structural Design}
 \begin{columns}[T]
-\column{0.42\textwidth}
-\textbf{Two elastic constants govern the structural response of
-every load-bearing component:}
-
-\smallskip
+\column{0.44\textwidth}
+\textbf{Every load-bearing part is sized by two numbers:}
 \begin{itemize}\small
-  \item $E = \sigma/\varepsilon$ \\
-        \scriptsize Young's modulus --- uniaxial stiffness (GPa).
-  \item $\nu = -\varepsilon_{\text{lat}}/\varepsilon_{\text{axial}}$ \\
-        \scriptsize Poisson's ratio --- transverse contraction.
+  \item $E = \sigma/\varepsilon$ --- \scriptsize Young's modulus: stiffness (GPa).
+  \item \small $\nu = -\varepsilon_{\text{lat}}/\varepsilon_{\text{axial}}$ --- \scriptsize Poisson's ratio: transverse contraction.
 \end{itemize}
 
 \smallskip
-For cubic crystals these derive analytically from the two
-independent stiffness constants $C_{11}$ and $C_{12}$ ---
-the quantities targeted from first principles in this work.
+\small For cubic crystals both follow from the two stiffness constants
+$C_{11}$ and $C_{12}$ --- \textbf{the quantities this work targets from
+first principles}.
 
-\column{0.57\textwidth}
+\medskip
+\scriptsize\textbf{They set:} beam deflection $\delta\!\propto\!1/E$,\,
+buckling load $\propto\!E$,\, natural frequency $\propto\!\sqrt{E/\rho}$;\,
+bulk modulus $K=E/[3(1-2\nu)]$, stress concentration, toughness.\\[0.3em]
+\textit{Stability (cubic, Born--Cauchy): $C_{11} > C_{12}$.}
+
+\column{0.55\textwidth}
 \begin{block}{Representative structural applications}
 \scriptsize
 \setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.05}
-\begin{tabular}{p{2.2cm}lrr}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{p{2.3cm}lrr}
 \toprule
 Application & Material & $E$ (GPa) & $\nu$ \\
 \midrule
-Aerospace fuselage    & Al\,7075         & 71--72 & 0.33 \\
-Turbine disk          & Inconel 718      & 200    & 0.29 \\
-Orthopaedic implant   & Ti\,6Al--4V      & 110    & 0.34 \\
-Automotive structure  & Mg AZ91          & 45     & 0.35 \\
-Structural steel      & Mild steel       & 200    & 0.30 \\
-MEMS resonator        & Si (single xtal) & 130    & 0.28 \\
-Rolling-element bearing & 52100 steel    & 210    & 0.30 \\
+Aerospace fuselage    & \textbf{Al\,7075}    & \textbf{71--72} & \textbf{0.33} \\
+Turbine disk          & Inconel 718          & 200    & 0.29 \\
+Orthopaedic implant   & Ti\,6Al--4V          & 110    & 0.34 \\
+Automotive structure  & Mg AZ91              & 45     & 0.35 \\
+Structural steel      & Mild steel           & 200    & 0.30 \\
+MEMS resonator        & Si (single xtal)     & 130    & 0.28 \\
 \bottomrule
 \end{tabular}
 \end{block}
-\end{columns}
-\end{frame}
-
-% =====================================================================
-% Slide 3: (E, nu) in mechanical design
-% =====================================================================
-\begin{frame}{Role of $(E, \nu)$ in Mechanical Design}
-\begin{columns}[T]
-\column{0.50\textwidth}
-\textbf{Quantities governed by $E$:}
-\begin{itemize}\scriptsize
-  \item Beam deflection $\delta = FL^{3}/(3EI)$
-  \item Euler buckling $P_{\mathrm{cr}} = \pi^{2}EI/(KL)^{2}$
-  \item Natural frequency $\omega_{n} \propto \sqrt{E/\rho}$
-  \item Hertzian contact pressure $\propto E^{*}$
-\end{itemize}
-
-\smallskip
-\textbf{Quantities governed by $\nu$:}
-\begin{itemize}\scriptsize
-  \item Bulk modulus $K = E/[3(1-2\nu)]$
-  \item Plane-stress vs.\ plane-strain regimes
-  \item Stress concentration at geometric discontinuities
-  \item Fracture toughness $\propto (1-\nu^{2})$
-\end{itemize}
-
-\column{0.49\textwidth}
-\begin{block}{Representative ranges}
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrr}
-\toprule
-Material           & $E$ (GPa) & $\nu$ \\
-\midrule
-Polymers           & 0.5 -- 3  & 0.40 \\
-Mg alloys          & 40 -- 45  & 0.35 \\
-\textbf{Al\,7075}  & \textbf{70 -- 75} & \textbf{0.33} \\
-Ti 6Al--4V         & 110       & 0.34 \\
-Steel              & 200       & 0.30 \\
-Rubber             & $\sim$0.01 & $\to 0.5$ \\
-\bottomrule
-\end{tabular}
-\end{block}
-
-\smallskip
-\begin{block}{Mechanical stability criteria}
-\scriptsize
-Isotropic continuum: $-1 < \nu < 0.5$.\\
-Cubic crystal (Born--Cauchy): $C_{11} > C_{12}$.
-\end{block}
+\centering\scriptsize
+Same two constants span polymers ($\nu\!\to\!0.4$) to steel --- and
+fix whether a design survives load.
 \end{columns}
 \end{frame}

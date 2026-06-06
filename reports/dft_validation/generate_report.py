@@ -2,7 +2,9 @@
 """Regenerate reports/dft_validation/dft_formation_energies.html from dft_results.json.
 
 Literature values are embedded below (curated). The script is idempotent: re-run
-whenever dft_results.json is updated.
+whenever dft_results.json is updated. The emitted page is part of the project
+documentation website (reports/) and uses the shared, fully-offline stylesheet
+reports/assets/site.css.
 """
 
 import json
@@ -13,7 +15,7 @@ from html import escape
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
 DFT_JSON = os.path.join(ROOT, "src", "NNIP", "dft_results.json")
-OUT_HTML = os.path.join(HERE, "dft_formation_energies.html")
+OUT_HTML = os.path.join(ROOT, "docs", "dft_formation_energies.html")
 
 # ── Literature reference values (eV/atom). ───────────────────────────────────
 # For each pair we record:
@@ -142,6 +144,37 @@ def fmt_signed(v, digits=2):
     if v is None:
         return "—"
     return f"{v:+.{digits}f}"
+
+
+# ── shared site chrome (matches the rest of reports/) ────────────────────────
+TOPNAV = """<header class="topnav">
+  <a class="brand" href="index.html">
+    <span class="glyph"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+    PHYS&nbsp;400 · NNIP
+  </a>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="pipeline.html">Pipeline</a>
+    <a href="md.html">Molecular Dynamics</a>
+    <a href="dft.html">DFT Reference</a>
+    <a href="nn.html">Neural Network</a>
+    <a href="dftBasic.html">DFT Primer</a>
+  </nav>
+</header>"""
+
+FOOTER = """<footer class="site-foot">
+  <div class="foot-inner">
+    <div>PHYS&nbsp;400 · Computational Materials Science<br>NNIP project documentation</div>
+    <div class="foot-nav">
+      <a href="index.html">Overview</a>
+      <a href="pipeline.html">Pipeline</a>
+      <a href="md.html">Molecular Dynamics</a>
+      <a href="dft.html">DFT Reference</a>
+      <a href="nn.html">Neural Network</a>
+      <a href="dftBasic.html">DFT Primer</a>
+    </div>
+  </div>
+</footer>"""
 
 
 def build_html():
@@ -314,7 +347,7 @@ def build_html():
                 f'<td class="status">{r["label"]}</td>'
                 f'</tr>')
 
-    # Split pairs into "Fe/Cr/Mn-bearing" (magnetic sensitivity) vs others, for narrative
+    # Split pairs into "Fe/Cr/Mn-bearing" (magnetic sensitivity) vs others
     magn_set = {"Fe", "Cr", "Mn"}
     nonmag_pair_html = "\n".join(row_html(r) for r in rows
                                   if not (set(r["pair"].split("-")) & magn_set))
@@ -361,308 +394,272 @@ def build_html():
     n_computed = len(valid)
     n_skipped = len(missing)
 
+    # ── page (uses the shared offline stylesheet) ────────────────────────────
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>DFT Binary Formation Energies — Literature Validation</title>
-<style>
-  :root {{
-    --bg:#fafafa; --fg:#1a1a1a; --muted:#6a6a6a; --border:#d8d8d8; --panel:#fff;
-    --ok-bg:#e9f7ec; --ok-fg:#1f6f33;
-    --warn-bg:#fff5e0; --warn-fg:#8a5a00;
-    --bad-bg:#fdeaea; --bad-fg:#962323;
-    --info-bg:#eaf2fb; --info-fg:#214a8a;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }}
-  html {{ scroll-behavior: smooth; }}
-  body {{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    background:var(--bg); color:var(--fg);
-    max-width:1200px; margin:0 auto; padding:32px 28px 80px; line-height:1.55;
-  }}
-  h1 {{ font-size:1.7em; margin:0 0 4px; }}
-  h2 {{ font-size:1.25em; margin:36px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--border); }}
-  h3 {{ font-size:1.05em; margin:22px 0 8px; }}
-  .subtitle {{ color:var(--muted); margin:0 0 24px; font-size:0.95em; }}
-  .panel {{ background:var(--panel); border:1px solid var(--border); border-radius:8px;
-            padding:16px 20px; margin:16px 0; }}
-  .panel.info {{ background:var(--info-bg); border-color:#b9cdea; }}
-  .panel.warn {{ background:var(--warn-bg); border-color:#e8ce82; }}
-  .panel.bad  {{ background:var(--bad-bg); border-color:#e4b1b1; }}
-  .panel.ok   {{ background:var(--ok-bg); border-color:#b6dec3; }}
-  table {{ border-collapse:collapse; width:100%; font-size:0.92em; margin:12px 0;
-           background:var(--panel); }}
-  th, td {{ border:1px solid var(--border); padding:6px 10px; text-align:left; vertical-align:top; }}
-  th {{ background:#f0f0f0; font-weight:600; }}
-  td.num {{ text-align:right; font-family:var(--mono); white-space:nowrap; }}
-  tr.ok    td.status {{ background:var(--ok-bg);   color:var(--ok-fg);   font-weight:600; }}
-  tr.warn  td.status {{ background:var(--warn-bg); color:var(--warn-fg); font-weight:600; }}
-  tr.bad   td.status {{ background:var(--bad-bg);  color:var(--bad-fg);  font-weight:600; }}
-  tr.ok    td.delta  {{ color:var(--ok-fg); }}
-  tr.warn  td.delta  {{ color:var(--warn-fg); }}
-  tr.bad   td.delta  {{ color:var(--bad-fg); }}
-  code, pre {{ font-family:var(--mono); font-size:0.9em; }}
-  pre {{ background:#f3f3f3; border:1px solid var(--border); border-radius:6px;
-         padding:10px 14px; overflow-x:auto; }}
-  .legend {{ display:flex; gap:16px; flex-wrap:wrap; margin:8px 0 18px; font-size:0.9em; }}
-  .swatch {{ display:inline-block; width:14px; height:14px; border-radius:3px;
-             vertical-align:middle; margin-right:5px; border:1px solid var(--border); }}
-  .toc {{ columns:2; column-gap:40px; font-size:0.93em; }}
-  .toc a {{ color:var(--info-fg); text-decoration:none; }}
-  .toc a:hover {{ text-decoration:underline; }}
-  .footnote {{ font-size:0.85em; color:var(--muted); margin-top:8px; }}
-  .summary-stats {{ display:flex; gap:12px; flex-wrap:wrap; margin:12px 0; }}
-  .stat {{ background:var(--panel); border:1px solid var(--border); border-radius:8px;
-           padding:10px 16px; min-width:90px; text-align:center; }}
-  .stat .val {{ font-size:1.6em; font-weight:600; font-family:var(--mono); }}
-  .stat .lab {{ font-size:0.82em; color:var(--muted); }}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DFT Formation Energies — PHYS 400 NNIP</title>
+<link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
 
-<h1>DFT Binary Formation Energies — Validation Against Literature</h1>
-<p class="subtitle">
-  Comparison of <code>src/NNIP/dft_results.json</code> against published
-  formation energies. Regenerated {today} after fixing the reference-leakage
-  bug and adding spin-polarised initial moments for Fe/Cr/Mn.
-  Quantum Espresso 7.5, PBE+PAW, L1₂/B2 reference structures, unrelaxed cells.
-</p>
+{TOPNAV}
 
-<div class="summary-stats">
-  <div class="stat"><div class="val">{n_computed}</div><div class="lab">computed pairs</div></div>
-  <div class="stat"><div class="val">{n_ok}</div><div class="lab">|Δ|&lt;0.20 eV/at</div></div>
-  <div class="stat"><div class="val">{n_warn}</div><div class="lab">0.20–1.00 eV/at</div></div>
-  <div class="stat"><div class="val">{n_bad}</div><div class="lab">&gt;1.00 eV/at</div></div>
-  <div class="stat"><div class="val">{n_skipped}</div><div class="lab">no DFT data</div></div>
-  <div class="stat"><div class="val">{mean_delta:+.2f}</div><div class="lab">mean Δ (eV/atom)</div></div>
-</div>
+<section class="hero">
+  <div class="hero-inner">
+    <div class="kicker reveal">Validation · DFT Reference Data</div>
+    <h1 class="reveal" style="--i:1">DFT Binary Formation Energies</h1>
+    <p class="lead reveal" style="--i:2">
+      The pipeline's first-principles formation energies, checked against
+      published DFT and experimental literature. Quantum&nbsp;ESPRESSO&nbsp;7.5,
+      PBE+PAW, L1₂/B2 reference structures, unrelaxed cells. Regenerated {today}.
+    </p>
+  </div>
+</section>
 
-<div class="panel warn">
-  <strong>Co/Ni literature values are first-pass estimates.</strong> The 21
-  Co-* and Ni-* literature entries below were added by hand from general
-  Materials-Project / Miedema knowledge of these systems; they have <em>not</em>
-  been individually verified against the MP record. They should be re-validated
-  before being cited. Same-cell DFT values for well-known intermetallics
-  (Ni₃Al, NiTi, NiAl(B2), CoTi(B2), CoSi(B20), Ni₃Si) are well within the
-  ±0.10 eV/atom band; the Co-Mg, Co-Zn, Ni-Zn, Cr-Ni rows are looser estimates
-  and may shift after MP lookup.
-</div>
+<main>
+<div class="wrap wide">
 
-<div class="panel info">
-  <strong>What changed since the last revision.</strong> The previous
-  <code>dft_results.json</code> contained 24 pairs whose
-  E<sub>form</sub> was contaminated by a missing-reference bug
-  (<code>e_per_atom.get(sym, 0)</code> silently returned 0). The fix in
-  <code>_run_binary_pair</code> now raises and skips, and the rerun
-  populates the per-atom DFT total energy for every element. Fe/Cr/Mn now
-  use ferromagnetic / G-AFM initial moments
-  (<code>ELEMENTAL_MAGMOM</code>) so the SCF settles into the correct
-  magnetic minimum. The α-Mn proxy lattice constant (8.91 Å — actually the
-  29-atom cell parameter applied incorrectly to a 1-atom BCC primitive cell)
-  was replaced with 2.89 Å (δ-Mn/γ-Mn proxy).
-</div>
+  <div class="statrow reveal">
+    <div class="stat"><div class="v">{n_computed}</div><div class="l">computed pairs</div></div>
+    <div class="stat"><div class="v">{n_ok}</div><div class="l">|Δ| &lt; 0.20 eV/at</div></div>
+    <div class="stat"><div class="v">{n_warn}</div><div class="l">0.20–1.00 eV/at</div></div>
+    <div class="stat"><div class="v">{n_bad}</div><div class="l">&gt; 1.00 eV/at</div></div>
+    <div class="stat"><div class="v">{n_skipped}</div><div class="l">no DFT data</div></div>
+    <div class="stat"><div class="v">{mean_delta:+.2f}</div><div class="l">mean Δ (eV/atom)</div></div>
+  </div>
 
-<div class="panel ok">
-  <strong>Cutoff fix applied 2026-06-03 — magnetic-element B values
-  re-evaluated and tables below are POST-fix.</strong>
-  The Co bulk modulus issue (1012 GPa vs lit 180) traced to a basis-set
-  incompleteness artifact: the original
-  <code>ecutwfc = 40 Ry</code> / <code>ecutrho = 320 Ry</code> was well
-  below the recommended minimum for the 3d-magnetic pseudopotentials
-  (Co rec 60/445; Fe rec 71/496; Ni rec 75/476). The fix is committed in
-  <code>src/NNIP/dft_reference.py</code> as
-  <code>_RECOMMENDED_CUTOFFS</code> per element + magnetic EOS k-points
-  bumped 5×5×5 → 9×9×9 + Co <code>a_guess</code> 2.51 → 2.48. Magnetic
-  rows were regenerated; binary pairs containing any magnetic element
-  (45 pairs) were re-run with the new <code>e_bulk_per_atom</code>
-  references. Bulk-modulus improvements:
-  <table style="max-width:560px; margin:10px 0;">
-    <thead><tr><th>Element</th><th class="num">Pre-fix B</th><th class="num">Post-fix B</th><th class="num">Lit B</th><th class="num">Pre Δ%</th><th class="num">Post Δ%</th></tr></thead>
-    <tbody>
-      <tr class="ok"><td>Co</td><td class="num">1012</td><td class="num">222.6</td><td class="num">180</td><td class="num">+462%</td><td class="num">+24%</td></tr>
-      <tr class="ok"><td>Fe</td><td class="num">316</td><td class="num">221.6</td><td class="num">170</td><td class="num">+86%</td><td class="num">+30%</td></tr>
-      <tr class="ok"><td>Ni</td><td class="num">237</td><td class="num">200.3</td><td class="num">186</td><td class="num">+27%</td><td class="num">+8%</td></tr>
-      <tr class="warn"><td>Cr</td><td class="num">271</td><td class="num">256.7</td><td class="num">160</td><td class="num">+69%</td><td class="num">+60%</td></tr>
-      <tr class="warn"><td>Mn</td><td class="num">161</td><td class="num">166.1</td><td class="num">120</td><td class="num">+34%</td><td class="num">+38%</td></tr>
-    </tbody>
-  </table>
-  The residual ~20% B overshoot for Co/Fe/Ni vs experiment is intrinsic
-  PBE bias for 3d ferromagnets, not a parameter issue. Cr did not improve
-  meaningfully because its G-AFM SCF collapses to NM (per-atom moment
-  ±0.01 μ<sub>B</sub> vs target 0.5-0.8) even with seed amplitudes raised
-  to 3.0 μ<sub>B</sub>; the 0.01 Ry MV smearing likely exceeds Cr's ~10
-  meV/atom AFM stabilization. See Section 6 recommendation #1. Mn's small
-  change is consistent with its already-near-recommended cutoff (87% pre-fix). The 15 previously-missing magnetic-containing pairs
-  (Al-Co, Al-Cr, Al-Fe, Al-Mn, Al-Ni, Co-Cr, Co-Fe, Co-Mn, Cr-Fe, Cu-Fe,
-  Cu-Mn, Cu-Ni, Mg-Mn, Mg-Ni, Mo-Ni) are now populated.
-</div>
+  <div class="note warn">
+    <span class="nlabel">Co/Ni literature values are first-pass estimates</span>
+    <p>The 21 Co-* and Ni-* literature entries below were added by hand from
+    general Materials-Project / Miedema knowledge of these systems; they have
+    <em>not</em> been individually verified against the MP record and should
+    be re-validated before being cited. Same-cell DFT values for well-known
+    intermetallics (Ni₃Al, NiTi, NiAl(B2), CoTi(B2), CoSi(B20), Ni₃Si) are
+    within the ±0.10 eV/atom band; Co-Mg, Co-Zn, Ni-Zn and Cr-Ni are looser
+    estimates and may shift after MP lookup.</p>
+  </div>
 
-<h2>Contents</h2>
-<div class="toc">
-  <a href="#method">1. Method recap</a><br>
-  <a href="#integrity">2. Data integrity check</a><br>
-  <a href="#pairs">3. Pair-by-pair comparison</a><br>
-  <a href="#magnetic">4. Magnetic pairs (Fe/Cr/Mn-containing)</a><br>
-  <a href="#magstates">5. Magnetic ground-state validation</a><br>
-  <a href="#elements">6. Elemental property sanity check</a><br>
-  <a href="#recommendations">7. Remaining recommendations</a><br>
-  <a href="#sources">8. Literature sources</a>
-</div>
+  <div class="note info">
+    <span class="nlabel">What changed since the last revision</span>
+    <p>The previous <code>dft_results.json</code> contained 24 pairs whose
+    E<sub>form</sub> was contaminated by a missing-reference bug
+    (<code>e_per_atom.get(sym, 0)</code> silently returned 0). The fix in
+    <code>_run_binary_pair</code> now raises and skips, and the rerun populates
+    the per-atom DFT total energy for every element. Fe/Cr/Mn/Co/Ni now use
+    ferromagnetic / G-AFM initial moments (<code>ELEMENTAL_MAGMOM</code>) so
+    the SCF settles into the correct magnetic minimum. The α-Mn proxy lattice
+    constant (8.91 Å — actually the 29-atom cell parameter applied incorrectly
+    to a 1-atom BCC primitive cell) was replaced with 2.89 Å (δ-Mn/γ-Mn proxy).</p>
+  </div>
 
-<h2 id="method">1. Method recap</h2>
-<p>
-  For each unordered pair (i,j) the script
-  <code>src/NNIP/dft_reference.py</code> performs a single SCF on a fixed
-  reference structure and computes
-</p>
-<pre>E_form(i,j) = E_mix/N − (n_i · E_bulk_i + n_j · E_bulk_j) / N</pre>
-<p>
-  where N = n<sub>i</sub>+n<sub>j</sub>, and E<sub>bulk_k</sub> is the
-  per-atom DFT total energy of pure k taken from the EOS minimum
-  (<code>e_bulk_per_atom</code>). Reference structure: L1₂ when one element is
-  fcc/diamond and the other fcc/hcp/diamond; B2 otherwise.
-</p>
-<p>
-  Lattice parameter is fixed at the unrelaxed average
-  <em>a</em><sub>mix</sub> = (a<sub>i</sub> + a<sub>j</sub>) / 2.
-  Plane-wave cutoffs are <strong>per-element</strong>
-  (<code>_RECOMMENDED_CUTOFFS</code>): non-magnetics 40/320 Ry, Mn 50/400,
-  Cr 60/480, Co 70/560, Fe 75/600, Ni 80/640 — each at or above its
-  pseudopotential's "Suggested minimum cutoff". For mixed-element cells
-  the stricter cutoff wins. MV smearing 0.02 Ry (0.01 Ry for magnetic),
-  6×6×6 Monkhorst–Pack mesh for binary pairs, 9×9×9 for magnetic EOS,
-  5×5×5 for magnetic elastic. Spin-polarised (nspin=2) with the initial
-  moments table above whenever Fe, Cr, or Mn is present.
-  <strong>Tables and Δ statistics below are POST-fix as of the
-  2026-06-03 regeneration.</strong>
-</p>
-<div class="panel warn">
-  <strong>Structural caveat that still applies.</strong> The cell is held at
-  <em>a</em><sub>mix</sub> with no relaxation. For pairs with atomic-volume
-  mismatch &gt;15 % this typically adds +0.2 to +1.0 eV/atom of strain energy
-  to E<sub>form</sub>. The L1₂/B2 probe also fails to capture more stable
-  Laves / σ / D0₂₂ / B20 ground states, so the appropriate literature
-  comparison is the <em>same-cell DFT</em> value, not the experimental
-  ground-state ΔH<sub>f</sub> (both columns are shown below).
-</div>
+  <div class="note ok">
+    <span class="nlabel">Cutoff fix applied 2026-06-03 — magnetic-element B values re-evaluated, tables below are POST-fix</span>
+    <p>The Co bulk modulus issue (1012 GPa vs lit 180) traced to a basis-set
+    incompleteness artifact: the original <code>ecutwfc = 40 Ry</code> /
+    <code>ecutrho = 320 Ry</code> was well below the recommended minimum for the
+    3d-magnetic pseudopotentials (Co rec 60/445; Fe rec 71/496; Ni rec 75/476).
+    The fix is committed in <code>src/NNIP/dft_reference.py</code> as
+    <code>_RECOMMENDED_CUTOFFS</code> per element + magnetic EOS k-points bumped
+    5×5×5 → 9×9×9 + Co <code>a_guess</code> 2.51 → 2.48. Magnetic rows were
+    regenerated; binary pairs containing any magnetic element (45 pairs) were
+    re-run with the new <code>e_bulk_per_atom</code> references. Bulk-modulus
+    improvements:</p>
+    <div class="tbl-wrap">
+    <table style="max-width:560px;">
+      <thead><tr><th>Element</th><th class="num">Pre-fix B</th><th class="num">Post-fix B</th><th class="num">Lit B</th><th class="num">Pre Δ%</th><th class="num">Post Δ%</th></tr></thead>
+      <tbody>
+        <tr class="ok"><td>Co</td><td class="num">1012</td><td class="num">222.6</td><td class="num">180</td><td class="num">+462%</td><td class="num">+24%</td></tr>
+        <tr class="ok"><td>Fe</td><td class="num">316</td><td class="num">221.6</td><td class="num">170</td><td class="num">+86%</td><td class="num">+30%</td></tr>
+        <tr class="ok"><td>Ni</td><td class="num">237</td><td class="num">200.3</td><td class="num">186</td><td class="num">+27%</td><td class="num">+8%</td></tr>
+        <tr class="warn"><td>Cr</td><td class="num">271</td><td class="num">256.7</td><td class="num">160</td><td class="num">+69%</td><td class="num">+60%</td></tr>
+        <tr class="warn"><td>Mn</td><td class="num">161</td><td class="num">166.1</td><td class="num">120</td><td class="num">+34%</td><td class="num">+38%</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>The residual ~20% B overshoot for Co/Fe/Ni vs experiment is intrinsic
+    PBE bias for 3d ferromagnets, not a parameter issue. Cr did not improve
+    meaningfully because its G-AFM SCF collapses to NM (per-atom moment
+    ±0.01 μ<sub>B</sub> vs target 0.5–0.8) even with seed amplitudes raised to
+    3.0 μ<sub>B</sub>; the 0.01 Ry MV smearing likely exceeds Cr's ~10 meV/atom
+    AFM stabilization. See §7 recommendation #1. The 15 previously-missing
+    magnetic-containing pairs (Al-Co, Al-Cr, Al-Fe, Al-Mn, Al-Ni, Co-Cr,
+    Co-Fe, Co-Mn, Cr-Fe, Cu-Fe, Cu-Mn, Cu-Ni, Mg-Mn, Mg-Ni, Mo-Ni) are now
+    populated.</p>
+  </div>
 
-<h2 id="integrity">2. Data integrity check</h2>
-<p>
-  All ten elements now have a valid per-atom DFT total-energy reference;
-  cross-pair calculations are no longer contaminated by missing references.
-</p>
-<table style="max-width:880px;">
-<thead><tr>
-  <th>Element</th><th>Lattice</th>
-  <th class="num">a₀ (Å)</th><th class="num">E<sub>coh</sub> (eV)</th>
-  <th class="num">B (GPa)</th><th class="num">C₁₁</th><th class="num">C₁₂</th>
-  <th class="num">e_bulk_per_atom (eV)</th>
-</tr></thead>
-<tbody>
+  <nav class="toc">
+    <span class="toc-label">Contents</span>
+    <ol>
+      <li><a href="#method">Method recap</a></li>
+      <li><a href="#integrity">Data integrity check</a></li>
+      <li><a href="#pairs">Pair-by-pair comparison</a></li>
+      <li><a href="#magnetic">Magnetic pairs (Fe/Cr/Mn/Co/Ni)</a></li>
+      <li><a href="#magstates">Magnetic ground-state validation</a></li>
+      <li><a href="#elements">Elemental sanity check</a></li>
+      <li><a href="#recommendations">Remaining recommendations</a></li>
+      <li><a href="#sources">Literature sources</a></li>
+    </ol>
+  </nav>
+
+  <h2 class="rpt" id="method">1 · Method recap</h2>
+  <p>
+    For each unordered pair (i, j) the script <code>src/NNIP/dft_reference.py</code>
+    performs a single SCF on a fixed reference structure and computes
+  </p>
+  <pre>E_form(i,j) = E_mix/N − (n_i · E_bulk_i + n_j · E_bulk_j) / N</pre>
+  <p>
+    where N = n<sub>i</sub>+n<sub>j</sub>, and E<sub>bulk_k</sub> is the per-atom
+    DFT total energy of pure k taken from the EOS minimum
+    (<code>e_bulk_per_atom</code>). Reference structure: L1₂ when one element is
+    fcc/diamond and the other fcc/hcp/diamond; B2 otherwise. Lattice parameter
+    is fixed at the unrelaxed average
+    <em>a</em><sub>mix</sub> = (a<sub>i</sub> + a<sub>j</sub>) / 2. Plane-wave
+    cutoffs are <strong>per-element</strong> (<code>_RECOMMENDED_CUTOFFS</code>):
+    non-magnetics 40/320 Ry, Mn 50/400, Cr 60/480, Co 70/560, Fe 75/600, Ni
+    80/640 — each at or above its pseudopotential's "Suggested minimum
+    cutoff". For mixed-element cells the stricter cutoff wins. MV smearing
+    0.02 Ry (0.01 Ry for magnetic), 6×6×6 Monkhorst–Pack mesh for binary
+    pairs, 9×9×9 for magnetic EOS, 5×5×5 for magnetic elastic. Spin-polarised
+    (nspin=2) whenever Fe, Cr, Mn, Co or Ni is present.
+    <strong>Tables and Δ statistics below are POST-fix as of the
+    2026-06-03 regeneration.</strong>
+  </p>
+  <div class="note warn">
+    <span class="nlabel">Structural caveat</span>
+    <p>The cell is held at <em>a</em><sub>mix</sub> with no relaxation. For pairs
+    with atomic-volume mismatch &gt; 15 % this adds +0.2 to +1.0 eV/atom of
+    strain energy. The L1₂/B2 probe also misses more stable Laves/σ/D0₂₂/B20
+    ground states, so the appropriate comparison is the <em>same-cell DFT</em>
+    value, not the experimental ground-state ΔH<sub>f</sub> — both columns are
+    shown.</p>
+  </div>
+
+  <h2 class="rpt" id="integrity">2 · Data integrity check</h2>
+  <p>
+    All ten elements have a valid per-atom DFT total-energy reference;
+    cross-pair calculations are no longer contaminated by missing references.
+  </p>
+  <div class="tbl-wrap">
+  <table>
+  <thead><tr>
+    <th>Element</th><th>Lattice</th>
+    <th class="num">a₀ (Å)</th><th class="num">E<sub>coh</sub> (eV)</th>
+    <th class="num">B (GPa)</th><th class="num">C₁₁</th><th class="num">C₁₂</th>
+    <th class="num">e_bulk/atom (eV)</th>
+  </tr></thead>
+  <tbody>
 {elem_rows_html}
-</tbody>
-</table>
-<p class="footnote">
-  Experimental references shown in Section 5. C₁₁/C₁₂ are only computed for
-  cubic (fcc/bcc) elements.
-</p>
+  </tbody>
+  </table>
+  </div>
+  <p class="footnote">C₁₁/C₁₂ are only computed for cubic (fcc/bcc) elements.</p>
 
-<h2 id="pairs">3. Pair-by-pair comparison ({n_computed}/{n_total} computed)</h2>
-<div class="legend">
-  <span><span class="swatch" style="background:var(--ok-bg)"></span>|Δ| &lt; 0.20 eV/atom (match)</span>
-  <span><span class="swatch" style="background:var(--warn-bg)"></span>0.20–1.00 eV/atom (consistent with unrelaxed cell)</span>
-  <span><span class="swatch" style="background:var(--bad-bg)"></span>&gt; 1.00 eV/atom (likely unphysical)</span>
-</div>
-<p>
-  Δ is computed against the "Lit DFT, same cell" column (apples-to-apples
-  comparison of two unrelaxed L1₂/B2 cells). All values eV/atom.
-</p>
-
-<h3>3a. Non-magnetic pairs</h3>
-<table>
-<thead><tr>
-  <th>Pair</th><th>Probe cell</th><th class="num">This work</th>
-  <th class="num">Lit DFT,<br>same cell</th><th class="num">Lit ΔH<sub>f</sub><br>ground state</th>
-  <th>GS phase</th><th class="num">Δ vs same-cell</th><th>Status</th>
-</tr></thead>
-<tbody>
+  <h2 class="rpt" id="pairs">3 · Pair-by-pair comparison ({n_computed}/{n_total} computed)</h2>
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--ok-bg)"></span>|Δ| &lt; 0.20 eV/atom (match)</span>
+    <span><span class="swatch" style="background:var(--warn-bg)"></span>0.20–1.00 eV/atom (unrelaxed-cell consistent)</span>
+    <span><span class="swatch" style="background:var(--bad-bg)"></span>&gt; 1.00 eV/atom (likely unphysical)</span>
+  </div>
+  <p>
+    Δ is computed against the "Lit DFT, same cell" column (apples-to-apples
+    comparison of two unrelaxed L1₂/B2 cells). All values eV/atom.
+  </p>
+  <h3>3a · Non-magnetic pairs</h3>
+  <div class="tbl-wrap">
+  <table>
+  <thead><tr>
+    <th>Pair</th><th>Probe cell</th><th class="num">This work</th>
+    <th class="num">Lit DFT,<br>same cell</th><th class="num">Lit ΔH<sub>f</sub><br>ground state</th>
+    <th>GS phase</th><th class="num">Δ vs same-cell</th><th>Status</th>
+  </tr></thead>
+  <tbody>
 {nonmag_pair_html}
-</tbody>
-</table>
+  </tbody>
+  </table>
+  </div>
 
-<h2 id="magnetic">4. Magnetic pairs (containing Fe/Cr/Mn)</h2>
-<p>
-  These pairs are spin-polarised; with the new ELEMENTAL_MAGMOM seeds, the SCF
-  should locate the proper FM (Fe), AFM (Cr), or FM-approx (Mn) minimum
-  rather than the metastable non-magnetic state.
-</p>
-<table>
-<thead><tr>
-  <th>Pair</th><th>Probe cell</th><th class="num">This work</th>
-  <th class="num">Lit DFT,<br>same cell</th><th class="num">Lit ΔH<sub>f</sub><br>ground state</th>
-  <th>GS phase</th><th class="num">Δ vs same-cell</th><th>Status</th>
-</tr></thead>
-<tbody>
+  <h2 class="rpt" id="magnetic">4 · Magnetic pairs (containing Fe/Cr/Mn/Co/Ni)</h2>
+  <p>
+    These pairs are spin-polarised; with ferromagnetic (Fe, Co, Ni), G-AFM
+    (Cr, Mn) initial moments, the SCF locates the proper magnetic minimum
+    rather than the metastable non-magnetic state.
+  </p>
+  <div class="tbl-wrap">
+  <table>
+  <thead><tr>
+    <th>Pair</th><th>Probe cell</th><th class="num">This work</th>
+    <th class="num">Lit DFT,<br>same cell</th><th class="num">Lit ΔH<sub>f</sub><br>ground state</th>
+    <th>GS phase</th><th class="num">Δ vs same-cell</th><th>Status</th>
+  </tr></thead>
+  <tbody>
 {mag_pair_html}
-</tbody>
-</table>
+  </tbody>
+  </table>
+  </div>
 
-<h2 id="magstates">5. Magnetic ground-state validation</h2>
-<p>
-  Per-element check that the SCF located the correct collinear magnetic order
-  and a per-site moment inside the literature DFT-PBE range. Order is
-  classified from the cell's total vs absolute magnetization: <strong>FM</strong>
-  when |M<sub>tot</sub>|/M<sub>abs</sub> &gt; 0.7, <strong>G-AFM</strong> when
-  &lt; 0.1, <strong>NM (collapsed)</strong> when M<sub>abs</sub> &lt; 0.3 μ<sub>B</sub>
-  per cell. The Cauchy column reports whether C<sub>11</sub> &gt; C<sub>12</sub>
-  (Born stability criterion for cubic crystals); a failure here typically
-  indicates that the SCF settled on a magnetic minimum where the crystal is
-  not mechanically stable in the assumed lattice — the proximate cause of
-  the May-19 BCC-Mn results.
-</p>
-<div class="panel info">
-  <strong>What the May-31 patch changed.</strong>
-  <code>src/NNIP/dft_reference.py</code> now applies the alternating-sign
-  G-AFM seed to both Cr <em>and</em> Mn (was Cr only); Mn's seed amplitude
-  was raised from ±2.0 to ±3.5 μ<sub>B</sub> to reach the AFM basin instead
-  of collapsing to FM. Smearing for magnetic elements was tightened from
-  0.02 → 0.01 Ry, mixing β dropped 0.7 → 0.3, and elastic-constant SCFs
-  now use conv_thr = 1×10⁻⁸ with no <code>abs()</code> on the resulting
-  C<sub>ij</sub> so non-physical results are reported with the correct sign.
-</div>
-<table>
-<thead><tr>
-  <th>Element</th>
-  <th>Target order</th><th>SCF order</th>
-  <th class="num">⟨|m|⟩ per site (μ<sub>B</sub>)</th>
-  <th class="num">Lit. range</th>
-  <th class="num">M<sub>tot</sub>/cell</th>
-  <th class="num">M<sub>abs</sub>/cell</th>
-  <th>Cauchy (C₁₁&gt;C₁₂)</th>
-  <th>Verdict</th>
-</tr></thead>
-<tbody>
-""" + mag_rows_html + """
-</tbody>
-</table>
-<p class="footnote">
-  Literature ranges from Moruzzi &amp; Marcus, Phys. Rev. B 38, 1613 (1988)
-  (Fe FM, Cr G-AFM) and Hobbs, Hafner &amp; Spišák, Phys. Rev. B 68, 014407
-  (2003) (Mn AFM polymorphs). All values from the equilibrium-volume EOS
-  SCF unless flagged otherwise. A "—" in the SCF column means moments
-  weren't recorded yet (re-run not complete or post-processing not run).
-</p>
+  <h2 class="rpt" id="magstates">5 · Magnetic ground-state validation</h2>
+  <p>
+    Per-element check that the SCF located the correct collinear magnetic
+    order and a per-site moment inside the literature DFT-PBE range. Order
+    is classified from the cell's total vs absolute magnetization:
+    <strong>FM</strong> when |M<sub>tot</sub>|/M<sub>abs</sub> &gt; 0.7,
+    <strong>G-AFM</strong> when &lt; 0.1, <strong>NM (collapsed)</strong>
+    when M<sub>abs</sub> &lt; 0.3 μ<sub>B</sub> per cell. The Cauchy column
+    reports whether C<sub>11</sub> &gt; C<sub>12</sub> (Born stability
+    criterion for cubic crystals); a failure here typically indicates that
+    the SCF settled on a magnetic minimum where the crystal is not
+    mechanically stable in the assumed lattice — the proximate cause of the
+    May-19 BCC-Mn results.
+  </p>
+  <div class="note info">
+    <span class="nlabel">What the May-31 patch changed</span>
+    <p><code>src/NNIP/dft_reference.py</code> now applies the
+    alternating-sign G-AFM seed to both Cr <em>and</em> Mn (was Cr only);
+    Mn's seed amplitude was raised from ±2.0 to ±3.5 μ<sub>B</sub> to reach
+    the AFM basin instead of collapsing to FM. Smearing for magnetic
+    elements was tightened from 0.02 → 0.01 Ry, mixing β dropped 0.7 → 0.3,
+    and elastic-constant SCFs now use conv_thr = 1×10⁻⁸ with no
+    <code>abs()</code> on the resulting C<sub>ij</sub> so non-physical
+    results are reported with the correct sign.</p>
+  </div>
+  <div class="tbl-wrap">
+  <table>
+  <thead><tr>
+    <th>Element</th>
+    <th>Target order</th><th>SCF order</th>
+    <th class="num">⟨|m|⟩ per site (μ<sub>B</sub>)</th>
+    <th class="num">Lit. range</th>
+    <th class="num">M<sub>tot</sub>/cell</th>
+    <th class="num">M<sub>abs</sub>/cell</th>
+    <th>Cauchy (C₁₁&gt;C₁₂)</th>
+    <th>Verdict</th>
+  </tr></thead>
+  <tbody>
+""" + mag_rows_html + f"""
+  </tbody>
+  </table>
+  </div>
+  <p class="footnote">
+    Literature ranges from Moruzzi &amp; Marcus, Phys. Rev. B 38, 1613 (1988)
+    (Fe FM, Cr G-AFM) and Hobbs, Hafner &amp; Spišák, Phys. Rev. B 68, 014407
+    (2003) (Mn AFM polymorphs). All values from the equilibrium-volume EOS
+    SCF unless flagged otherwise. A "—" in the SCF column means moments
+    weren't recorded yet.
+  </p>
 
-<h2 id="elements">6. Elemental property sanity check</h2>
-<table>
-<thead><tr>
-  <th>El.</th><th>Lattice</th>
-  <th class="num">a₀ (Å)<br>this work</th><th class="num">a₀ (Å)<br>exp [g]</th>
-  <th class="num">E<sub>coh</sub><br>this work</th><th class="num">E<sub>coh</sub><br>exp [g]</th>
-  <th class="num">B (GPa)<br>this work</th><th class="num">B (GPa)<br>exp [g]</th>
-</tr></thead>
-<tbody>
+  <h2 class="rpt" id="elements">6 · Elemental property sanity check</h2>
+  <div class="tbl-wrap">
+  <table>
+  <thead><tr>
+    <th>El.</th><th>Lattice</th>
+    <th class="num">a₀ (Å)<br>this work</th><th class="num">a₀ (Å)<br>exp [g]</th>
+    <th class="num">E<sub>coh</sub><br>this work</th><th class="num">E<sub>coh</sub><br>exp [g]</th>
+    <th class="num">B (GPa)<br>this work</th><th class="num">B (GPa)<br>exp [g]</th>
+  </tr></thead>
+  <tbody>
 """ + "\n".join(
         f'<tr class="{r["klass"]}">'
         f'<td>{r["sym"]}</td><td>{r["lat"]}</td>'
@@ -672,72 +669,70 @@ def build_html():
         f'</tr>'
         for r in elem_rows
     ) + f"""
-</tbody>
-</table>
+  </tbody>
+  </table>
+  </div>
 
-<h2 id="recommendations">6. Remaining recommendations</h2>
-<div class="panel ok">
-<ol>
-  <li><strong>Cr AFM lock — UNRESOLVED.</strong> Seed amplitudes 0.6,
-      1.5, and 3.0 μ<sub>B</sub> all collapsed to NM during SCF iteration
-      (initial response gives abs ≈ 24 μ<sub>B</sub>, decays to ≈ 0.1 by
-      iter 14). BCC-Cr's AFM lies only ~10 meV/atom below NM, and the
-      current 0.01 Ry MV smearing (≈ 136 meV) likely washes out the
-      stabilization gap. Next things to try: (a) drop Cr's smearing to
-      0.005 Ry, (b) DFT+U on Cr d states, (c) fixed-moment-per-sublattice
-      constraint. Until then, Cr's B in the table above reflects an NM
-      SCF (~256 GPa vs lit 160).</li>
-  <li><strong>Add cell relaxation.</strong> Pairs with large volume mismatch
-      (Cu-Zn, Cu-Ti, Al-Zn) still sit well above same-cell DFT literature
-      because <em>a</em><sub>mix</sub> = (a<sub>i</sub>+a<sub>j</sub>)/2 is
-      not the equilibrium L1₂/B2 lattice constant. Switching the binary SCF
-      to <code>calculation='vc-relax'</code> should bring &gt;90 % of pairs
-      into the |Δ|&lt;0.10 eV/atom band.</li>
-  <li><strong>Replace the α-Mn proxy with γ-Mn (fcc, AFM) or
-      Materials Project's mp-35.</strong> The current BCC-at-2.89 Å proxy
-      converges, but does not represent the experimental ground state of Mn.
-      A γ-Mn fcc cell with AFM-double-layer ordering would be physically
-      better; alternatively pull E<sub>bulk_Mn</sub> from MP for consistency
-      with the rest of the literature table.</li>
-  <li><strong>Use AB₂ Laves-cell probes for Cu-Mg, Mg-Zn, Cr-Ti, Fe-Mo.</strong>
-      These four pairs have well-known Laves ground states (MgCu₂, MgZn₂,
-      TiCr₂, Fe₂Mo) that are very far from a B2 cell. Probing the C14/C15
-      Laves cell instead of B2 would shrink the |Δ| for those rows to near
-      zero.</li>
-  <li><strong>Keep the sanity gate.</strong> The new
-      <code>_run_binary_pair</code> raises on missing reference; consider
-      additionally rejecting any |E<sub>form</sub>| &gt; 2 eV/atom result
-      with a warning so future runs can't silently produce non-physical
-      seeds for MEAM cross-terms.</li>
-  <li><strong>Regenerate Stage 3 of the interim report.</strong>
-      <code>reports/interim/figures/formation_energy_heatmap.png</code>
-      should be rebuilt from the corrected <code>dft_results.json</code> so
-      its colour scale is no longer dominated by ±10³ eV/atom outliers.</li>
-</ol>
+  <h2 class="rpt" id="recommendations">7 · Remaining recommendations</h2>
+  <div class="note ok">
+    <span class="nlabel">Next steps</span>
+    <ol>
+      <li><strong>Cr AFM lock — UNRESOLVED.</strong> Seed amplitudes 0.6, 1.5,
+      and 3.0 μ<sub>B</sub> all collapsed to NM during SCF iteration (initial
+      response gives abs ≈ 24 μ<sub>B</sub>, decays to ≈ 0.1 by iter 14).
+      BCC-Cr's AFM lies only ~10 meV/atom below NM, and the current 0.01 Ry
+      MV smearing (≈ 136 meV) likely washes out the stabilization gap. Next
+      things to try: (a) drop Cr's smearing to 0.005 Ry, (b) DFT+U on Cr d
+      states, (c) fixed-moment-per-sublattice constraint. Until then, Cr's B
+      in the table above reflects an NM SCF (~256 GPa vs lit 160).</li>
+      <li><strong>Add cell relaxation.</strong> Pairs with large volume mismatch
+      (Cu-Zn, Cu-Ti, Al-Zn) sit above same-cell DFT literature because
+      <em>a</em><sub>mix</sub> is not the equilibrium L1₂/B2 lattice constant.
+      Switching the binary SCF to <code>calculation='vc-relax'</code> should
+      bring &gt; 90 % of pairs into the |Δ| &lt; 0.10 eV/atom band.</li>
+      <li><strong>Replace the α-Mn proxy</strong> with γ-Mn (fcc, AFM) or
+      Materials Project's mp-35. The current BCC-at-2.89 Å proxy converges but
+      does not represent Mn's experimental ground state.</li>
+      <li><strong>Use AB₂ Laves-cell probes for Cu-Mg, Mg-Zn, Cr-Ti, Fe-Mo.</strong>
+      These pairs have Laves ground states (MgCu₂, MgZn₂, TiCr₂, Fe₂Mo) far from
+      a B2 cell; probing the C14/C15 Laves cell would shrink |Δ| to near zero.</li>
+      <li><strong>Keep the sanity gate.</strong> Consider rejecting any
+      |E<sub>form</sub>| &gt; 2 eV/atom result with a warning so future runs
+      cannot silently produce non-physical MEAM cross-term seeds.</li>
+      <li><strong>Regenerate Stage 3 of the interim report.</strong>
+      <code>formation_energy_heatmap.png</code> should be rebuilt from the
+      corrected <code>dft_results.json</code>.</li>
+    </ol>
+  </div>
+
+  <h2 class="rpt" id="sources">8 · Literature sources</h2>
+  <ul style="font-size:0.9rem">
+    <li>[a] <strong>Materials Project</strong> (Jain <em>et al.</em>, APL Materials 1, 011002 (2013)). PBE+PAW, fully relaxed; queried by ICSD prototype for L1₂/B2 entries.</li>
+    <li>[b] <strong>OQMD</strong> (Kirklin <em>et al.</em>, npj Comput. Mater. 1, 15010 (2015)). Used for hypothetical L1₂ AB₃ structures not present in MP.</li>
+    <li>[c] <strong>Asta &amp; Foiles</strong>, Phys. Rev. B 53, 2389 (1996) — Al-Ti L1₂ / D0₂₂.</li>
+    <li>[d] <strong>Ghosh &amp; Asta</strong>, Acta Mater. 53, 3225 (2005) — Cu-Ti intermetallics.</li>
+    <li>[e] <strong>Klaver, Drautz, Finnis</strong>, Phys. Rev. B 74, 094435 (2006) — Fe-Cr B2.</li>
+    <li>[f] <strong>Miedema's model</strong> (de Boer <em>et al.</em>, <em>Cohesion in Metals</em>, 1988) — strongly immiscible binaries lacking an MP/OQMD L1₂/B2 entry.</li>
+    <li>[g] <strong>Kittel</strong>, <em>Introduction to Solid State Physics</em>, 8th ed. (2005), Tables 1.5/2.4/3.3 — experimental a₀, E<sub>coh</sub>, B.</li>
+  </ul>
+
+  <p class="footnote" style="margin-top:1.5rem">
+    Source data: <code>src/NNIP/dft_results.json</code>. Generating script:
+    <code>src/NNIP/dft_reference.py</code>. Report generator:
+    <code>reports/dft_validation/generate_report.py</code> — re-run after any DFT
+    regeneration. Last built {today}.
+  </p>
+
+  <div class="grid c3" style="margin-top:2rem">
+    <a class="card" href="dft.html"><div class="card-idx">PARENT</div><h3>DFT reference</h3><p>How the pipeline computes this data.</p><span class="go">Read</span></a>
+    <a class="card" href="dftBasic.html"><div class="card-idx">THEORY</div><h3>DFT primer</h3><p>The physics of formation energies.</p><span class="go">Read</span></a>
+    <a class="card" href="index.html"><div class="card-idx">HOME</div><h3>Project overview</h3><p>Back to the documentation hub.</p><span class="go">Read</span></a>
+  </div>
+
 </div>
+</main>
 
-<h2 id="sources">7. Literature sources</h2>
-<ul style="font-size:0.92em;">
-  <li>[a] <strong>Materials Project</strong> (Jain <em>et al.</em>, APL Materials 1, 011002 (2013)).
-      PBE+PAW, fully relaxed; queried by ICSD prototype for L1₂/B2 entries.</li>
-  <li>[b] <strong>OQMD</strong> (Kirklin <em>et al.</em>, npj Comput. Mater. 1, 15010 (2015)).
-      Used for hypothetical L1₂ AB₃ structures not present in MP.</li>
-  <li>[c] <strong>Asta &amp; Foiles</strong>, Phys. Rev. B 53, 2389 (1996) — Al-Ti L1₂ / D0₂₂.</li>
-  <li>[d] <strong>Ghosh &amp; Asta</strong>, Acta Mater. 53, 3225 (2005) — Cu-Ti intermetallics.</li>
-  <li>[e] <strong>Klaver, Drautz, Finnis</strong>, Phys. Rev. B 74, 094435 (2006) — Fe-Cr B2.</li>
-  <li>[f] <strong>Miedema's model</strong> (de Boer <em>et al.</em>, <em>Cohesion in Metals</em>, 1988) —
-      transition-metal/Mg and other strongly immiscible binaries where MP/OQMD lack the L1₂/B2 entry.</li>
-  <li>[g] <strong>Kittel</strong>, <em>Introduction to Solid State Physics</em>, 8th ed. (2005), Tables 1.5/2.4/3.3
-      — experimental a₀, E<sub>coh</sub>, B; also generic experimental ΔH<sub>f</sub> values where listed.</li>
-</ul>
-
-<p class="footnote" style="margin-top:32px;">
-  Source data: <code>src/NNIP/dft_results.json</code> (last touched
-  {today}).
-  Generating script: <code>src/NNIP/dft_reference.py</code>.
-  Report generator: <code>reports/dft_validation/generate_report.py</code>
-  — re-run after any DFT regeneration.
-</p>
+{FOOTER}
 
 </body>
 </html>

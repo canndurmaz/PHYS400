@@ -12,22 +12,17 @@ forces obtained as $\mathbf{F}_{i} = -\nabla_{i}U$.
 \smallskip
 \textbf{Historical development:}
 \begin{itemize}\scriptsize
-  \item Pairwise (Lennard--Jones, Morse) ---
-        inadequate for metallic bonding.
-  \item Embedded Atom Method (Daw \& Baskes, 1984) ---
-        suitable for FCC metals.
-  \item \textbf{Modified EAM}~\citep{baskes1992,lee2001}: introduces
-        angular partial densities $\rho_{i}^{(l)}$, $l = 1{-}3$;
-        established formalism for BCC, HCP and mixed-bonding
-        metals.
+  \item Pairwise (Lennard--Jones, Morse) --- too crude for metals.
+  \item Embedded Atom Method (1984) --- good for FCC metals.
+  \item \textbf{Modified EAM} (MEAM)~\citep{baskes1992}: adds angular
+        terms --- covers BCC, HCP and mixed bonding.
 \end{itemize}
 
 \column{0.49\textwidth}
 \textbf{Density-functional theory (DFT).}
-First-principles electronic-structure method, formulated via the
-Kohn--Sham equations~\citep{kohn1965} and implemented here with a
-plane-wave + pseudopotential basis (QE,
-\citealt{giannozzi2009}).
+First-principles electronic-structure method (Kohn--Sham
+equations~\citep{kohn1965}); here a plane-wave + pseudopotential
+basis in Quantum Espresso~\citep{giannozzi2009}.
 
 \smallskip
 Quantities computed:
