@@ -180,6 +180,66 @@
     font-family: var(--sans);
   }
   .tip strong { color: #3a2f0d; }
+  .learn {
+    background: #eef4fb;
+    border-top: 1px solid #cfe0f2;
+    border-left: 3px solid #2f6db0;
+    padding: 0.75rem 1.1rem 0.85rem 1.1rem;
+    font-size: 0.92rem;
+    color: #24364a;
+    margin: 0.6rem 1rem 1.1rem 1rem;
+    border-radius: 3px;
+    font-family: var(--sans);
+    line-height: 1.6;
+  }
+  .learn .label {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #2f6db0;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+  .learn strong { color: #163049; }
+  .learn p { margin: 0 0 0.55rem 0; }
+  .learn p:last-child { margin-bottom: 0; }
+  .learn ul { margin: 0.2rem 0 0.55rem 0; padding-left: 1.15rem; }
+  .learn li { margin-bottom: 0.22rem; }
+  .eq, .learn code {
+    font-family: var(--mono);
+    background: #ffffff;
+    border: 1px solid #d6e2f0;
+    border-radius: 3px;
+    padding: 0.02rem 0.32rem;
+    font-size: 0.86em;
+    color: #1d3a57;
+    white-space: nowrap;
+  }
+  .cmat-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin: 0.55rem 0 0.7rem 0;
+  }
+  .cmat-lhs { font-family: var(--mono); font-size: 0.95rem; color: #163049; }
+  pre.cmat {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.25;
+    color: #1d3a57;
+    background: #ffffff;
+    border: 1px solid #d6e2f0;
+    border-radius: 4px;
+    padding: 0.5rem 0.7rem;
+    overflow-x: auto;
+  }
+  @media print {
+    .learn { background: #f4f8fc; box-shadow: none; }
+  }
   footer {
     text-align: center;
     color: var(--muted);
@@ -199,20 +259,24 @@
 <body>
 
 <header>
-  <h1>Final Presentation Transcript &mdash; Can Durmaz</h1>
-  <div class="meta">PHYS&nbsp;400 &middot; jury version &middot; 11&nbsp;slides &middot; target&nbsp;~10:15</div>
+  <h1>Final Presentation Transcript &amp; Study Guide &mdash; Can Durmaz</h1>
+  <div class="meta">PHYS&nbsp;400 &middot; jury version &middot; 12&nbsp;slides &middot; target&nbsp;~11:05</div>
 </header>
 
 <main>
 
 <div class="intro">
   <span class="label">How to use this</span>
-  <strong>Format.</strong> Each slide carries a target time budget and approximate word count.
-  Words in <em>red italics</em> indicate emphasis. <span class="pause">(pause)</span> markers
-  denote short separations between argument segments. Small-caps mark
-  <span class="term">technical terms</span> on first introduction. The grey callouts beneath each
-  segment are procedural notes for the speaker, not part of the spoken text. The deck closes on
-  Slide&nbsp;11; the bibliography frame is shown silently while the jury formulates questions.
+  <strong>Two documents in one.</strong> Each slide shows, in order: the <strong>spoken
+  transcript</strong> (serif text &mdash; what is said aloud, with <em>red italics</em> for emphasis
+  and <span class="pause">(pause)</span> markers between argument segments); an amber
+  <strong>Procedure</strong> note (stage directions for the speaker, not spoken); and a blue
+  <strong>Background</strong> box that explains the underlying physics or method in plain terms.
+  <strong>To rehearse the talk,</strong> read the serif text and amber notes. <strong>To study
+  the subject,</strong> read the blue Background boxes &mdash; they are self-contained and assume
+  no prior knowledge of interatomic potentials. Small-caps mark
+  <span class="term">technical terms</span> on first introduction. The deck closes on
+  Slide&nbsp;12; the bibliography frame is shown silently while the jury formulates questions.
 </div>
 
 <div class="intro abbrev">
@@ -252,7 +316,7 @@
   <div class="slide-header">
     <span class="badge">2</span>
     <span class="slide-title">Why Two Elastic Constants Govern Structural Design</span>
-    <span class="timing">~65&nbsp;s &middot; ~150&nbsp;words</span>
+    <span class="timing">~70&nbsp;s &middot; ~160&nbsp;words</span>
   </div>
   <div class="transcript">
     The selection of a structural alloy is principally governed by its elastic
@@ -265,9 +329,13 @@
     modulus through <em>K = E / 3(1 &minus; 2&nu;)</em>, stress concentration,
     and fracture toughness.
     <span class="pause">(pause)</span>
-    For a cubic crystal both reduce analytically to two independent stiffness
-    constants, <em>C<sub>11</sub></em> and <em>C<sub>12</sub></em> &mdash; the
-    quantities this work targets from first principles &mdash; subject to the
+    For a cubic crystal, symmetry collapses the stress&ndash;strain law
+    <em>&sigma; = C&epsilon;</em> &mdash; shown as the six-by-six matrix &mdash;
+    to just three independent constants, <em>C<sub>11</sub></em>,
+    <em>C<sub>12</sub></em>, and <em>C<sub>44</sub></em>; Young's modulus and
+    Poisson's ratio follow from <em>C<sub>11</sub></em> and
+    <em>C<sub>12</sub></em> &mdash; the quantities this work targets from first
+    principles &mdash; subject to the
     <span class="term">Born&ndash;Cauchy</span> stability criterion
     <em>C<sub>11</sub>&nbsp;&gt;&nbsp;C<sub>12</sub></em>, which recurs as the
     principal verification gate in Stage&nbsp;5b. Measuring these constants
@@ -276,6 +344,56 @@
     That condition motivates the whole framework.
   </div>
   <div class="tip"><strong>Procedure:</strong> Reference the table by gesture; do not enumerate rows. State the Born&ndash;Cauchy inequality explicitly &mdash; it is the closing verification gate.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; the cubic elastic constants</span>
+    <p>When you pull on a solid it stretches, and springs back when released.
+    <strong>Stress</strong> <code>&sigma;</code> is force per unit area;
+    <strong>strain</strong> <code>&epsilon;</code> is the fractional stretch. For small
+    deformations they are proportional &mdash; Hooke's law <code>F = kx</code> generalised to
+    three dimensions: <code>&sigma; = C&epsilon;</code>, where <code>C</code> is the
+    <strong>stiffness tensor</strong>, the material's collection of &ldquo;spring constants.&rdquo;
+    It is not a single number because pushing or shearing in different directions gives
+    different responses.</p>
+    <p>Stress and strain each have six independent components (three normal, three shear), so
+    <code>C</code> is a 6&times;6 matrix &mdash; in full generality <strong>21 independent
+    numbers</strong>. Crystal symmetry is the great simplifier: a <strong>cubic</strong> crystal
+    has a cube-shaped cell with three identical axes, and that symmetry forces most entries to be
+    equal or zero, leaving exactly <strong>three independent constants</strong> &mdash;
+    <code>C&#8321;&#8321;</code>, <code>C&#8321;&#8322;</code>, <code>C&#8324;&#8324;</code>:</p>
+    <div class="cmat-wrap">
+      <span class="cmat-lhs">&sigma; = C&epsilon;,&nbsp; C =</span>
+<pre class="cmat">&#9121; C&#8321;&#8321; C&#8321;&#8322; C&#8321;&#8322;  0   0   0 &#9124;
+&#9122; C&#8321;&#8322; C&#8321;&#8321; C&#8321;&#8322;  0   0   0 &#9125;
+&#9122; C&#8321;&#8322; C&#8321;&#8322; C&#8321;&#8321;  0   0   0 &#9125;
+&#9122;  0   0   0  C&#8324;&#8324;  0   0 &#9125;
+&#9122;  0   0   0   0  C&#8324;&#8324;  0 &#9125;
+&#9123;  0   0   0   0   0  C&#8324;&#8324;&#9126;</pre>
+    </div>
+    <ul>
+      <li><strong>C&#8321;&#8321;</strong> &mdash; stiffness against <em>stretching along a cube
+      edge</em>: how hard the bonds resist being pulled apart.</li>
+      <li><strong>C&#8321;&#8322;</strong> &mdash; the <em>sideways coupling</em>: squeeze along
+      x and the crystal pushes out in y and z. This is the origin of Poisson's ratio.</li>
+      <li><strong>C&#8324;&#8324;</strong> &mdash; resistance to <em>shear</em> (sliding atomic
+      planes past each other); genuinely independent of the other two in a cubic crystal. Its
+      departure from <code>(C&#8321;&#8321;&minus;C&#8321;&#8322;)/2</code> measures the crystal's
+      anisotropy.</li>
+    </ul>
+    <p>The engineering quantities follow directly: bulk modulus
+    <code>K = (C&#8321;&#8321;+2C&#8321;&#8322;)/3</code>, and along [100]
+    <code>E = (C&#8321;&#8321;&minus;C&#8321;&#8322;)(C&#8321;&#8321;+2C&#8321;&#8322;)/(C&#8321;&#8321;+C&#8321;&#8322;)</code>,
+    <code>&nu; = C&#8321;&#8322;/(C&#8321;&#8321;+C&#8321;&#8322;)</code>. So
+    <strong>C&#8321;&#8321; and C&#8321;&#8322; together fix E and &nu;</strong> &mdash; exactly the
+    two numbers this framework targets; C&#8324;&#8324; governs shear, which is not the target.</p>
+    <p><strong>Why C&#8321;&#8321; &gt; C&#8321;&#8322; is the stability gate.</strong> A crystal
+    only holds together if its strain energy is positive for any deformation (Born stability),
+    which for cubic means <code>C&#8321;&#8321;&minus;C&#8321;&#8322; &gt; 0</code>,
+    <code>C&#8321;&#8321;+2C&#8321;&#8322; &gt; 0</code>, and <code>C&#8324;&#8324; &gt; 0</code>.
+    The inequality on the slide is the first of these. A potential predicting
+    <code>C&#8321;&#8322; &ge; C&#8321;&#8321;</code> describes a crystal that would spontaneously
+    shear apart &mdash; physically meaningless &mdash; which is precisely the gate where 19 of 30
+    alloys fail in Stage&nbsp;5b.</p>
+  </div>
 </section>
 
 <!-- Slide 3 -->
@@ -313,6 +431,25 @@
     against which the MEAM potential is calibrated.
   </div>
   <div class="tip"><strong>Procedure:</strong> Underline the accuracy/scale trade-off explicitly &mdash; it is the rationale for the entire pipeline.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; potentials vs. first principles</span>
+    <p>Every property of a material follows from its <strong>energy as a function of where the
+    atoms sit</strong>, <code>U(r)</code>. The force on an atom is just the downhill slope of that
+    energy, <code>F = &minus;&part;U/&part;r</code>. An <strong>interatomic potential</strong> is a
+    cheap closed-form guess for <code>U</code>; molecular dynamics simply lets the atoms roll
+    downhill on it.</p>
+    <p>The simplest guess &mdash; sum over pairs of atoms (Lennard&ndash;Jones) &mdash; works for
+    noble gases but fails for metals, where a shared &ldquo;sea&rdquo; of electrons means an
+    atom's energy depends on <em>how many</em> neighbours surround it, not just pair distances.
+    <strong>EAM</strong> fixes this with an <em>embedding energy</em> (the cost of placing an atom
+    in the local electron density); <strong>MEAM</strong> adds <em>angular</em> terms so it can
+    distinguish BCC, HCP, and directional bonding.</p>
+    <p><strong>DFT</strong> skips the guessing: it approximately solves the quantum equations for
+    the electrons themselves, predicting <code>U</code> from first principles &mdash; but costs so
+    much it caps at ~10&sup3; atoms, versus ~10&#8310;+ for MEAM. So DFT is the accurate ruler;
+    MEAM is the fast tool calibrated against it. That trade-off is the whole reason this pipeline
+    exists.</p>
+  </div>
 </section>
 
 <!-- Slide 4 -->
@@ -340,6 +477,19 @@
     formalism and constructs the missing parameters automatically.
   </div>
   <div class="tip"><strong>Procedure:</strong> Reference the table once by gesture; the &ldquo;merged&rdquo; row is the visual answer to the problem.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; why you can't just merge two MEAM files</span>
+    <p>A MEAM <strong>library</strong> is a text file of fitted parameters: per-element functions
+    <em>plus</em> pair-specific <strong>cross-terms</strong> describing how each pair of elements
+    interacts. Published files were each fitted for a particular handful of elements together.</p>
+    <p>You cannot concatenate two files, because the cross-terms between an element from file A and
+    one from file B were <em>never fitted</em> &mdash; they simply do not exist. With twelve
+    elements there are <code>C(12,2) = 66</code> such pairs to define, far too many to hand-tune.
+    The modern alternative &mdash; purely data-driven machine-learning potentials &mdash; avoids
+    the problem but needs 10&#8308;&ndash;10&#8309; DFT snapshots and becomes an uninterpretable
+    black box. Keeping MEAM preserves physical meaning and a tiny parameter count; this work just
+    fills in the missing cross-terms automatically.</p>
+  </div>
 </section>
 
 <!-- Slide 5 -->
@@ -370,6 +520,20 @@
     predictor independent of the MEAM-refitting loop.
   </div>
   <div class="tip"><strong>Procedure:</strong> The longest segment of the talk. Indicate each stage with the laser pointer in turn; do not return to earlier stages.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; the inverse-problem trick</span>
+    <p>The core idea is solving an <strong>inverse problem</strong>. The <em>forward</em> direction
+    is easy: given MEAM parameters, LAMMPS computes the elastic constants. We want the
+    <em>reverse</em> &mdash; the parameters that produce a <em>target</em> set of constants &mdash;
+    which has no formula.</p>
+    <p>So we train a <strong>neural network</strong> to imitate the forward map
+    (parameters &rarr; C&#8321;&#8321;, C&#8321;&#8322;). Because a neural network is
+    <strong>differentiable</strong>, we can ask &ldquo;which way should I nudge the parameters to
+    reduce the error?&rdquo; and let an optimiser (<strong>L-BFGS</strong>, a gradient-based
+    method) walk downhill to a solution &mdash; vastly faster than blindly searching a
+    ~200-dimensional parameter space. Stage&nbsp;5a is a separate, simpler net that predicts
+    properties straight from composition.</p>
+  </div>
 </section>
 
 <!-- Slide 6 -->
@@ -389,6 +553,15 @@
     comparable frequencies, preserving cross-term identifiability.
   </div>
   <div class="tip"><strong>Procedure:</strong> Brief slide; advance without lingering.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; the composition simplex</span>
+    <p>A <strong>composition</strong> is a list of element fractions that must sum to one; the set
+    of all such lists is called the <strong>simplex</strong>. Sampling it <em>uniformly</em> gives
+    an even spread of candidate alloys. We deliberately bias toward aluminium because the
+    engineering target (Al&nbsp;7075) is Al-rich &mdash; while still sampling the other eleven
+    elements often enough to <em>identify</em> their cross-terms (you cannot fit an interaction you
+    never observe).</p>
+  </div>
 </section>
 
 <!-- Slide 7 -->
@@ -416,6 +589,19 @@
     rather than directly on (<em>E</em>,&nbsp;<em>&nu;</em>).
   </div>
   <div class="tip"><strong>Procedure:</strong> The Mg/Zn cluster justifies the choice of training targets &mdash; state it explicitly.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; measuring stiffness by simulation</span>
+    <p>To measure stiffness <em>in silico</em>, you build a box of a few thousand atoms, relax it
+    to its lowest-energy shape, then stretch it by a tiny known amount (here 0.1&nbsp;%) and read
+    off the <strong>stress</strong> that develops. Stress divided by strain, in each direction,
+    gives <code>C&#8321;&#8321;</code> and <code>C&#8321;&#8322;</code> &mdash; the numerical
+    (<em>finite-difference</em>) version of their definition.</p>
+    <p>Magnesium- and zinc-rich alloys come out with <code>&nu;</code> near 0.5 &mdash; nearly
+    incompressible, like rubber &mdash; where <code>E</code> and <code>&nu;</code> become
+    numerically explosive (the <code>1&minus;2&nu;</code> term in the denominator approaches zero).
+    Training the surrogate on the well-behaved <code>C&#8321;&#8321;, C&#8321;&#8322;</code> and
+    converting afterwards avoids that instability.</p>
+  </div>
 </section>
 
 <!-- Slide 8 (merged: former slides 9 + 10) -->
@@ -446,6 +632,20 @@
     converge; a relaxed body-centred-cubic approximation stands in.
   </div>
   <div class="tip"><strong>Procedure:</strong> Seeding the cross-terms directly is the hand-off from DFT to MEAM. Do not derive &alpha; on the board &mdash; cite its MEAM origin.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; what DFT measures, and how it seeds MEAM</span>
+    <p>For each element, DFT computes the energy at several lattice spacings; fitting that
+    <strong>energy-versus-volume curve</strong> (the Birch&ndash;Murnaghan equation of state) yields
+    three numbers: the equilibrium spacing <code>a&#8320;</code>, the <strong>cohesive energy</strong>
+    (how strongly an atom is bound), and the <strong>bulk modulus B</strong> (resistance to uniform
+    compression). For each <em>pair</em> of elements, the <strong>formation energy</strong> says
+    whether mixing is favourable (negative &mdash; the elements like to alloy) or not (positive
+    &mdash; they tend to separate).</p>
+    <p>Stage&nbsp;4 then converts each element's three DFT numbers into the MEAM
+    <strong>screening parameter <code>&alpha;</code></strong> through a closed-form formula
+    &mdash; no fitting required &mdash; while the pair formation energies seed the cross-terms
+    directly. The result is a complete twelve-element starting library in milliseconds.</p>
+  </div>
 </section>
 
 <!-- Slide 9 -->
@@ -472,6 +672,19 @@
     consistent with the published reference range.
   </div>
   <div class="tip"><strong>Procedure:</strong> Reference the deployed application image; do not propose a live demonstration.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; reading the surrogate's metrics</span>
+    <p>A small neural network learns the map <strong>composition &rarr;
+    (C&#8321;&#8321;, C&#8321;&#8322;)</strong>. The <strong>R&sup2;</strong> score rates the fit:
+    1.0 is perfect, 0 is no better than always guessing the average. R&sup2;&nbsp;=&nbsp;0.77 on
+    <code>E</code> is solid; 0.52 on <code>&nu;</code> reflects how intrinsically noisy
+    <code>&nu;</code> is. <strong>Huber loss</strong> is a hybrid error measure &mdash; quadratic
+    for small errors, only linear for large ones &mdash; so a few wild outlier alloys don't
+    dominate training.</p>
+    <p>Running five independently-initialised networks (a <strong>deep ensemble</strong>) and
+    watching how much they disagree gives a cheap, honest <strong>uncertainty</strong> estimate
+    &mdash; useful for flagging compositions far from the training data.</p>
+  </div>
 </section>
 
 <!-- Slide 10 -->
@@ -501,38 +714,110 @@
     corpus.
   </div>
   <div class="tip"><strong>Procedure:</strong> State the verification numbers without qualifying language; the closing slide addresses the interpretation.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; why the loop is hard</span>
+    <p>This is the same surrogate idea as Stage&nbsp;5a, but now over <strong>MEAM parameters</strong>
+    instead of composition, run as a loop: optimise &rarr; re-check the result in LAMMPS &rarr;
+    append the new data &rarr; retrain. <strong>Active learning</strong> means the loop chooses its
+    next samples where the model is least certain, rather than at random.</p>
+    <p>The difficulty is that the problem is <strong>under-determined</strong> &mdash; roughly 200
+    free parameters but at most ~100 elastic targets &mdash; so many different parameter sets fit
+    the data equally well, and most describe <em>mechanically unstable</em> crystals. The
+    <strong>Born&ndash;Cauchy check</strong> (<code>C&#8321;&#8321; &gt; C&#8321;&#8322;</code>,
+    explained on Slide&nbsp;2) is the filter: only 11 of 30 held-out alloys survive it, and 4 then
+    meet the 20&nbsp;% engineering tolerance.</p>
+  </div>
 </section>
 
-<!-- Slide 11 -->
+<!-- Slide 11 (external validation, tables) -->
 <section class="slide">
   <div class="slide-header">
     <span class="badge">11</span>
-    <span class="slide-title">Discussion and Outlook</span>
-    <span class="timing">~55&nbsp;s &middot; ~125&nbsp;words</span>
+    <span class="slide-title">External Validation &mdash; Quantitative Summary</span>
+    <span class="timing">~40&nbsp;s &middot; ~95&nbsp;words</span>
   </div>
   <div class="transcript">
-    In summary, the contributions of the present work comprise the
-    molecular-dynamics elastic database of seven thousand eight hundred and
-    fifteen alloys, the DFT reference set covering ten elements, the merged
-    twelve-element MEAM library, the deployed composition surrogate with a
-    coefficient of determination of <em>0.77</em> on Young's modulus, and the
-    resumable Stage-5b optimisation framework.
+    To validate both surrogates against independent experimental data, I scraped
+    Young's modulus and Poisson's ratio for <em>forty-three</em> engineering
+    alloys from the ASM Aerospace materials database and fed each measured
+    composition through both models. Across the thirty-three aluminium alloys,
+    the composition network predicts Young's modulus to a mean absolute error of
+    <em>two-point-three percent</em>, the MEAM to <em>seven-point-four
+    percent</em> &mdash; and that agreement holds uniformly across the two-,
+    five-, six- and seven-thousand series.
     <span class="pause">(pause)</span>
-    The current limitations of Stage&nbsp;5b are attributed to three causes:
-    an under-determined inverse problem, a residual mismatch between the
-    surrogate and the LAMMPS evaluator, and the absence of mechanical-stability
-    constraints from the training loss. The planned extensions address these
-    causes in turn: restricting optimisation to Sobol-sensitive cross-terms,
-    expanding the active-learning corpus, incorporating physics-informed
-    stability penalties, and introducing special-quasirandom-structure DFT
-    references at intermediate compositions. The architecture is established;
-    the remaining work is one of sampling and loss formulation.
+    Off the aluminium domain the error climbs steeply for the MEAM &mdash; its
+    cubic-strain assumption fails on hexagonal titanium and ferrous chemistries,
+    some even mechanically unstable &mdash; and far more gently for the
+    composition network.
   </div>
-  <div class="tip"><strong>Procedure:</strong> Conclude on the closing sentence. Acknowledge the jury and yield the floor for questions.</div>
+  <div class="tip"><strong>Procedure:</strong> Cite the aluminium row and the overall trend; let the two tables carry the detail.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; what is compared, and how to read it</span>
+    <p>Datasheets give <strong>weight-percent</strong> compositions and
+    <strong>polycrystalline</strong> <em>E</em> and <em>&nu;</em>; the models consume
+    <strong>mole fractions</strong> and emit <strong>single-crystal cubic</strong>
+    <code>C&#8321;&#8321;, C&#8321;&#8322;</code>. The script converts weight to mole
+    fractions over the twelve-element basis &mdash; dropping out-of-basis elements such
+    as carbon in steel and vanadium in Ti&ndash;6Al&ndash;4V &mdash; and compares the
+    derived <em>E</em> and <em>&nu;</em>.</p>
+    <p><strong>MAPE</strong> is the mean absolute percent error against the datasheet
+    value. For the MEAM columns, mechanically unstable runs &mdash; negative modulus,
+    or failing the Born&ndash;Cauchy check from Slide&nbsp;2 &mdash; are
+    <em>excluded</em> rather than allowed to dominate; the A-286 MEAM cell is blank for
+    exactly this reason. The breakdown by aluminium alloy series confirms the agreement
+    is a property of the whole family, not an artefact of one composition.</p>
+  </div>
+</section>
+
+<!-- Slide 12 -->
+<section class="slide">
+  <div class="slide-header">
+    <span class="badge">12</span>
+    <span class="slide-title">Further Studies</span>
+    <span class="timing">~60&nbsp;s &middot; ~140&nbsp;words</span>
+  </div>
+  <div class="transcript">
+    The architecture proposed here is complete; the further studies fall into
+    three groups. First, making the optimisation <em>well-posed</em>: ranking the
+    MEAM cross-terms by Sobol sensitivity so that only the influential few are
+    fitted, baking the Born&ndash;Cauchy stability inequalities directly into the
+    loss, and expanding the active-learning corpus to at least five hundred
+    composition medoids.
+    <span class="pause">(pause)</span>
+    Second &mdash; and this is what the external validation motivates &mdash;
+    moving <em>beyond the aluminium domain</em>: extending the element basis to
+    carbon, vanadium and nitrogen so that steels and titanium alloys become
+    representable, broadening the molecular-dynamics and DFT sampling into the
+    hexagonal and ferrous regions, and replacing the cubic-only elastic
+    extraction with a symmetry-aware tensor. Third, the <em>reference data</em>:
+    special-quasirandom-structure DFT at intermediate compositions, and a
+    standing re-validation loop against the ASM experimental data. The remaining
+    work is one of sampling, loss formulation, and domain coverage.
+  </div>
+  <div class="tip"><strong>Procedure:</strong> Group the points by the three column headers; close on the final sentence, then acknowledge the jury and yield the floor for questions.</div>
+  <div class="learn">
+    <span class="label">Background &mdash; the proposed directions, in plain terms</span>
+    <p>The first group attacks the <strong>under-determination</strong> from Slide&nbsp;10.
+    <strong>Sobol sensitivity analysis</strong> ranks which parameters actually move the elastic
+    constants, so optimisation can be restricted to the few that matter (fewer unknowns &rarr; a
+    better-posed problem); a <strong>physics-informed loss</strong> bakes the stability
+    inequalities into training, penalising unstable solutions before they are proposed rather than
+    catching them at the verification gate.</p>
+    <p>The second group is the lesson of the validation slides: both models were accurate only on
+    aluminium because that is what they were built from. Adding the missing elements (carbon,
+    vanadium&hellip;) and sampling <strong>hcp</strong> and <strong>ferrous</strong> chemistries
+    widens the domain; a <strong>symmetry-aware</strong> elastic calculation (a hexagonal stiffness
+    tensor for titanium, not the cubic one) removes the specific error that made MEAM titanium come
+    out far too stiff. <strong>SQS</strong> &mdash; special quasirandom structures &mdash; are small
+    cells engineered to mimic a random alloy, letting DFT supply references at intermediate
+    compositions.</p>
+  </div>
 </section>
 
 <footer>
-  total target ~10:15 &middot; ~1395 words &middot; pace ~136 WPM &middot; bibliography frame shown silently
+  spoken: total target ~11:05 &middot; ~1550 words &middot; pace ~136 WPM &middot; bibliography frame shown silently<br>
+  study guide: 11 Background boxes &middot; self-contained, no prior knowledge assumed
 </footer>
 
 </main>

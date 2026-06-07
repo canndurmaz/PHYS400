@@ -1,0 +1,4 @@
+__pycache__/
+# Raw scraped ASM/MatWeb datasheets — a local offline cache, regenerable via
+# matweb_scraper.fetch_html(); not committed (third-party HTML, reproducible).
+html_cache/

@@ -7,8 +7,15 @@ cd "$(dirname "$0")"
 mkdir -p tmp
 
 if [[ "${REGEN:-0}" == "1" ]]; then
+  # Each generator depends on a JSON artifact produced elsewhere in the
+  # pipeline; a missing input should warn and skip, not abort the whole
+  # compile (so the deck still builds from the committed PNGs).
   echo "== regenerating NNIP figures =="
-  ../../phys/bin/python3 generate_nnip_figures.py
+  ../../phys/bin/python3 generate_nnip_figures.py \
+    || echo "   (skipped: NNIP diagnostics not present)"
+  echo "== regenerating literature-comparison tables =="
+  ../../phys/bin/python3 generate_literature_figure.py \
+    || echo "   (skipped: literature_comparison.json not present)"
 fi
 
 DOC=0900-2587772-meam-nn-final

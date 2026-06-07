@@ -1,0 +1,3800 @@
+{
+  "metadata": {
+    "generated": "2026-06-07T01:37:53+00:00",
+    "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+    "basis": [
+      "Al",
+      "Co",
+      "Cr",
+      "Cu",
+      "Fe",
+      "Mg",
+      "Mn",
+      "Mo",
+      "Ni",
+      "Si",
+      "Ti",
+      "Zn"
+    ],
+    "n_materials": 43,
+    "n_skipped": 0,
+    "meam_enabled": true,
+    "meam_unphysical": 2,
+    "meam_knobs": {
+      "box_size_m": 2.5e-09,
+      "temperature": 300.0,
+      "total_steps": 1000,
+      "thermo_interval": 10,
+      "dump_interval": 50
+    },
+    "notes": "Literature E/\u03bd are polycrystalline datasheet values; model C11/C12 are single-crystal cubic. Out-of-basis elements (C, V, \u2026) are dropped before modelling \u2014 see basis_coverage."
+  },
+  "summary": {
+    "ML": {
+      "overall": {
+        "E_GPa": {
+          "n": 43,
+          "MAE": 17.46978275162323,
+          "MAPE": 10.756311827157399,
+          "bias_pct": 10.545722044961295
+        },
+        "nu": {
+          "n": 40,
+          "MAE": 0.023393520773652615,
+          "MAPE": 7.201610217929111,
+          "bias_pct": 3.4242161559111985
+        }
+      },
+      "by_family": {
+        "aluminium": {
+          "E_GPa": {
+            "n": 33,
+            "MAE": 1.6481074829377889,
+            "MAPE": 2.3341280515098077,
+            "bias_pct": 2.3341280515098077
+          },
+          "nu": {
+            "n": 33,
+            "MAE": 0.01333974436267992,
+            "MAPE": 4.042346776569673,
+            "bias_pct": 4.042346776569673
+          }
+        },
+        "nickel_iron": {
+          "E_GPa": {
+            "n": 1,
+            "MAE": 215.1006415001578,
+            "MAPE": 107.0152445274417,
+            "bias_pct": 107.0152445274417
+          },
+          "nu": {
+            "n": 0,
+            "MAE": null,
+            "MAPE": null,
+            "bias_pct": null
+          }
+        },
+        "stainless": {
+          "E_GPa": {
+            "n": 3,
+            "MAE": 135.8300768644106,
+            "MAPE": 69.63100003170118,
+            "bias_pct": 69.63100003170118
+          },
+          "nu": {
+            "n": 1,
+            "MAE": 0.21908885559703895,
+            "MAPE": 75.54788124035827,
+            "bias_pct": -75.54788124035827
+          }
+        },
+        "titanium": {
+          "E_GPa": {
+            "n": 6,
+            "MAE": 12.370373214910382,
+            "MAPE": 11.597823040899883,
+            "bias_pct": 10.088596268494472
+          },
+          "nu": {
+            "n": 6,
+            "MAE": 0.04607340189677137,
+            "MAPE": 13.186513975001168,
+            "bias_pct": 13.186513975001168
+          }
+        }
+      }
+    },
+    "MEAM": {
+      "overall": {
+        "E_GPa": {
+          "n": 41,
+          "MAE": 57.25865796877986,
+          "MAPE": 42.239295100220325,
+          "bias_pct": 42.239295100220325
+        },
+        "nu": {
+          "n": 40,
+          "MAE": 0.023733376287699882,
+          "MAPE": 7.109940705636278,
+          "bias_pct": 0.3135421474983475
+        }
+      },
+      "by_family": {
+        "aluminium": {
+          "E_GPa": {
+            "n": 33,
+            "MAE": 5.263872844434216,
+            "MAPE": 7.376206248000383,
+            "bias_pct": 7.376206248000383
+          },
+          "nu": {
+            "n": 33,
+            "MAE": 0.014964660671892472,
+            "MAPE": 4.534745658149234,
+            "bias_pct": 4.463415375953343
+          }
+        },
+        "nickel_iron": {
+          "E_GPa": {
+            "n": 0,
+            "MAE": null,
+            "MAPE": null,
+            "bias_pct": null
+          },
+          "nu": {
+            "n": 0,
+            "MAE": null,
+            "MAPE": null,
+            "bias_pct": null
+          }
+        },
+        "stainless": {
+          "E_GPa": {
+            "n": 2,
+            "MAE": 631.0216435338654,
+            "MAPE": 324.0535302228,
+            "bias_pct": 324.0535302228
+          },
+          "nu": {
+            "n": 1,
+            "MAE": 0.137189770942808,
+            "MAPE": 47.30681756648551,
+            "bias_pct": -47.30681756648551
+          }
+        },
+        "titanium": {
+          "E_GPa": {
+            "n": 6,
+            "MAE": 151.97564763098578,
+            "MAPE": 140.0482054132368,
+            "bias_pct": 140.0482054132368
+          },
+          "nu": {
+            "n": 6,
+            "MAE": 0.05305191306545595,
+            "MAPE": 14.574033990006813,
+            "bias_pct": -14.574033990006813
+          }
+        }
+      }
+    }
+  },
+  "materials": [
+    {
+      "bassnum": "MA2014O",
+      "name": "Aluminum 2014-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2014O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 72.4,
+        "nu": 0.33,
+        "G_GPa": 28.0,
+        "density_g_cc": 2.8
+      },
+      "composition_wt_pct": {
+        "Al": 92.7,
+        "Cu": 4.45,
+        "Mg": 0.5,
+        "Mn": 0.8,
+        "Si": 0.85,
+        "Cr": 0.05,
+        "Fe": 0.35,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.9592,
+        "Cu": 0.019551,
+        "Mg": 0.005744,
+        "Mn": 0.004066,
+        "Si": 0.00845,
+        "Cr": 0.000268,
+        "Fe": 0.00175,
+        "Ti": 0.000437,
+        "Zn": 0.000534
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.59233475569744,
+          "nu": 0.34497917114281035,
+          "C11_GPa": 115.66301107406616,
+          "C12_GPa": 60.944894552230835,
+          "E_GPa_std": 1.369050054963939,
+          "nu_std": 0.0053262175123331545,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 77.4502554525171,
+          "nu": 0.3365492798963327,
+          "C11_GPa": 117.60606366144413,
+          "C12_GPa": 59.6581401411648,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.59233475569744,
+            "lit": 72.4,
+            "abs_err": 1.1923347556974306,
+            "pct_err": 1.6468712095268379
+          },
+          "nu": {
+            "pred": 0.34497917114281035,
+            "lit": 0.33,
+            "abs_err": 0.014979171142810332,
+            "pct_err": 4.539142770548585
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 77.4502554525171,
+            "lit": 72.4,
+            "abs_err": 5.050255452517092,
+            "pct_err": 6.97549095651532
+          },
+          "nu": {
+            "pred": 0.3365492798963327,
+            "lit": 0.33,
+            "abs_err": 0.006549279896332694,
+            "pct_err": 1.9846302716159676
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2014T4",
+      "name": "Aluminum 2014-T4; 2014-T451",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2014T4",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 72.4,
+        "nu": 0.33,
+        "G_GPa": 28.0,
+        "density_g_cc": 2.8
+      },
+      "composition_wt_pct": {
+        "Al": 92.7,
+        "Cu": 4.45,
+        "Mg": 0.5,
+        "Mn": 0.8,
+        "Si": 0.85,
+        "Cr": 0.05,
+        "Fe": 0.35,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.9592,
+        "Cu": 0.019551,
+        "Mg": 0.005744,
+        "Mn": 0.004066,
+        "Si": 0.00845,
+        "Cr": 0.000268,
+        "Fe": 0.00175,
+        "Ti": 0.000437,
+        "Zn": 0.000534
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.59233475569744,
+          "nu": 0.34497917114281035,
+          "C11_GPa": 115.66301107406616,
+          "C12_GPa": 60.944894552230835,
+          "E_GPa_std": 1.369050054963939,
+          "nu_std": 0.0053262175123331545,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 77.4502554525171,
+          "nu": 0.3365492798963327,
+          "C11_GPa": 117.60606366144413,
+          "C12_GPa": 59.6581401411648,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.59233475569744,
+            "lit": 72.4,
+            "abs_err": 1.1923347556974306,
+            "pct_err": 1.6468712095268379
+          },
+          "nu": {
+            "pred": 0.34497917114281035,
+            "lit": 0.33,
+            "abs_err": 0.014979171142810332,
+            "pct_err": 4.539142770548585
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 77.4502554525171,
+            "lit": 72.4,
+            "abs_err": 5.050255452517092,
+            "pct_err": 6.97549095651532
+          },
+          "nu": {
+            "pred": 0.3365492798963327,
+            "lit": 0.33,
+            "abs_err": 0.006549279896332694,
+            "pct_err": 1.9846302716159676
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2014T6",
+      "name": "Aluminum 2014-T6; 2014-T651",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2014T6",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 72.4,
+        "nu": 0.33,
+        "G_GPa": 28.0,
+        "density_g_cc": 2.8
+      },
+      "composition_wt_pct": {
+        "Al": 92.7,
+        "Cu": 4.45,
+        "Mg": 0.5,
+        "Mn": 0.8,
+        "Si": 0.85,
+        "Cr": 0.05,
+        "Fe": 0.35,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.9592,
+        "Cu": 0.019551,
+        "Mg": 0.005744,
+        "Mn": 0.004066,
+        "Si": 0.00845,
+        "Cr": 0.000268,
+        "Fe": 0.00175,
+        "Ti": 0.000437,
+        "Zn": 0.000534
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.59233475569744,
+          "nu": 0.34497917114281035,
+          "C11_GPa": 115.66301107406616,
+          "C12_GPa": 60.944894552230835,
+          "E_GPa_std": 1.369050054963939,
+          "nu_std": 0.0053262175123331545,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 77.4502554525171,
+          "nu": 0.3365492798963327,
+          "C11_GPa": 117.60606366144413,
+          "C12_GPa": 59.6581401411648,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.59233475569744,
+            "lit": 72.4,
+            "abs_err": 1.1923347556974306,
+            "pct_err": 1.6468712095268379
+          },
+          "nu": {
+            "pred": 0.34497917114281035,
+            "lit": 0.33,
+            "abs_err": 0.014979171142810332,
+            "pct_err": 4.539142770548585
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 77.4502554525171,
+            "lit": 72.4,
+            "abs_err": 5.050255452517092,
+            "pct_err": 6.97549095651532
+          },
+          "nu": {
+            "pred": 0.3365492798963327,
+            "lit": 0.33,
+            "abs_err": 0.006549279896332694,
+            "pct_err": 1.9846302716159676
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2017O",
+      "name": "Aluminum 2017-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2017O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 72.4,
+        "nu": 0.33,
+        "G_GPa": 27.0,
+        "density_g_cc": 2.79
+      },
+      "composition_wt_pct": {
+        "Al": 93.5,
+        "Cu": 4.0,
+        "Mg": 0.6,
+        "Mn": 0.7,
+        "Si": 0.5,
+        "Cr": 0.05,
+        "Fe": 0.35,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.96414,
+        "Cu": 0.017514,
+        "Mg": 0.006868,
+        "Mn": 0.003545,
+        "Si": 0.004953,
+        "Cr": 0.000268,
+        "Fe": 0.001744,
+        "Ti": 0.000436,
+        "Zn": 0.000532
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.26231794177511,
+          "nu": 0.3452680068777861,
+          "C11_GPa": 115.28133392333984,
+          "C12_GPa": 60.81972122192383,
+          "E_GPa_std": 1.6692283527512095,
+          "nu_std": 0.005453565904322875,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 81.1780183151303,
+          "nu": 0.3295148849548035,
+          "C11_GPa": 120.06541311776476,
+          "C12_GPa": 59.007038191868446,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.26231794177511,
+            "lit": 72.4,
+            "abs_err": 0.8623179417751032,
+            "pct_err": 1.1910468809048387
+          },
+          "nu": {
+            "pred": 0.3452680068777861,
+            "lit": 0.33,
+            "abs_err": 0.015268006877786067,
+            "pct_err": 4.626668750844263
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 81.1780183151303,
+            "lit": 72.4,
+            "abs_err": 8.778018315130296,
+            "pct_err": 12.124334689406485
+          },
+          "nu": {
+            "pred": 0.3295148849548035,
+            "lit": 0.33,
+            "abs_err": -0.0004851150451964936,
+            "pct_err": -0.1470045591504526
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2017T4",
+      "name": "Aluminum 2017-T4; 2017-T451",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2017T4",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 72.4,
+        "nu": 0.33,
+        "G_GPa": 27.0,
+        "density_g_cc": 2.79
+      },
+      "composition_wt_pct": {
+        "Al": 93.5,
+        "Cu": 4.0,
+        "Mg": 0.6,
+        "Mn": 0.7,
+        "Si": 0.5,
+        "Cr": 0.05,
+        "Fe": 0.35,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.96414,
+        "Cu": 0.017514,
+        "Mg": 0.006868,
+        "Mn": 0.003545,
+        "Si": 0.004953,
+        "Cr": 0.000268,
+        "Fe": 0.001744,
+        "Ti": 0.000436,
+        "Zn": 0.000532
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.26231794177511,
+          "nu": 0.3452680068777861,
+          "C11_GPa": 115.28133392333984,
+          "C12_GPa": 60.81972122192383,
+          "E_GPa_std": 1.6692283527512095,
+          "nu_std": 0.005453565904322875,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 81.1780183151303,
+          "nu": 0.3295148849548035,
+          "C11_GPa": 120.06541311776476,
+          "C12_GPa": 59.007038191868446,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.26231794177511,
+            "lit": 72.4,
+            "abs_err": 0.8623179417751032,
+            "pct_err": 1.1910468809048387
+          },
+          "nu": {
+            "pred": 0.3452680068777861,
+            "lit": 0.33,
+            "abs_err": 0.015268006877786067,
+            "pct_err": 4.626668750844263
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 81.1780183151303,
+            "lit": 72.4,
+            "abs_err": 8.778018315130296,
+            "pct_err": 12.124334689406485
+          },
+          "nu": {
+            "pred": 0.3295148849548035,
+            "lit": 0.33,
+            "abs_err": -0.0004851150451964936,
+            "pct_err": -0.1470045591504526
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2024O",
+      "name": "Aluminum 2024-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2024O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 73.1,
+        "nu": 0.33,
+        "G_GPa": 28.0,
+        "density_g_cc": 2.78
+      },
+      "composition_wt_pct": {
+        "Al": 92.7,
+        "Cu": 4.35,
+        "Mg": 1.5,
+        "Mn": 0.6,
+        "Cr": 0.05,
+        "Fe": 0.25,
+        "Si": 0.25,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.955791,
+        "Cu": 0.019044,
+        "Mg": 0.017169,
+        "Mn": 0.003038,
+        "Cr": 0.000268,
+        "Fe": 0.001245,
+        "Si": 0.002476,
+        "Ti": 0.000436,
+        "Zn": 0.000532
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.62418819567623,
+          "nu": 0.34267832646346197,
+          "C11_GPa": 114.61921215057373,
+          "C12_GPa": 59.78149652481079,
+          "E_GPa_std": 1.336370885024137,
+          "nu_std": 0.006199546534620568,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 76.26690234783797,
+          "nu": 0.3381302175508898,
+          "C11_GPa": 116.52376392263177,
+          "C12_GPa": 59.52863643240491,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.62418819567623,
+            "lit": 73.1,
+            "abs_err": 0.5241881956762313,
+            "pct_err": 0.7170837150153644
+          },
+          "nu": {
+            "pred": 0.34267832646346197,
+            "lit": 0.33,
+            "abs_err": 0.012678326463461953,
+            "pct_err": 3.8419171101399856
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 76.26690234783797,
+            "lit": 73.1,
+            "abs_err": 3.1669023478379756,
+            "pct_err": 4.332287753540323
+          },
+          "nu": {
+            "pred": 0.3381302175508898,
+            "lit": 0.33,
+            "abs_err": 0.008130217550889773,
+            "pct_err": 2.463702288148416
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2024T3",
+      "name": "Aluminum 2024-T3",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2024T3",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 73.1,
+        "nu": 0.33,
+        "G_GPa": 28.0,
+        "density_g_cc": 2.78
+      },
+      "composition_wt_pct": {
+        "Al": 92.7,
+        "Cu": 4.35,
+        "Mg": 1.5,
+        "Mn": 0.6,
+        "Cr": 0.05,
+        "Fe": 0.25,
+        "Si": 0.25,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.955791,
+        "Cu": 0.019044,
+        "Mg": 0.017169,
+        "Mn": 0.003038,
+        "Cr": 0.000268,
+        "Fe": 0.001245,
+        "Si": 0.002476,
+        "Ti": 0.000436,
+        "Zn": 0.000532
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.62418819567623,
+          "nu": 0.34267832646346197,
+          "C11_GPa": 114.61921215057373,
+          "C12_GPa": 59.78149652481079,
+          "E_GPa_std": 1.336370885024137,
+          "nu_std": 0.006199546534620568,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 76.26690234783797,
+          "nu": 0.3381302175508898,
+          "C11_GPa": 116.52376392263177,
+          "C12_GPa": 59.52863643240491,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.62418819567623,
+            "lit": 73.1,
+            "abs_err": 0.5241881956762313,
+            "pct_err": 0.7170837150153644
+          },
+          "nu": {
+            "pred": 0.34267832646346197,
+            "lit": 0.33,
+            "abs_err": 0.012678326463461953,
+            "pct_err": 3.8419171101399856
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 76.26690234783797,
+            "lit": 73.1,
+            "abs_err": 3.1669023478379756,
+            "pct_err": 4.332287753540323
+          },
+          "nu": {
+            "pred": 0.3381302175508898,
+            "lit": 0.33,
+            "abs_err": 0.008130217550889773,
+            "pct_err": 2.463702288148416
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2024T4",
+      "name": "Aluminum 2024-T4; 2024-T351",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2024T4",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 73.1,
+        "nu": 0.33,
+        "G_GPa": 28.0,
+        "density_g_cc": 2.78
+      },
+      "composition_wt_pct": {
+        "Al": 92.7,
+        "Cu": 4.35,
+        "Mg": 1.5,
+        "Mn": 0.6,
+        "Cr": 0.05,
+        "Fe": 0.25,
+        "Si": 0.25,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.955791,
+        "Cu": 0.019044,
+        "Mg": 0.017169,
+        "Mn": 0.003038,
+        "Cr": 0.000268,
+        "Fe": 0.001245,
+        "Si": 0.002476,
+        "Ti": 0.000436,
+        "Zn": 0.000532
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.62418819567623,
+          "nu": 0.34267832646346197,
+          "C11_GPa": 114.61921215057373,
+          "C12_GPa": 59.78149652481079,
+          "E_GPa_std": 1.336370885024137,
+          "nu_std": 0.006199546534620568,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 76.26690234783797,
+          "nu": 0.3381302175508898,
+          "C11_GPa": 116.52376392263177,
+          "C12_GPa": 59.52863643240491,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.62418819567623,
+            "lit": 73.1,
+            "abs_err": 0.5241881956762313,
+            "pct_err": 0.7170837150153644
+          },
+          "nu": {
+            "pred": 0.34267832646346197,
+            "lit": 0.33,
+            "abs_err": 0.012678326463461953,
+            "pct_err": 3.8419171101399856
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 76.26690234783797,
+            "lit": 73.1,
+            "abs_err": 3.1669023478379756,
+            "pct_err": 4.332287753540323
+          },
+          "nu": {
+            "pred": 0.3381302175508898,
+            "lit": 0.33,
+            "abs_err": 0.008130217550889773,
+            "pct_err": 2.463702288148416
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2024T6",
+      "name": "Aluminum 2024-T6",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2024T6",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 72.4,
+        "nu": 0.33,
+        "G_GPa": 27.0,
+        "density_g_cc": 2.78
+      },
+      "composition_wt_pct": {
+        "Al": 92.7,
+        "Cu": 4.35,
+        "Mg": 1.5,
+        "Mn": 0.6,
+        "Cr": 0.05,
+        "Fe": 0.25,
+        "Si": 0.25,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.955791,
+        "Cu": 0.019044,
+        "Mg": 0.017169,
+        "Mn": 0.003038,
+        "Cr": 0.000268,
+        "Fe": 0.001245,
+        "Si": 0.002476,
+        "Ti": 0.000436,
+        "Zn": 0.000532
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.62418819567623,
+          "nu": 0.34267832646346197,
+          "C11_GPa": 114.61921215057373,
+          "C12_GPa": 59.78149652481079,
+          "E_GPa_std": 1.336370885024137,
+          "nu_std": 0.006199546534620568,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 76.26690234783797,
+          "nu": 0.3381302175508898,
+          "C11_GPa": 116.52376392263177,
+          "C12_GPa": 59.52863643240491,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.62418819567623,
+            "lit": 72.4,
+            "abs_err": 1.22418819567622,
+            "pct_err": 1.690867673585939
+          },
+          "nu": {
+            "pred": 0.34267832646346197,
+            "lit": 0.33,
+            "abs_err": 0.012678326463461953,
+            "pct_err": 3.8419171101399856
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 76.26690234783797,
+            "lit": 72.4,
+            "abs_err": 3.8669023478379643,
+            "pct_err": 5.3410253423176295
+          },
+          "nu": {
+            "pred": 0.3381302175508898,
+            "lit": 0.33,
+            "abs_err": 0.008130217550889773,
+            "pct_err": 2.463702288148416
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2219O",
+      "name": "Aluminum 2219-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2219O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 73.1,
+        "nu": 0.33,
+        "G_GPa": 27.0,
+        "density_g_cc": 2.84
+      },
+      "composition_wt_pct": {
+        "Al": 92.65,
+        "Cu": 6.3,
+        "Mn": 0.3,
+        "Ti": 0.06,
+        "V": 0.1,
+        "Zr": 0.175,
+        "Fe": 0.15,
+        "Mg": 0.01,
+        "Si": 0.1,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Al": 0.968064,
+        "Cu": 0.02795,
+        "Mn": 0.00154,
+        "Ti": 0.000353,
+        "Fe": 0.000757,
+        "Mg": 0.000116,
+        "Si": 0.001004,
+        "Zn": 0.000216
+      },
+      "basis_coverage": 0.9972,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 74.31367300757903,
+          "nu": 0.3446736718139862,
+          "C11_GPa": 116.63816213607788,
+          "C12_GPa": 61.3691520690918,
+          "E_GPa_std": 2.320019709352222,
+          "nu_std": 0.005786701694127742,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 81.88619791973218,
+          "nu": 0.32854314811241336,
+          "C11_GPa": 120.689173097465,
+          "C12_GPa": 59.053088461391546,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 74.31367300757903,
+            "lit": 73.1,
+            "abs_err": 1.2136730075790325,
+            "pct_err": 1.6602913920369804
+          },
+          "nu": {
+            "pred": 0.3446736718139862,
+            "lit": 0.33,
+            "abs_err": 0.014673671813986211,
+            "pct_err": 4.446567216359457
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 81.88619791973218,
+            "lit": 73.1,
+            "abs_err": 8.786197919732189,
+            "pct_err": 12.019422598812845
+          },
+          "nu": {
+            "pred": 0.32854314811241336,
+            "lit": 0.33,
+            "abs_err": -0.001456851887586652,
+            "pct_err": -0.4414702689656521
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA2219T87",
+      "name": "Aluminum 2219-T87",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA2219T87",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 73.1,
+        "nu": 0.33,
+        "G_GPa": 27.0,
+        "density_g_cc": 2.84
+      },
+      "composition_wt_pct": {
+        "Al": 92.65,
+        "Cu": 6.3,
+        "Mn": 0.3,
+        "Ti": 0.06,
+        "V": 0.1,
+        "Zr": 0.175,
+        "Fe": 0.15,
+        "Mg": 0.01,
+        "Si": 0.1,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Al": 0.968064,
+        "Cu": 0.02795,
+        "Mn": 0.00154,
+        "Ti": 0.000353,
+        "Fe": 0.000757,
+        "Mg": 0.000116,
+        "Si": 0.001004,
+        "Zn": 0.000216
+      },
+      "basis_coverage": 0.9972,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 74.31367300757903,
+          "nu": 0.3446736718139862,
+          "C11_GPa": 116.63816213607788,
+          "C12_GPa": 61.3691520690918,
+          "E_GPa_std": 2.320019709352222,
+          "nu_std": 0.005786701694127742,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 81.88619791973218,
+          "nu": 0.32854314811241336,
+          "C11_GPa": 120.689173097465,
+          "C12_GPa": 59.053088461391546,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 74.31367300757903,
+            "lit": 73.1,
+            "abs_err": 1.2136730075790325,
+            "pct_err": 1.6602913920369804
+          },
+          "nu": {
+            "pred": 0.3446736718139862,
+            "lit": 0.33,
+            "abs_err": 0.014673671813986211,
+            "pct_err": 4.446567216359457
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 81.88619791973218,
+            "lit": 73.1,
+            "abs_err": 8.786197919732189,
+            "pct_err": 12.019422598812845
+          },
+          "nu": {
+            "pred": 0.32854314811241336,
+            "lit": 0.33,
+            "abs_err": -0.001456851887586652,
+            "pct_err": -0.4414702689656521
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5052O",
+      "name": "Aluminum 5052-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5052O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 70.3,
+        "nu": 0.33,
+        "G_GPa": 25.9,
+        "density_g_cc": 2.68
+      },
+      "composition_wt_pct": {
+        "Al": 96.7,
+        "Cr": 0.25,
+        "Mg": 2.5,
+        "Cu": 0.05,
+        "Fe": 0.2,
+        "Mn": 0.05,
+        "Si": 0.125,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Al": 0.968082,
+        "Cr": 0.001299,
+        "Mg": 0.027785,
+        "Cu": 0.000213,
+        "Fe": 0.000967,
+        "Mn": 0.000246,
+        "Si": 0.001202,
+        "Zn": 0.000207
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.44822651519492,
+          "nu": 0.3452225923578936,
+          "C11_GPa": 112.39176034927368,
+          "C12_GPa": 59.27122950553894,
+          "E_GPa_std": 2.703733562539776,
+          "nu_std": 0.00696832855764481,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 73.7794775385756,
+          "nu": 0.35126731533441774,
+          "C11_GPa": 119.0758443800763,
+          "C12_GPa": 64.47563559731867,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.44822651519492,
+            "lit": 70.3,
+            "abs_err": 1.1482265151949207,
+            "pct_err": 1.6333236347011675
+          },
+          "nu": {
+            "pred": 0.3452225923578936,
+            "lit": 0.33,
+            "abs_err": 0.015222592357893583,
+            "pct_err": 4.612906775119267
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 73.7794775385756,
+            "lit": 70.3,
+            "abs_err": 3.4794775385756083,
+            "pct_err": 4.9494701828956025
+          },
+          "nu": {
+            "pred": 0.35126731533441774,
+            "lit": 0.33,
+            "abs_err": 0.021267315334417725,
+            "pct_err": 6.4446410104296135
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5052H32",
+      "name": "Aluminum 5052-H32",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5052H32",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 70.3,
+        "nu": 0.33,
+        "G_GPa": 25.9,
+        "density_g_cc": 2.68
+      },
+      "composition_wt_pct": {
+        "Al": 96.7,
+        "Cr": 0.25,
+        "Mg": 2.5,
+        "Cu": 0.05,
+        "Fe": 0.2,
+        "Mn": 0.05,
+        "Si": 0.125,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Al": 0.968082,
+        "Cr": 0.001299,
+        "Mg": 0.027785,
+        "Cu": 0.000213,
+        "Fe": 0.000967,
+        "Mn": 0.000246,
+        "Si": 0.001202,
+        "Zn": 0.000207
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.44822651519492,
+          "nu": 0.3452225923578936,
+          "C11_GPa": 112.39176034927368,
+          "C12_GPa": 59.27122950553894,
+          "E_GPa_std": 2.703733562539776,
+          "nu_std": 0.00696832855764481,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 73.7794775385756,
+          "nu": 0.35126731533441774,
+          "C11_GPa": 119.0758443800763,
+          "C12_GPa": 64.47563559731867,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.44822651519492,
+            "lit": 70.3,
+            "abs_err": 1.1482265151949207,
+            "pct_err": 1.6333236347011675
+          },
+          "nu": {
+            "pred": 0.3452225923578936,
+            "lit": 0.33,
+            "abs_err": 0.015222592357893583,
+            "pct_err": 4.612906775119267
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 73.7794775385756,
+            "lit": 70.3,
+            "abs_err": 3.4794775385756083,
+            "pct_err": 4.9494701828956025
+          },
+          "nu": {
+            "pred": 0.35126731533441774,
+            "lit": 0.33,
+            "abs_err": 0.021267315334417725,
+            "pct_err": 6.4446410104296135
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5052H34",
+      "name": "Aluminum 5052-H34",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5052H34",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 70.3,
+        "nu": 0.33,
+        "G_GPa": 25.9,
+        "density_g_cc": 2.68
+      },
+      "composition_wt_pct": {
+        "Al": 96.7,
+        "Cr": 0.25,
+        "Mg": 2.5,
+        "Cu": 0.05,
+        "Fe": 0.2,
+        "Mn": 0.05,
+        "Si": 0.125,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Al": 0.968082,
+        "Cr": 0.001299,
+        "Mg": 0.027785,
+        "Cu": 0.000213,
+        "Fe": 0.000967,
+        "Mn": 0.000246,
+        "Si": 0.001202,
+        "Zn": 0.000207
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.44822651519492,
+          "nu": 0.3452225923578936,
+          "C11_GPa": 112.39176034927368,
+          "C12_GPa": 59.27122950553894,
+          "E_GPa_std": 2.703733562539776,
+          "nu_std": 0.00696832855764481,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 73.7794775385756,
+          "nu": 0.35126731533441774,
+          "C11_GPa": 119.0758443800763,
+          "C12_GPa": 64.47563559731867,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.44822651519492,
+            "lit": 70.3,
+            "abs_err": 1.1482265151949207,
+            "pct_err": 1.6333236347011675
+          },
+          "nu": {
+            "pred": 0.3452225923578936,
+            "lit": 0.33,
+            "abs_err": 0.015222592357893583,
+            "pct_err": 4.612906775119267
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 73.7794775385756,
+            "lit": 70.3,
+            "abs_err": 3.4794775385756083,
+            "pct_err": 4.9494701828956025
+          },
+          "nu": {
+            "pred": 0.35126731533441774,
+            "lit": 0.33,
+            "abs_err": 0.021267315334417725,
+            "pct_err": 6.4446410104296135
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5052H38",
+      "name": "Aluminum 5052-H38",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5052H38",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 70.3,
+        "nu": 0.33,
+        "G_GPa": 25.9,
+        "density_g_cc": 2.68
+      },
+      "composition_wt_pct": {
+        "Al": 96.7,
+        "Cr": 0.25,
+        "Mg": 2.5,
+        "Cu": 0.05,
+        "Fe": 0.2,
+        "Mn": 0.05,
+        "Si": 0.125,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Al": 0.968082,
+        "Cr": 0.001299,
+        "Mg": 0.027785,
+        "Cu": 0.000213,
+        "Fe": 0.000967,
+        "Mn": 0.000246,
+        "Si": 0.001202,
+        "Zn": 0.000207
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.44822651519492,
+          "nu": 0.3452225923578936,
+          "C11_GPa": 112.39176034927368,
+          "C12_GPa": 59.27122950553894,
+          "E_GPa_std": 2.703733562539776,
+          "nu_std": 0.00696832855764481,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 73.7794775385756,
+          "nu": 0.35126731533441774,
+          "C11_GPa": 119.0758443800763,
+          "C12_GPa": 64.47563559731867,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.44822651519492,
+            "lit": 70.3,
+            "abs_err": 1.1482265151949207,
+            "pct_err": 1.6333236347011675
+          },
+          "nu": {
+            "pred": 0.3452225923578936,
+            "lit": 0.33,
+            "abs_err": 0.015222592357893583,
+            "pct_err": 4.612906775119267
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 73.7794775385756,
+            "lit": 70.3,
+            "abs_err": 3.4794775385756083,
+            "pct_err": 4.9494701828956025
+          },
+          "nu": {
+            "pred": 0.35126731533441774,
+            "lit": 0.33,
+            "abs_err": 0.021267315334417725,
+            "pct_err": 6.4446410104296135
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5083O",
+      "name": "Aluminum 5083-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5083O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 70.3,
+        "nu": 0.33,
+        "G_GPa": 26.4,
+        "density_g_cc": 2.66
+      },
+      "composition_wt_pct": {
+        "Al": 94.0,
+        "Cr": 0.15,
+        "Mg": 4.45,
+        "Mn": 0.7,
+        "Cu": 0.05,
+        "Fe": 0.2,
+        "Si": 0.2,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.942208,
+        "Cr": 0.00078,
+        "Mg": 0.049517,
+        "Mn": 0.003446,
+        "Cu": 0.000213,
+        "Fe": 0.000969,
+        "Si": 0.001926,
+        "Ti": 0.000424,
+        "Zn": 0.000517
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 72.3610135077707,
+          "nu": 0.3390164834815807,
+          "C11_GPa": 111.02383375167847,
+          "C12_GPa": 56.97211503982544,
+          "E_GPa_std": 2.8727123426202605,
+          "nu_std": 0.00886334106469182,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 79.5913435077048,
+          "nu": 0.35372126786637964,
+          "C11_GPa": 129.8808926686905,
+          "C12_GPa": 71.08640860687923,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 72.3610135077707,
+            "lit": 70.3,
+            "abs_err": 2.06101350777071,
+            "pct_err": 2.9317404093466712
+          },
+          "nu": {
+            "pred": 0.3390164834815807,
+            "lit": 0.33,
+            "abs_err": 0.009016483481580684,
+            "pct_err": 2.732267721691116
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 79.5913435077048,
+            "lit": 70.3,
+            "abs_err": 9.29134350770481,
+            "pct_err": 13.216704847375263
+          },
+          "nu": {
+            "pred": 0.35372126786637964,
+            "lit": 0.33,
+            "abs_err": 0.023721267866379625,
+            "pct_err": 7.188262989812007
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5083H32",
+      "name": "Aluminum 5083-H32; 5083-H323",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5083H32",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 70.3,
+        "nu": 0.33,
+        "G_GPa": 26.4,
+        "density_g_cc": 2.66
+      },
+      "composition_wt_pct": {
+        "Al": 94.0,
+        "Cr": 0.15,
+        "Mg": 4.45,
+        "Mn": 0.7,
+        "Cu": 0.05,
+        "Fe": 0.2,
+        "Si": 0.2,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.942208,
+        "Cr": 0.00078,
+        "Mg": 0.049517,
+        "Mn": 0.003446,
+        "Cu": 0.000213,
+        "Fe": 0.000969,
+        "Si": 0.001926,
+        "Ti": 0.000424,
+        "Zn": 0.000517
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 72.3610135077707,
+          "nu": 0.3390164834815807,
+          "C11_GPa": 111.02383375167847,
+          "C12_GPa": 56.97211503982544,
+          "E_GPa_std": 2.8727123426202605,
+          "nu_std": 0.00886334106469182,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 79.5913435077048,
+          "nu": 0.35372126786637964,
+          "C11_GPa": 129.8808926686905,
+          "C12_GPa": 71.08640860687923,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 72.3610135077707,
+            "lit": 70.3,
+            "abs_err": 2.06101350777071,
+            "pct_err": 2.9317404093466712
+          },
+          "nu": {
+            "pred": 0.3390164834815807,
+            "lit": 0.33,
+            "abs_err": 0.009016483481580684,
+            "pct_err": 2.732267721691116
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 79.5913435077048,
+            "lit": 70.3,
+            "abs_err": 9.29134350770481,
+            "pct_err": 13.216704847375263
+          },
+          "nu": {
+            "pred": 0.35372126786637964,
+            "lit": 0.33,
+            "abs_err": 0.023721267866379625,
+            "pct_err": 7.188262989812007
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5083H34",
+      "name": "Aluminum 5083-H34; 5083-H343",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5083H34",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 70.3,
+        "nu": 0.33,
+        "G_GPa": 26.4,
+        "density_g_cc": 2.66
+      },
+      "composition_wt_pct": {
+        "Al": 94.0,
+        "Cr": 0.15,
+        "Mg": 4.45,
+        "Mn": 0.7,
+        "Cu": 0.05,
+        "Fe": 0.2,
+        "Si": 0.2,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.942208,
+        "Cr": 0.00078,
+        "Mg": 0.049517,
+        "Mn": 0.003446,
+        "Cu": 0.000213,
+        "Fe": 0.000969,
+        "Si": 0.001926,
+        "Ti": 0.000424,
+        "Zn": 0.000517
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 72.3610135077707,
+          "nu": 0.3390164834815807,
+          "C11_GPa": 111.02383375167847,
+          "C12_GPa": 56.97211503982544,
+          "E_GPa_std": 2.8727123426202605,
+          "nu_std": 0.00886334106469182,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 79.5913435077048,
+          "nu": 0.35372126786637964,
+          "C11_GPa": 129.8808926686905,
+          "C12_GPa": 71.08640860687923,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 72.3610135077707,
+            "lit": 70.3,
+            "abs_err": 2.06101350777071,
+            "pct_err": 2.9317404093466712
+          },
+          "nu": {
+            "pred": 0.3390164834815807,
+            "lit": 0.33,
+            "abs_err": 0.009016483481580684,
+            "pct_err": 2.732267721691116
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 79.5913435077048,
+            "lit": 70.3,
+            "abs_err": 9.29134350770481,
+            "pct_err": 13.216704847375263
+          },
+          "nu": {
+            "pred": 0.35372126786637964,
+            "lit": 0.33,
+            "abs_err": 0.023721267866379625,
+            "pct_err": 7.188262989812007
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5086O",
+      "name": "Aluminum 5086-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5086O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 71.0,
+        "nu": 0.33,
+        "G_GPa": 26.4,
+        "density_g_cc": 2.66
+      },
+      "composition_wt_pct": {
+        "Al": 94.65,
+        "Cr": 0.15,
+        "Mg": 4.0,
+        "Mn": 0.45,
+        "Cu": 0.05,
+        "Fe": 0.25,
+        "Si": 0.2,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.948231,
+        "Cr": 0.00078,
+        "Mg": 0.044487,
+        "Mn": 0.002214,
+        "Cu": 0.000213,
+        "Fe": 0.00121,
+        "Si": 0.001925,
+        "Ti": 0.000424,
+        "Zn": 0.000517
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 72.30615705720687,
+          "nu": 0.3401177955692948,
+          "C11_GPa": 111.4144778251648,
+          "C12_GPa": 57.44843602180481,
+          "E_GPa_std": 2.8367041452469532,
+          "nu_std": 0.008472358547345243,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 74.99355167845476,
+          "nu": 0.35342394046722825,
+          "C11_GPa": 122.2127875734136,
+          "C12_GPa": 66.80254290715956,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 72.30615705720687,
+            "lit": 71.0,
+            "abs_err": 1.3061570572068746,
+            "pct_err": 1.839657827051936
+          },
+          "nu": {
+            "pred": 0.3401177955692948,
+            "lit": 0.33,
+            "abs_err": 0.010117795569294763,
+            "pct_err": 3.0659986573620492
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 74.99355167845476,
+            "lit": 71.0,
+            "abs_err": 3.9935516784547644,
+            "pct_err": 5.62472067387995
+          },
+          "nu": {
+            "pred": 0.35342394046722825,
+            "lit": 0.33,
+            "abs_err": 0.023423940467228233,
+            "pct_err": 7.098163777947949
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA5086H34",
+      "name": "Aluminum 5086-H34",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA5086H34",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 71.0,
+        "nu": 0.33,
+        "G_GPa": 26.4,
+        "density_g_cc": 2.66
+      },
+      "composition_wt_pct": {
+        "Al": 94.65,
+        "Cr": 0.15,
+        "Mg": 4.0,
+        "Mn": 0.45,
+        "Cu": 0.05,
+        "Fe": 0.25,
+        "Si": 0.2,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.948231,
+        "Cr": 0.00078,
+        "Mg": 0.044487,
+        "Mn": 0.002214,
+        "Cu": 0.000213,
+        "Fe": 0.00121,
+        "Si": 0.001925,
+        "Ti": 0.000424,
+        "Zn": 0.000517
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 72.30615705720687,
+          "nu": 0.3401177955692948,
+          "C11_GPa": 111.4144778251648,
+          "C12_GPa": 57.44843602180481,
+          "E_GPa_std": 2.8367041452469532,
+          "nu_std": 0.008472358547345243,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 74.99355167845476,
+          "nu": 0.35342394046722825,
+          "C11_GPa": 122.2127875734136,
+          "C12_GPa": 66.80254290715956,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 72.30615705720687,
+            "lit": 71.0,
+            "abs_err": 1.3061570572068746,
+            "pct_err": 1.839657827051936
+          },
+          "nu": {
+            "pred": 0.3401177955692948,
+            "lit": 0.33,
+            "abs_err": 0.010117795569294763,
+            "pct_err": 3.0659986573620492
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 74.99355167845476,
+            "lit": 71.0,
+            "abs_err": 3.9935516784547644,
+            "pct_err": 5.62472067387995
+          },
+          "nu": {
+            "pred": 0.35342394046722825,
+            "lit": 0.33,
+            "abs_err": 0.023423940467228233,
+            "pct_err": 7.098163777947949
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA6061O",
+      "name": "Aluminum 6061-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA6061O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 68.9,
+        "nu": 0.33,
+        "G_GPa": 26.0,
+        "density_g_cc": 2.7
+      },
+      "composition_wt_pct": {
+        "Al": 97.2,
+        "Cr": 0.195,
+        "Cu": 0.275,
+        "Mg": 1.0,
+        "Si": 0.6,
+        "Fe": 0.35,
+        "Mn": 0.075,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.977825,
+        "Cr": 0.001018,
+        "Cu": 0.001175,
+        "Mg": 0.011168,
+        "Si": 0.005799,
+        "Fe": 0.001701,
+        "Mn": 0.000371,
+        "Ti": 0.000425,
+        "Zn": 0.000519
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.57320103521995,
+          "nu": 0.34798262892067217,
+          "C11_GPa": 113.9267110824585,
+          "C12_GPa": 60.824382305145264,
+          "E_GPa_std": 2.3892203057748356,
+          "nu_std": 0.006499010715518416,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 71.05779361877919,
+          "nu": 0.35045790807247734,
+          "C11_GPa": 114.27323398423971,
+          "C12_GPa": 61.655678713523635,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.57320103521995,
+            "lit": 68.9,
+            "abs_err": 2.6732010352199467,
+            "pct_err": 3.8798273370391096
+          },
+          "nu": {
+            "pred": 0.34798262892067217,
+            "lit": 0.33,
+            "abs_err": 0.01798262892067215,
+            "pct_err": 5.449281491112773
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 71.05779361877919,
+            "lit": 68.9,
+            "abs_err": 2.1577936187791806,
+            "pct_err": 3.131775934367461
+          },
+          "nu": {
+            "pred": 0.35045790807247734,
+            "lit": 0.33,
+            "abs_err": 0.020457908072477327,
+            "pct_err": 6.199366082568887
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA6061T4",
+      "name": "Aluminum 6061-T4; 6061-T451",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA6061T4",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 68.9,
+        "nu": 0.33,
+        "G_GPa": 26.0,
+        "density_g_cc": 2.7
+      },
+      "composition_wt_pct": {
+        "Al": 97.2,
+        "Cr": 0.195,
+        "Cu": 0.275,
+        "Mg": 1.0,
+        "Si": 0.6,
+        "Fe": 0.35,
+        "Mn": 0.075,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.977825,
+        "Cr": 0.001018,
+        "Cu": 0.001175,
+        "Mg": 0.011168,
+        "Si": 0.005799,
+        "Fe": 0.001701,
+        "Mn": 0.000371,
+        "Ti": 0.000425,
+        "Zn": 0.000519
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.57320103521995,
+          "nu": 0.34798262892067217,
+          "C11_GPa": 113.9267110824585,
+          "C12_GPa": 60.824382305145264,
+          "E_GPa_std": 2.3892203057748356,
+          "nu_std": 0.006499010715518416,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 71.05779361877919,
+          "nu": 0.35045790807247734,
+          "C11_GPa": 114.27323398423971,
+          "C12_GPa": 61.655678713523635,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.57320103521995,
+            "lit": 68.9,
+            "abs_err": 2.6732010352199467,
+            "pct_err": 3.8798273370391096
+          },
+          "nu": {
+            "pred": 0.34798262892067217,
+            "lit": 0.33,
+            "abs_err": 0.01798262892067215,
+            "pct_err": 5.449281491112773
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 71.05779361877919,
+            "lit": 68.9,
+            "abs_err": 2.1577936187791806,
+            "pct_err": 3.131775934367461
+          },
+          "nu": {
+            "pred": 0.35045790807247734,
+            "lit": 0.33,
+            "abs_err": 0.020457908072477327,
+            "pct_err": 6.199366082568887
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA6061T6",
+      "name": "Aluminum 6061-T6; 6061-T651",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA6061T6",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 68.9,
+        "nu": 0.33,
+        "G_GPa": 26.0,
+        "density_g_cc": 2.7
+      },
+      "composition_wt_pct": {
+        "Al": 97.2,
+        "Cr": 0.195,
+        "Cu": 0.275,
+        "Mg": 1.0,
+        "Si": 0.6,
+        "Fe": 0.35,
+        "Mn": 0.075,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.977825,
+        "Cr": 0.001018,
+        "Cu": 0.001175,
+        "Mg": 0.011168,
+        "Si": 0.005799,
+        "Fe": 0.001701,
+        "Mn": 0.000371,
+        "Ti": 0.000425,
+        "Zn": 0.000519
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.57320103521995,
+          "nu": 0.34798262892067217,
+          "C11_GPa": 113.9267110824585,
+          "C12_GPa": 60.824382305145264,
+          "E_GPa_std": 2.3892203057748356,
+          "nu_std": 0.006499010715518416,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 71.05779361877919,
+          "nu": 0.35045790807247734,
+          "C11_GPa": 114.27323398423971,
+          "C12_GPa": 61.655678713523635,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.57320103521995,
+            "lit": 68.9,
+            "abs_err": 2.6732010352199467,
+            "pct_err": 3.8798273370391096
+          },
+          "nu": {
+            "pred": 0.34798262892067217,
+            "lit": 0.33,
+            "abs_err": 0.01798262892067215,
+            "pct_err": 5.449281491112773
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 71.05779361877919,
+            "lit": 68.9,
+            "abs_err": 2.1577936187791806,
+            "pct_err": 3.131775934367461
+          },
+          "nu": {
+            "pred": 0.35045790807247734,
+            "lit": 0.33,
+            "abs_err": 0.020457908072477327,
+            "pct_err": 6.199366082568887
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA6061T8",
+      "name": "Aluminum 6061-T8",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA6061T8",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 69.0,
+        "nu": 0.33,
+        "G_GPa": 26.0,
+        "density_g_cc": 2.7
+      },
+      "composition_wt_pct": {
+        "Al": 97.2,
+        "Cr": 0.195,
+        "Cu": 0.275,
+        "Mg": 1.0,
+        "Si": 0.6,
+        "Fe": 0.35,
+        "Mn": 0.075,
+        "Ti": 0.075,
+        "Zn": 0.125
+      },
+      "composition": {
+        "Al": 0.977825,
+        "Cr": 0.001018,
+        "Cu": 0.001175,
+        "Mg": 0.011168,
+        "Si": 0.005799,
+        "Fe": 0.001701,
+        "Mn": 0.000371,
+        "Ti": 0.000425,
+        "Zn": 0.000519
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.57320103521995,
+          "nu": 0.34798262892067217,
+          "C11_GPa": 113.9267110824585,
+          "C12_GPa": 60.824382305145264,
+          "E_GPa_std": 2.3892203057748356,
+          "nu_std": 0.006499010715518416,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 71.05779361877919,
+          "nu": 0.35045790807247734,
+          "C11_GPa": 114.27323398423971,
+          "C12_GPa": 61.655678713523635,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.57320103521995,
+            "lit": 69.0,
+            "abs_err": 2.5732010352199524,
+            "pct_err": 3.729276862637612
+          },
+          "nu": {
+            "pred": 0.34798262892067217,
+            "lit": 0.33,
+            "abs_err": 0.01798262892067215,
+            "pct_err": 5.449281491112773
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 71.05779361877919,
+            "lit": 69.0,
+            "abs_err": 2.0577936187791863,
+            "pct_err": 2.9823095924336034
+          },
+          "nu": {
+            "pred": 0.35045790807247734,
+            "lit": 0.33,
+            "abs_err": 0.020457908072477327,
+            "pct_err": 6.199366082568887
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA6063O",
+      "name": "Aluminum 6063-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA6063O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 68.9,
+        "nu": 0.33,
+        "G_GPa": 25.8,
+        "density_g_cc": 2.7
+      },
+      "composition_wt_pct": {
+        "Mg": 0.675,
+        "Si": 0.4,
+        "Al": 48.75,
+        "Cr": 0.05,
+        "Cu": 0.05,
+        "Fe": 0.175,
+        "Mn": 0.05,
+        "Ti": 0.05,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Mg": 0.01496,
+        "Si": 0.007672,
+        "Al": 0.973273,
+        "Cr": 0.000518,
+        "Cu": 0.000424,
+        "Fe": 0.001688,
+        "Mn": 0.00049,
+        "Ti": 0.000563,
+        "Zn": 0.000412
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.5231665059976,
+          "nu": 0.34748411324403744,
+          "C11_GPa": 113.60216617584229,
+          "C12_GPa": 60.517544746398926,
+          "E_GPa_std": 2.2748837534215958,
+          "nu_std": 0.006390835085083826,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 72.73738994614028,
+          "nu": 0.35116368127694775,
+          "C11_GPa": 117.33997360932592,
+          "C12_GPa": 63.506828925183605,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.5231665059976,
+            "lit": 68.9,
+            "abs_err": 2.623166505997588,
+            "pct_err": 3.8072082815639883
+          },
+          "nu": {
+            "pred": 0.34748411324403744,
+            "lit": 0.33,
+            "abs_err": 0.017484113244037425,
+            "pct_err": 5.298216134556795
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 72.73738994614028,
+            "lit": 68.9,
+            "abs_err": 3.837389946140277,
+            "pct_err": 5.569506453033783
+          },
+          "nu": {
+            "pred": 0.35116368127694775,
+            "lit": 0.33,
+            "abs_err": 0.021163681276947732,
+            "pct_err": 6.413236750590222
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA6063T4",
+      "name": "Aluminum 6063-T4",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA6063T4",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 68.9,
+        "nu": 0.33,
+        "G_GPa": 25.8,
+        "density_g_cc": 2.7
+      },
+      "composition_wt_pct": {
+        "Mg": 0.675,
+        "Si": 0.4,
+        "Al": 48.75,
+        "Cr": 0.05,
+        "Cu": 0.05,
+        "Fe": 0.175,
+        "Mn": 0.05,
+        "Ti": 0.05,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Mg": 0.01496,
+        "Si": 0.007672,
+        "Al": 0.973273,
+        "Cr": 0.000518,
+        "Cu": 0.000424,
+        "Fe": 0.001688,
+        "Mn": 0.00049,
+        "Ti": 0.000563,
+        "Zn": 0.000412
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.5231665059976,
+          "nu": 0.34748411324403744,
+          "C11_GPa": 113.60216617584229,
+          "C12_GPa": 60.517544746398926,
+          "E_GPa_std": 2.2748837534215958,
+          "nu_std": 0.006390835085083826,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 72.73738994614028,
+          "nu": 0.35116368127694775,
+          "C11_GPa": 117.33997360932592,
+          "C12_GPa": 63.506828925183605,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.5231665059976,
+            "lit": 68.9,
+            "abs_err": 2.623166505997588,
+            "pct_err": 3.8072082815639883
+          },
+          "nu": {
+            "pred": 0.34748411324403744,
+            "lit": 0.33,
+            "abs_err": 0.017484113244037425,
+            "pct_err": 5.298216134556795
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 72.73738994614028,
+            "lit": 68.9,
+            "abs_err": 3.837389946140277,
+            "pct_err": 5.569506453033783
+          },
+          "nu": {
+            "pred": 0.35116368127694775,
+            "lit": 0.33,
+            "abs_err": 0.021163681276947732,
+            "pct_err": 6.413236750590222
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA6063T6",
+      "name": "Aluminum 6063-T6",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA6063T6",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 68.9,
+        "nu": 0.33,
+        "G_GPa": 25.8,
+        "density_g_cc": 2.7
+      },
+      "composition_wt_pct": {
+        "Mg": 0.675,
+        "Si": 0.4,
+        "Al": 48.75,
+        "Cr": 0.05,
+        "Cu": 0.05,
+        "Fe": 0.175,
+        "Mn": 0.05,
+        "Ti": 0.05,
+        "Zn": 0.05
+      },
+      "composition": {
+        "Mg": 0.01496,
+        "Si": 0.007672,
+        "Al": 0.973273,
+        "Cr": 0.000518,
+        "Cu": 0.000424,
+        "Fe": 0.001688,
+        "Mn": 0.00049,
+        "Ti": 0.000563,
+        "Zn": 0.000412
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 71.5231665059976,
+          "nu": 0.34748411324403744,
+          "C11_GPa": 113.60216617584229,
+          "C12_GPa": 60.517544746398926,
+          "E_GPa_std": 2.2748837534215958,
+          "nu_std": 0.006390835085083826,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 72.73738994614028,
+          "nu": 0.35116368127694775,
+          "C11_GPa": 117.33997360932592,
+          "C12_GPa": 63.506828925183605,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 71.5231665059976,
+            "lit": 68.9,
+            "abs_err": 2.623166505997588,
+            "pct_err": 3.8072082815639883
+          },
+          "nu": {
+            "pred": 0.34748411324403744,
+            "lit": 0.33,
+            "abs_err": 0.017484113244037425,
+            "pct_err": 5.298216134556795
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 72.73738994614028,
+            "lit": 68.9,
+            "abs_err": 3.837389946140277,
+            "pct_err": 5.569506453033783
+          },
+          "nu": {
+            "pred": 0.35116368127694775,
+            "lit": 0.33,
+            "abs_err": 0.021163681276947732,
+            "pct_err": 6.413236750590222
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA7075O",
+      "name": "Aluminum 7075-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA7075O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 71.7,
+        "nu": 0.33,
+        "G_GPa": 26.9,
+        "density_g_cc": 2.81
+      },
+      "composition_wt_pct": {
+        "Al": 89.25,
+        "Cr": 0.23,
+        "Cu": 1.6,
+        "Mg": 2.5,
+        "Zn": 5.6,
+        "Fe": 0.25,
+        "Mn": 0.15,
+        "Si": 0.2,
+        "Ti": 0.1
+      },
+      "composition": {
+        "Al": 0.933791,
+        "Cr": 0.001249,
+        "Cu": 0.007108,
+        "Mg": 0.029038,
+        "Zn": 0.02418,
+        "Fe": 0.001264,
+        "Mn": 0.000771,
+        "Si": 0.00201,
+        "Ti": 0.00059
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.6315937487328,
+          "nu": 0.3391858203400669,
+          "C11_GPa": 113.04410934448242,
+          "C12_GPa": 58.0583918094635,
+          "E_GPa_std": 1.4912848878876195,
+          "nu_std": 0.006520792865539969,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 79.13348247492368,
+          "nu": 0.3468019498066793,
+          "C11_GPa": 125.26166729133972,
+          "C12_GPa": 66.50508286088018,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.6315937487328,
+            "lit": 71.7,
+            "abs_err": 1.9315937487327943,
+            "pct_err": 2.6939940707570353
+          },
+          "nu": {
+            "pred": 0.3391858203400669,
+            "lit": 0.33,
+            "abs_err": 0.009185820340066875,
+            "pct_err": 2.7835819212323862
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 79.13348247492368,
+            "lit": 71.7,
+            "abs_err": 7.433482474923679,
+            "pct_err": 10.367479044523957
+          },
+          "nu": {
+            "pred": 0.3468019498066793,
+            "lit": 0.33,
+            "abs_err": 0.01680194980667926,
+            "pct_err": 5.091499941417958
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA7075T6",
+      "name": "Aluminum 7075-T6; 7075-T651",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA7075T6",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 71.7,
+        "nu": 0.33,
+        "G_GPa": 26.9,
+        "density_g_cc": 2.81
+      },
+      "composition_wt_pct": {
+        "Al": 89.25,
+        "Cr": 0.23,
+        "Cu": 1.6,
+        "Mg": 2.5,
+        "Zn": 5.6,
+        "Fe": 0.25,
+        "Mn": 0.15,
+        "Si": 0.2,
+        "Ti": 0.1
+      },
+      "composition": {
+        "Al": 0.933791,
+        "Cr": 0.001249,
+        "Cu": 0.007108,
+        "Mg": 0.029038,
+        "Zn": 0.02418,
+        "Fe": 0.001264,
+        "Mn": 0.000771,
+        "Si": 0.00201,
+        "Ti": 0.00059
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.6315937487328,
+          "nu": 0.3391858203400669,
+          "C11_GPa": 113.04410934448242,
+          "C12_GPa": 58.0583918094635,
+          "E_GPa_std": 1.4912848878876195,
+          "nu_std": 0.006520792865539969,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 79.13348247492368,
+          "nu": 0.3468019498066793,
+          "C11_GPa": 125.26166729133972,
+          "C12_GPa": 66.50508286088018,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.6315937487328,
+            "lit": 71.7,
+            "abs_err": 1.9315937487327943,
+            "pct_err": 2.6939940707570353
+          },
+          "nu": {
+            "pred": 0.3391858203400669,
+            "lit": 0.33,
+            "abs_err": 0.009185820340066875,
+            "pct_err": 2.7835819212323862
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 79.13348247492368,
+            "lit": 71.7,
+            "abs_err": 7.433482474923679,
+            "pct_err": 10.367479044523957
+          },
+          "nu": {
+            "pred": 0.3468019498066793,
+            "lit": 0.33,
+            "abs_err": 0.01680194980667926,
+            "pct_err": 5.091499941417958
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA7075T73",
+      "name": "Aluminum 7075-T73; 7075-T735x",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA7075T73",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 72.0,
+        "nu": 0.33,
+        "G_GPa": 26.9,
+        "density_g_cc": 2.81
+      },
+      "composition_wt_pct": {
+        "Al": 89.25,
+        "Cr": 0.23,
+        "Cu": 1.6,
+        "Mg": 2.5,
+        "Zn": 5.6,
+        "Fe": 0.25,
+        "Mn": 0.15,
+        "Si": 0.2,
+        "Ti": 0.1
+      },
+      "composition": {
+        "Al": 0.933791,
+        "Cr": 0.001249,
+        "Cu": 0.007108,
+        "Mg": 0.029038,
+        "Zn": 0.02418,
+        "Fe": 0.001264,
+        "Mn": 0.000771,
+        "Si": 0.00201,
+        "Ti": 0.00059
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.6315937487328,
+          "nu": 0.3391858203400669,
+          "C11_GPa": 113.04410934448242,
+          "C12_GPa": 58.0583918094635,
+          "E_GPa_std": 1.4912848878876195,
+          "nu_std": 0.006520792865539969,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 79.13348247492368,
+          "nu": 0.3468019498066793,
+          "C11_GPa": 125.26166729133972,
+          "C12_GPa": 66.50508286088018,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.6315937487328,
+            "lit": 72.0,
+            "abs_err": 1.6315937487327972,
+            "pct_err": 2.2661024287955516
+          },
+          "nu": {
+            "pred": 0.3391858203400669,
+            "lit": 0.33,
+            "abs_err": 0.009185820340066875,
+            "pct_err": 2.7835819212323862
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 79.13348247492368,
+            "lit": 72.0,
+            "abs_err": 7.133482474923682,
+            "pct_err": 9.907614548505114
+          },
+          "nu": {
+            "pred": 0.3468019498066793,
+            "lit": 0.33,
+            "abs_err": 0.01680194980667926,
+            "pct_err": 5.091499941417958
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA7178O",
+      "name": "Aluminum 7178-O",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA7178O",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 71.7,
+        "nu": 0.33,
+        "G_GPa": 27.0,
+        "density_g_cc": 2.83
+      },
+      "composition_wt_pct": {
+        "Al": 87.4,
+        "Cr": 0.23,
+        "Cu": 2.0,
+        "Mg": 2.75,
+        "Zn": 6.8,
+        "Fe": 0.25,
+        "Mn": 0.15,
+        "Si": 0.2,
+        "Ti": 0.1
+      },
+      "composition": {
+        "Al": 0.9232,
+        "Cr": 0.001261,
+        "Cu": 0.00897,
+        "Mg": 0.032247,
+        "Zn": 0.029643,
+        "Fe": 0.001276,
+        "Mn": 0.000778,
+        "Si": 0.00203,
+        "Ti": 0.000595
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 74.07542468880371,
+          "nu": 0.3372239618526617,
+          "C11_GPa": 112.861807346344,
+          "C12_GPa": 57.46509790420532,
+          "E_GPa_std": 1.1929767776570785,
+          "nu_std": 0.006331930544444886,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 78.09878142478055,
+          "nu": 0.3449476268639465,
+          "C11_GPa": 122.66099850886785,
+          "C12_GPa": 64.59272888643969,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 74.07542468880371,
+            "lit": 71.7,
+            "abs_err": 2.3754246888037045,
+            "pct_err": 3.313005144775041
+          },
+          "nu": {
+            "pred": 0.3372239618526617,
+            "lit": 0.33,
+            "abs_err": 0.0072239618526616645,
+            "pct_err": 2.1890793492914136
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 78.09878142478055,
+            "lit": 71.7,
+            "abs_err": 6.398781424780552,
+            "pct_err": 8.92438134557957
+          },
+          "nu": {
+            "pred": 0.3449476268639465,
+            "lit": 0.33,
+            "abs_err": 0.014947626863946462,
+            "pct_err": 4.529583898165594
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA7178T6",
+      "name": "Aluminum 7178-T6; 7178-T651",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA7178T6",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 71.7,
+        "nu": 0.33,
+        "G_GPa": 27.0,
+        "density_g_cc": 2.83
+      },
+      "composition_wt_pct": {
+        "Al": 87.4,
+        "Cr": 0.23,
+        "Cu": 2.0,
+        "Mg": 2.75,
+        "Zn": 6.8,
+        "Fe": 0.25,
+        "Mn": 0.15,
+        "Si": 0.2,
+        "Ti": 0.1
+      },
+      "composition": {
+        "Al": 0.9232,
+        "Cr": 0.001261,
+        "Cu": 0.00897,
+        "Mg": 0.032247,
+        "Zn": 0.029643,
+        "Fe": 0.001276,
+        "Mn": 0.000778,
+        "Si": 0.00203,
+        "Ti": 0.000595
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 74.07542468880371,
+          "nu": 0.3372239618526617,
+          "C11_GPa": 112.861807346344,
+          "C12_GPa": 57.46509790420532,
+          "E_GPa_std": 1.1929767776570785,
+          "nu_std": 0.006331930544444886,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 78.09878142478055,
+          "nu": 0.3449476268639465,
+          "C11_GPa": 122.66099850886785,
+          "C12_GPa": 64.59272888643969,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 74.07542468880371,
+            "lit": 71.7,
+            "abs_err": 2.3754246888037045,
+            "pct_err": 3.313005144775041
+          },
+          "nu": {
+            "pred": 0.3372239618526617,
+            "lit": 0.33,
+            "abs_err": 0.0072239618526616645,
+            "pct_err": 2.1890793492914136
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 78.09878142478055,
+            "lit": 71.7,
+            "abs_err": 6.398781424780552,
+            "pct_err": 8.92438134557957
+          },
+          "nu": {
+            "pred": 0.3449476268639465,
+            "lit": 0.33,
+            "abs_err": 0.014947626863946462,
+            "pct_err": 4.529583898165594
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MA7475T651",
+      "name": "Aluminum 7475-T651",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MA7475T651",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 71.7,
+        "nu": 0.33,
+        "G_GPa": 27.0,
+        "density_g_cc": 2.81
+      },
+      "composition_wt_pct": {
+        "Al": 90.0,
+        "Cr": 0.215,
+        "Cu": 1.55,
+        "Mg": 2.25,
+        "Zn": 5.7,
+        "Fe": 0.06,
+        "Mn": 0.03,
+        "Si": 0.05,
+        "Ti": 0.03
+      },
+      "composition": {
+        "Al": 0.940158,
+        "Cr": 0.001165,
+        "Cu": 0.006875,
+        "Mg": 0.026093,
+        "Zn": 0.024573,
+        "Fe": 0.000303,
+        "Mn": 0.000154,
+        "Si": 0.000502,
+        "Ti": 0.000177
+      },
+      "basis_coverage": 1.0,
+      "family": "aluminium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 73.46561300725764,
+          "nu": 0.34011373614738327,
+          "C11_GPa": 113.20384740829468,
+          "C12_GPa": 58.3797550201416,
+          "E_GPa_std": 1.5177335762636426,
+          "nu_std": 0.006516048121934984,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 77.14059702550489,
+          "nu": 0.33907643327437864,
+          "C11_GPa": 118.29849549702577,
+          "C12_GPa": 60.691181150617076,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 73.46561300725764,
+            "lit": 71.7,
+            "abs_err": 1.7656130072576417,
+            "pct_err": 2.4625007074723033
+          },
+          "nu": {
+            "pred": 0.34011373614738327,
+            "lit": 0.33,
+            "abs_err": 0.010113736147383257,
+            "pct_err": 3.0647685295100775
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 77.14059702550489,
+            "lit": 71.7,
+            "abs_err": 5.440597025504886,
+            "pct_err": 7.588001430271806
+          },
+          "nu": {
+            "pred": 0.33907643327437864,
+            "lit": 0.33,
+            "abs_err": 0.009076433274378626,
+            "pct_err": 2.7504343255692802
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MTU010",
+      "name": "Titanium Grade 1",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTU010",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 105.0,
+        "nu": 0.37,
+        "G_GPa": 45.0,
+        "density_g_cc": 4.51
+      },
+      "composition_wt_pct": {
+        "C": 0.05,
+        "Fe": 0.1,
+        "H": 0.0075,
+        "N": 0.015,
+        "O": 0.09,
+        "Ti": 99.5
+      },
+      "composition": {
+        "Fe": 0.000861,
+        "Ti": 0.999139
+      },
+      "basis_coverage": 0.9984,
+      "family": "titanium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 121.34270476041313,
+          "nu": 0.4061642668569764,
+          "C11_GPa": 337.2608017921448,
+          "C12_GPa": 237.8240180015564,
+          "E_GPa_std": 206.83431594518493,
+          "nu_std": 0.14342111082514794,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 267.6510748756784,
+          "nu": 0.3032837209480662,
+          "C11_GPa": 363.67687172094935,
+          "C12_GPa": 158.31017330091757,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 121.34270476041313,
+            "lit": 105.0,
+            "abs_err": 16.342704760413127,
+            "pct_err": 15.56448072420298
+          },
+          "nu": {
+            "pred": 0.4061642668569764,
+            "lit": 0.37,
+            "abs_err": 0.03616426685697638,
+            "pct_err": 9.774126177561184
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 267.6510748756784,
+            "lit": 105.0,
+            "abs_err": 162.65107487567838,
+            "pct_err": 154.90578559588417
+          },
+          "nu": {
+            "pred": 0.3032837209480662,
+            "lit": 0.37,
+            "abs_err": -0.06671627905193378,
+            "pct_err": -18.031426770792915
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MTU020",
+      "name": "Titanium Grade 2",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTU020",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 105.0,
+        "nu": 0.37,
+        "G_GPa": 45.0,
+        "density_g_cc": 4.51
+      },
+      "composition_wt_pct": {
+        "C": 0.05,
+        "Fe": 0.15,
+        "H": 0.0075,
+        "N": 0.015,
+        "O": 0.125,
+        "Ti": 99.2
+      },
+      "composition": {
+        "Fe": 0.001294,
+        "Ti": 0.998706
+      },
+      "basis_coverage": 0.998,
+      "family": "titanium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 121.22567687868636,
+          "nu": 0.4063274265598146,
+          "C11_GPa": 337.0645785331726,
+          "C12_GPa": 237.77899742126465,
+          "E_GPa_std": 206.49488946198773,
+          "nu_std": 0.14314562368542225,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 267.9956372844464,
+          "nu": 0.3029703098346274,
+          "C11_GPa": 363.81685201383965,
+          "C12_GPa": 158.13631174238841,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 121.22567687868636,
+            "lit": 105.0,
+            "abs_err": 16.225676878686357,
+            "pct_err": 15.453025598748914
+          },
+          "nu": {
+            "pred": 0.4063274265598146,
+            "lit": 0.37,
+            "abs_err": 0.03632742655981458,
+            "pct_err": 9.81822339454448
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 267.9956372844464,
+            "lit": 105.0,
+            "abs_err": 162.9956372844464,
+            "pct_err": 155.23394027090131
+          },
+          "nu": {
+            "pred": 0.3029703098346274,
+            "lit": 0.37,
+            "abs_err": -0.06702969016537258,
+            "pct_err": -18.116132477127724
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MTU030",
+      "name": "Titanium Grade 3",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTU030",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 105.0,
+        "nu": 0.37,
+        "G_GPa": 45.0,
+        "density_g_cc": 4.5
+      },
+      "composition_wt_pct": {
+        "C": 0.05,
+        "Fe": 0.15,
+        "H": 0.0075,
+        "N": 0.025,
+        "O": 0.175,
+        "Ti": 99.1
+      },
+      "composition": {
+        "Fe": 0.001296,
+        "Ti": 0.998704
+      },
+      "basis_coverage": 0.9974,
+      "family": "titanium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 121.22512894072972,
+          "nu": 0.406328173044599,
+          "C11_GPa": 337.063684463501,
+          "C12_GPa": 237.77880668640137,
+          "E_GPa_std": 206.4933507421355,
+          "nu_std": 0.14314432744208574,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 267.39792672232767,
+          "nu": 0.30291803319185195,
+          "C11_GPa": 362.9509229283917,
+          "C12_GPa": 157.72087782166787,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 121.22512894072972,
+            "lit": 105.0,
+            "abs_err": 16.225128940729718,
+            "pct_err": 15.452503753075923
+          },
+          "nu": {
+            "pred": 0.406328173044599,
+            "lit": 0.37,
+            "abs_err": 0.03632817304459901,
+            "pct_err": 9.818425147188922
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 267.39792672232767,
+            "lit": 105.0,
+            "abs_err": 162.39792672232767,
+            "pct_err": 154.66469211650255
+          },
+          "nu": {
+            "pred": 0.30291803319185195,
+            "lit": 0.37,
+            "abs_err": -0.06708196680814804,
+            "pct_err": -18.130261299499473
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MTU040",
+      "name": "Titanium Grade 4",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTU040",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 105.0,
+        "nu": 0.37,
+        "G_GPa": 40.0,
+        "density_g_cc": 4.51
+      },
+      "composition_wt_pct": {
+        "C": 0.05,
+        "Fe": 0.25,
+        "H": 0.0075,
+        "N": 0.025,
+        "O": 0.2,
+        "Ti": 99.0
+      },
+      "composition": {
+        "Fe": 0.00216,
+        "Ti": 0.99784
+      },
+      "basis_coverage": 0.9972,
+      "family": "titanium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 120.99053280046698,
+          "nu": 0.40665338162609804,
+          "C11_GPa": 336.6721725463867,
+          "C12_GPa": 237.68903970718384,
+          "E_GPa_std": 205.81497732150646,
+          "nu_std": 0.14259670745177497,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 267.98079950281334,
+          "nu": 0.30297626418046375,
+          "C11_GPa": 363.8029331602256,
+          "C12_GPa": 158.13472041548627,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 120.99053280046698,
+            "lit": 105.0,
+            "abs_err": 15.99053280046698,
+            "pct_err": 15.2290788575876
+          },
+          "nu": {
+            "pred": 0.40665338162609804,
+            "lit": 0.37,
+            "abs_err": 0.03665338162609805,
+            "pct_err": 9.906319358404879
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 267.98079950281334,
+            "lit": 105.0,
+            "abs_err": 162.98079950281334,
+            "pct_err": 155.2198090502984
+          },
+          "nu": {
+            "pred": 0.30297626418046375,
+            "lit": 0.37,
+            "abs_err": -0.06702373581953625,
+            "pct_err": -18.114523194469257
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MTP641",
+      "name": "Titanium Ti-6Al-4V (Grade 5), Annealed",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTP641",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 113.8,
+        "nu": 0.342,
+        "G_GPa": 44.0,
+        "density_g_cc": 4.43
+      },
+      "composition_wt_pct": {
+        "Fe": 0.125,
+        "O": 0.1,
+        "Al": 6.0,
+        "Ti": 90.0,
+        "V": 4.0
+      },
+      "composition": {
+        "Fe": 0.001063,
+        "Al": 0.105648,
+        "Ti": 0.893288
+      },
+      "basis_coverage": 0.9591,
+      "family": "titanium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 117.62387231581798,
+          "nu": 0.3979760108836628,
+          "C11_GPa": 304.0051198005676,
+          "C12_GPa": 213.23423385620117,
+          "E_GPa_std": 142.83756967167426,
+          "nu_std": 0.10525304505206992,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 251.03118963516945,
+          "nu": 0.3063409982512816,
+          "C11_GPa": 344.1513434818043,
+          "C12_GPa": 151.98774303505303,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 117.62387231581798,
+            "lit": 113.8,
+            "abs_err": 3.8238723158179795,
+            "pct_err": 3.3601689945676445
+          },
+          "nu": {
+            "pred": 0.3979760108836628,
+            "lit": 0.342,
+            "abs_err": 0.055976010883662775,
+            "pct_err": 16.367254644345838
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 251.03118963516945,
+            "lit": 113.8,
+            "abs_err": 137.23118963516947,
+            "pct_err": 120.58979757044769
+          },
+          "nu": {
+            "pred": 0.3063409982512816,
+            "lit": 0.342,
+            "abs_err": -0.035659001748718444,
+            "pct_err": -10.426608698455684
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MTA815",
+      "name": "Titanium Ti-8Al-1Mo-1V (Ti-8-1-1) Duplex Anneal",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MTA815",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 124.0,
+        "nu": 0.32,
+        "G_GPa": 46.0,
+        "density_g_cc": 4.37
+      },
+      "composition_wt_pct": {
+        "Al": 8.0,
+        "Mo": 1.0,
+        "Ti": 90.0,
+        "V": 1.0
+      },
+      "composition": {
+        "Al": 0.135563,
+        "Mo": 0.004765,
+        "Ti": 0.859672
+      },
+      "basis_coverage": 0.99,
+      "family": "titanium",
+      "predictions": {
+        "ML": {
+          "E_GPa": 118.38567640665187,
+          "nu": 0.39499115240947746,
+          "C11_GPa": 296.87777519226074,
+          "C12_GPa": 207.01809644699097,
+          "E_GPa_std": 122.30442177762197,
+          "nu_std": 0.09300813743093997,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 247.5972577654794,
+          "nu": 0.3051991952009734,
+          "C11_GPa": 338.30514561152813,
+          "C12_GPa": 148.60440209601086,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 118.38567640665187,
+            "lit": 124.0,
+            "abs_err": -5.614323593348132,
+            "pct_err": -4.527680317216236
+          },
+          "nu": {
+            "pred": 0.39499115240947746,
+            "lit": 0.32,
+            "abs_err": 0.07499115240947746,
+            "pct_err": 23.434735127961705
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 247.5972577654794,
+            "lit": 124.0,
+            "abs_err": 123.59725776547941,
+            "pct_err": 99.67520787538662
+          },
+          "nu": {
+            "pred": 0.3051991952009734,
+            "lit": 0.32,
+            "abs_err": -0.014800804799026623,
+            "pct_err": -4.625251499695819
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MQ304A",
+      "name": "AISI Type 304 Stainless Steel",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MQ304A",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 196.5,
+        "nu": 0.29,
+        "G_GPa": 86.0,
+        "density_g_cc": 8.0
+      },
+      "composition_wt_pct": {
+        "Cr": 19.0,
+        "Fe": 70.1725,
+        "Ni": 9.25,
+        "C": 0.04,
+        "Mn": 1.0,
+        "P": 0.0225,
+        "S": 0.015,
+        "Si": 0.5
+      },
+      "composition": {
+        "Cr": 0.201265,
+        "Fe": 0.692099,
+        "Ni": 0.086804,
+        "Mn": 0.010026,
+        "Si": 0.009806
+      },
+      "basis_coverage": 0.9992,
+      "family": "stainless",
+      "predictions": {
+        "ML": {
+          "E_GPa": 391.6989622561026,
+          "nu": 0.07091114440296102,
+          "C11_GPa": 396.2082290649414,
+          "C12_GPa": 30.262698531150818,
+          "E_GPa_std": 9.729219782010235,
+          "nu_std": 0.017662861785612747,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 825.1125057478594,
+          "nu": 0.152810229057192,
+          "C11_GPa": 873.251086302946,
+          "C12_GPa": 157.51098879993827,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 391.6989622561026,
+            "lit": 196.5,
+            "abs_err": 195.19896225610262,
+            "pct_err": 99.33789427791481
+          },
+          "nu": {
+            "pred": 0.07091114440296102,
+            "lit": 0.29,
+            "abs_err": -0.21908885559703895,
+            "pct_err": -75.54788124035827
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 825.1125057478594,
+            "lit": 196.5,
+            "abs_err": 628.6125057478594,
+            "pct_err": 319.904583077791
+          },
+          "nu": {
+            "pred": 0.152810229057192,
+            "lit": 0.29,
+            "abs_err": -0.137189770942808,
+            "pct_err": -47.30681756648551
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MQ304L",
+      "name": "AISI Type 304L Stainless Steel",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MQ304L",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 196.5,
+        "nu": null,
+        "G_GPa": null,
+        "density_g_cc": 8.0
+      },
+      "composition_wt_pct": {
+        "Cr": 19.0,
+        "Ni": 10.0,
+        "C": 0.015,
+        "Mn": 1.0,
+        "P": 0.0225,
+        "S": 0.015,
+        "Si": 0.5
+      },
+      "composition": {
+        "Cr": 0.639061,
+        "Ni": 0.29797,
+        "Mn": 0.031834,
+        "Si": 0.031135
+      },
+      "basis_coverage": 0.9983,
+      "family": "stainless",
+      "predictions": {
+        "ML": {
+          "E_GPa": 244.21660645889696,
+          "nu": 0.25896211385762763,
+          "C11_GPa": 298.61698150634766,
+          "C12_GPa": 104.27889585494995,
+          "E_GPa_std": 27.683550252757094,
+          "nu_std": 0.02552188133641867,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": -98.5864997289865,
+          "nu": 0.5654728490068314,
+          "C11_GPa": 208.97656713804224,
+          "C12_GPa": 271.9521082287305,
+          "physical": false,
+          "physical_reason": "negative Young's modulus (-98.59 GPa)"
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 244.21660645889696,
+            "lit": 196.5,
+            "abs_err": 47.71660645889696,
+            "pct_err": 24.283260284425932
+          },
+          "nu": {
+            "pred": 0.25896211385762763,
+            "lit": null,
+            "abs_err": null,
+            "pct_err": null
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": -98.5864997289865,
+            "lit": 196.5,
+            "abs_err": -295.0864997289865,
+            "pct_err": -150.17124668141807
+          },
+          "nu": {
+            "pred": 0.5654728490068314,
+            "lit": null,
+            "abs_err": null,
+            "pct_err": null
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "MQ316A",
+      "name": "AISI Type 316 Stainless Steel, annealed sheet",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=MQ316A",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 193.0,
+        "nu": null,
+        "G_GPa": null,
+        "density_g_cc": 8.0
+      },
+      "composition_wt_pct": {
+        "Cr": 9.0,
+        "Mo": 1.5,
+        "Ni": 7.0,
+        "C": 0.08,
+        "Fe": 62.0,
+        "Mn": 2.0,
+        "P": 0.045,
+        "S": 0.03,
+        "Si": 1.0
+      },
+      "composition": {
+        "Cr": 0.116151,
+        "Mo": 0.010491,
+        "Ni": 0.080032,
+        "Fe": 0.745004,
+        "Mn": 0.024429,
+        "Si": 0.023893
+      },
+      "basis_coverage": 0.9981,
+      "family": "stainless",
+      "predictions": {
+        "ML": {
+          "E_GPa": 357.5746618782322,
+          "nu": 0.10285675854430383,
+          "C11_GPa": 366.7002201080322,
+          "C12_GPa": 42.23617613315582,
+          "E_GPa_std": 7.319305323951312,
+          "nu_std": 0.024993763755950447,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": 826.4307813198714,
+          "nu": 0.16325862822251835,
+          "C11_GPa": 882.6631025695493,
+          "C12_GPa": 172.21852793297572,
+          "physical": true,
+          "physical_reason": null
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 357.5746618782322,
+            "lit": 193.0,
+            "abs_err": 164.57466187823218,
+            "pct_err": 85.27184553276278
+          },
+          "nu": {
+            "pred": 0.10285675854430383,
+            "lit": null,
+            "abs_err": null,
+            "pct_err": null
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": 826.4307813198714,
+            "lit": 193.0,
+            "abs_err": 633.4307813198714,
+            "pct_err": 328.202477367809
+          },
+          "nu": {
+            "pred": 0.16325862822251835,
+            "lit": null,
+            "abs_err": null,
+            "pct_err": null
+          }
+        }
+      }
+    },
+    {
+      "bassnum": "NINCO01",
+      "name": "Special Metals INCO\u00ae A-286 Iron-Nickel-Chromium Alloy",
+      "url": "https://asm.matweb.com/search/SpecificMaterial.asp?bassnum=NINCO01",
+      "source": "ASM Aerospace Specification Metals (asm.matweb.com)",
+      "lit": {
+        "E_GPa": 201.0,
+        "nu": null,
+        "G_GPa": null,
+        "density_g_cc": 7.94
+      },
+      "composition_wt_pct": {
+        "B": 0.0055,
+        "Cr": 14.75,
+        "Mo": 1.25,
+        "Ni": 25.5,
+        "Ti": 2.125,
+        "V": 0.3,
+        "W": 3.75,
+        "Al": 0.175,
+        "C": 0.04,
+        "Mn": 1.0,
+        "S": 0.015,
+        "Fe": 60.0
+      },
+      "composition": {
+        "Cr": 0.151322,
+        "Mo": 0.006949,
+        "Ni": 0.231757,
+        "Ti": 0.023681,
+        "Al": 0.00346,
+        "Mn": 0.00971,
+        "Fe": 0.573121
+      },
+      "basis_coverage": 0.9623,
+      "family": "nickel_iron",
+      "predictions": {
+        "ML": {
+          "E_GPa": 416.1006415001578,
+          "nu": 0.04548260961737935,
+          "C11_GPa": 419.22006130218506,
+          "C12_GPa": 20.200437903404236,
+          "E_GPa_std": 28.485284629379723,
+          "nu_std": 0.04274634596696762,
+          "ensemble_size": 5,
+          "backend": "onnx"
+        },
+        "MEAM": {
+          "E_GPa": -230.18363258915684,
+          "nu": 0.6844487418537063,
+          "C11_GPa": 116.89094317404424,
+          "C12_GPa": 253.54314687116823,
+          "physical": false,
+          "physical_reason": "negative Young's modulus (-230.18 GPa)"
+        }
+      },
+      "comparison": {
+        "ML": {
+          "E_GPa": {
+            "pred": 416.1006415001578,
+            "lit": 201.0,
+            "abs_err": 215.1006415001578,
+            "pct_err": 107.0152445274417
+          },
+          "nu": {
+            "pred": 0.04548260961737935,
+            "lit": null,
+            "abs_err": null,
+            "pct_err": null
+          }
+        },
+        "MEAM": {
+          "E_GPa": {
+            "pred": -230.18363258915684,
+            "lit": 201.0,
+            "abs_err": -431.18363258915684,
+            "pct_err": -214.51922019361038
+          },
+          "nu": {
+            "pred": 0.6844487418537063,
+            "lit": null,
+            "abs_err": null,
+            "pct_err": null
+          }
+        }
+      }
+    }
+  ],
+  "skipped": []
+}

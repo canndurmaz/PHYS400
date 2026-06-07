@@ -1,45 +1,48 @@
 % =====================================================================
 % Slide 13: Discussion of results
 % =====================================================================
-\begin{frame}{Discussion and Outlook}
+\begin{frame}{Further Studies}
 \begin{columns}[T]
 \column{0.32\textwidth}
-\textbf{Contributions}
+\textbf{Well-posed optimisation}
 \begin{itemize}\scriptsize
-  \item MD elastic database, 7815 alloys
-  \item DFT reference set, 10 elements
-  \item Merged 12-element MEAM library
-  \item Composition surrogate
-        ($R^{2}_{E} = 0.77$, deployed)
-  \item Resumable Stage~5b framework
-\end{itemize}
-
-\column{0.32\textwidth}
-\textbf{Current limitations}
-\begin{itemize}\scriptsize
-  \item 4/30 predictions within tolerance
-  \item 19/30 violate Born--Cauchy
-  \item Cross-term parameters saturate bounds
-\end{itemize}
-
-\smallskip
-\textbf{Identified causes}
-\begin{itemize}\scriptsize
-  \item Under-determined inverse problem
-        ($\sim\!200$ parameters, $\le\!100$ targets)
-  \item Surrogate--LAMMPS residual mismatch
-  \item Stability constraints absent from the loss
+  \item Restrict to single-element-anchored
+        cross-terms, ranked by Sobol sensitivity
+        ($\sim\!200$ params $\to$ a tractable few)
+  \item Physics-informed loss: Born--Cauchy
+        stability penalties baked into training
+  \item Active-learning expansion to
+        $\ge\!500$ composition medoids
 \end{itemize}
 
 \column{0.34\textwidth}
-\textbf{Planned extensions}
+\textbf{Beyond the aluminium domain}
 \begin{itemize}\scriptsize
-  \item Restrict optimisation to single-element-anchored
-        cross-terms ranked by Sobol sensitivity
-  \item Active-learning expansion to $\ge\!500$ medoids
-  \item Physics-informed loss with stability penalties
+  \item Extend the basis to out-of-basis
+        elements (C, V, N) so ferrous and
+        Ti-alloy chemistries are representable
+  \item Broaden MD/DFT sampling into
+        \emph{hcp} (Ti, Mg, Zn) and ferrous
+        (Fe--Cr--Ni) regions
+  \item Symmetry-aware elastic extraction
+        (hexagonal tensor) --- removes the
+        cubic-strain error on hcp metals
+\end{itemize}
+
+\column{0.32\textwidth}
+\textbf{Reference data \& validation}
+\begin{itemize}\scriptsize
   \item SQS DFT references~\citep{lewis1995}
         at intermediate compositions
+  \item Enlarged DFT set spanning the
+        broadened element domain
+  \item Re-validate each round against
+        ASM/MatWeb experiment --- a standing
+        external accuracy loop
 \end{itemize}
 \end{columns}
+
+\vspace{0.4em}
+{\footnotesize The architecture is established; the remaining work is
+\emph{sampling}, \emph{loss formulation}, and \emph{domain coverage}.}
 \end{frame}
