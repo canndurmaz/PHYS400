@@ -1,0 +1,67 @@
+\introduction
+
+\subsection{Motivation}
+Industrial alloys such as steels and aluminium grades are chosen for
+load-bearing parts on the basis of their elastic response. The Young's
+modulus $E$ sets the stiffness and the Poisson's ratio $\nu$ sets the
+transverse contraction under load. For a cubic crystal both quantities
+follow from just two independent stiffness constants, $C_{11}$ and
+$C_{12}$. These constants size almost every structural calculation an
+engineer runs: beam deflection scales as $1/E$, the buckling load and the
+natural frequency scale with $E$, and the bulk modulus is
+$K = E/[3(1-2\nu)]$. At present they are measured experimentally, which is
+slow and expensive. A computational route that was both accurate and cheap
+would let new compositions be screened before any metal is cast.
+
+Molecular dynamics is the natural candidate for that route, but an MD
+prediction is only as good as the interatomic potential behind it. Among the
+analytic forms available, the Modified Embedded Atom Method
+\citep{baskes1992,lee2001} is the standard choice for metallic and covalent
+systems. It adds angular terms to the original embedded-atom picture, so it
+handles FCC, BCC, HCP, and mixed bonding, and it stays cheap and physically
+readable next to a fully machine-learned potential.
+
+\subsection{The Cross-Interaction Problem}
+The obstacle to using MEAM on real alloys is coverage. A published parameter
+set typically spans three or four elements, for example the Al--Mg--Zn
+potential of \citet{Dickel_2018} or the Al--Si--Mg--Cu--Fe set of
+\citet{jelinek2012}, and says nothing about how those elements interact with
+species outside its scope. A practically relevant alloy such as Al~7075
+contains Al, Zn, Mg, Cu, Cr, Mn, Fe, Si, and Ti, and no single published
+file spans that list. Concatenating parameters from different libraries
+leaves the binary cross-terms undefined, which produces unstable or
+unphysical simulations.
+
+The literature offers two ways around this. The first is to fit a fresh MEAM
+set by hand against experimental and reference data \citep{jelinek2012}. That
+is accurate but slow, and the work does not transfer to a new element list.
+The second is to drop MEAM for a fully data-driven machine-learning potential
+\citep{behler2007,shapeev2016,mishin2021}. Those are flexible, but they need
+$10^{4}$ to $10^{5}$ reference configurations and they give up the analytic
+readability that makes MEAM useful in an engineering setting.
+
+\subsection{Approach Adopted in This Project}
+This project takes a hybrid route. Rather than replacing MEAM, it uses a
+neural network as a \emph{surrogate} that refits the MEAM parameters
+themselves. Single-element parameters are anchored to DFT
+\citep{kohn1965,giannozzi2009} references, and the missing cross-terms are
+adjusted so the potential reproduces target elastic constants. This keeps the
+efficiency and transparency of MEAM while borrowing DFT accuracy to fill the
+gaps. The five-stage pipeline that implements the idea, configuration
+generation, MD evaluation, DFT reference calculation, MEAM initialization,
+and neural-network optimization, is described stage by stage in
+Section~\ref{sec:progress}. Stages 1 through 4 seed the potential; Stage~5
+closes the loop. A separate composition-only surrogate, described in
+Section~\ref{sec:comp_nn}, runs alongside Stage~2 as a consistency check and
+as a standalone predictor.
+
+\subsection{Research Question}
+\textit{Can DFT reference calculations combined with neural-network surrogate
+optimization produce multi-element MEAM interatomic potentials that
+reproduce the elastic properties of arbitrary metallic alloys, even when the
+constituent elements do not share a common published MEAM
+parameterization?} The results in Sections~\ref{sec:nnip}
+and~\ref{sec:validation} answer this in the affirmative inside the
+aluminium-rich design region, where both surrogates land within a few percent
+of experiment, and identify the loss of accuracy outside that region as the
+main item of remaining work.

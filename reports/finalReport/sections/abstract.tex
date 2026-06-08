@@ -1,0 +1,28 @@
+\begin{boxedabstract}
+\small
+Molecular dynamics (MD) simulations of metallic alloys need an interatomic
+potential that describes every constituent element pair. The Modified
+Embedded Atom Method (MEAM) provides one, but published MEAM parameter sets
+each cover only a narrow slice of the periodic table, so an alloy whose
+elements are split across several files cannot be simulated at all. This
+project builds an automated pipeline that produces a single MEAM parameter
+file for a chosen list of elements. The five stages are: (i) randomized
+alloy configurations drawn from the available composition files, (ii) a
+LAMMPS strain sweep that measures the cubic elastic constants and the derived
+Young's modulus $E$ and Poisson's ratio $\nu$, (iii) density functional
+theory (DFT) reference data computed in Quantum Espresso through the Atomic
+Simulation Environment, (iv) DFT-driven MEAM initialization that merges the
+existing libraries and fills the missing cross-terms, and (v) a neural-network
+surrogate of the MEAM-to-$(C_{11},C_{12})$ map that is inverted under L-BFGS
+to refit the cross-interaction parameters. A separate composition-only
+surrogate that maps element fractions straight to $(C_{11},C_{12})$ runs
+alongside Stage~2 as a fast consistency check on the LAMMPS dataset and as a
+ready predictor for new compositions. All five stages now run end to end. On
+43 named alloys with experimental data from ASM and MatWeb, both surrogates
+reproduce the aluminium Young's modulus to within a few percent (composition
+NN $2.3\,\%$, refitted MEAM $7.4\,\%$); accuracy degrades once the
+composition leaves the aluminium-rich region the training data covers most
+densely. The closing section sets out the sampling, loss, and
+domain-coverage work that would extend the method past that region.
+\vspace{0.5em}
+\end{boxedabstract}

@@ -1,0 +1,70 @@
+\documentclass{phys400interimreport}
+\usepackage[dvipsnames]{xcolor}
+\proposaltitle{Your Project Title Here}
+\studentname{Your Name}
+\studentid{Your Student ID}
+\advisor{Advisor Name}
+\studyfield{Astrophysics, Plasma Physics, etc.}
+\studytype{Computational, Experimental or Theoretical}
+\submissiondate{\today}
+
+\begin{document}
+
+\makeproposalcover
+
+%\tableofcontents
+\newpage
+
+\introduction
+Write your introduction here \citep{example2020}. Alternatively, you may use narrative citations, such as: ``\cite{example2021} states that...''
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.5\textwidth]{example.png}
+	\caption{Write a descriptive caption.}
+	\label{fig:yourlabel}
+\end{figure}
+
+\begin{table}[htbp]
+	\centering
+	\caption{Write a descriptive caption.}
+	\label{tab:yourlabel}
+	\begin{tabular}{|c|c|c|}
+		\hline
+		Column 1 & Column 2 & Column 3 \\
+		\hline
+		Data 1 & Data 2 & Data 3 \\
+		Data 4 & Data 5 & Data 6 \\
+		\hline
+	\end{tabular}.
+\end{table}
+
+You can refer to the example table using Table~\ref{tab:yourlabel}.
+
+\projectprogress
+Write about your project progress here.
+
+\begin{semestergantt}
+	\workpackage{Literature Review}{1}{3}
+	\workpackage{Data Collection}{3}{6}
+	\workpackage{Analysis}{6}{10}
+	\workpackage{Writing}{10}{15}
+	\workpackage{Poster Preparation}{13}{15}
+\end{semestergantt}
+
+\subsection{Description of Work Packages}
+\begin{itemize}
+	\item \textbf{Literature Review:} Add description.
+	\item \textbf{Data Collection:} Add description.
+	\item \textbf{Analysis:} Add description.
+	\item \textbf{Writing:} Add description.
+	\item \textbf{Poster Preparation:} Add description.
+\end{itemize}
+
+
+\futureoutlook
+Write about your future outlook here.
+
+\referencessection
+
+\end{document}

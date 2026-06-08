@@ -1,0 +1,52 @@
+\subsection{External Validation Against Experimental Data}
+\label{sec:validation}
+
+The internal checks so far compare the surrogates against the project's own MD
+output. The real test is experiment. Both the composition surrogate of
+Section~\ref{sec:comp_nn} and the refit MEAM potential of
+Section~\ref{sec:nnip} were run on 43 named alloys whose elements the merged
+basis covers, and the predicted $(E,\nu)$ were compared against published
+elastic data from ASM and MatWeb \citep{asmmatweb}. Mean absolute percentage
+error (MAPE) is the figure of merit. Unphysical MEAM runs are excluded from
+the MEAM column.
+
+Table~\ref{tab:lit_family} breaks the comparison down by material family.
+Inside the aluminium family, which is where the training data is densest, both
+methods do well: the composition NN reaches $2.3\,\%$ MAPE on $E$ and the
+refit MEAM $7.4\,\%$, with $\nu$ within $4$ to $5\,\%$ for both. Moving off the
+aluminium domain, the two methods part ways. The composition NN degrades
+gently, staying near $12\,\%$ on titanium and only failing badly on the
+stainless and Ni--Fe alloys it has almost no training support for. The MEAM
+potential degrades steeply: its error on titanium and stainless runs into the
+hundreds of percent, which is the same instability seen on the held-out alloys
+in Section~\ref{sec:nnip}, now measured against experiment.
+
+\begin{table}[h]
+	\centering
+	\caption{Validation against ASM/MatWeb experimental elastic data, by
+	material family ($N=43$ alloys). Values are MAPE in percent for the
+	composition NN (ML) and the refit MEAM potential. Unphysical MEAM runs are
+	excluded.}
+	\label{tab:lit_family}
+	\input{sections/_auto_literature_family}
+\end{table}
+
+Because aluminium is the design target, Table~\ref{tab:lit_al} drills into it
+by AA series. The composition NN holds between $1.3$ and $3.8\,\%$ on $E$
+across the 2xxx, 5xxx, 6xxx, and 7xxx series, and the refit MEAM stays under
+$10\,\%$ across all four. For the 7xxx series, which includes the Al~7075 case
+used as a running example, the NN lands at $2.8\,\%$ and the MEAM at $9.3\,\%$.
+The takeaway is consistent with the rest of the report: within the
+aluminium-rich region the pipeline produces a potential that matches
+experiment to within a few percent, and the accuracy falls off only once the
+composition leaves that region.
+
+\begin{table}[h]
+	\centering
+	\caption{Aluminium validation drilled down by AA series ($N=33$ of the 43
+	alloys). $\langle E_\mathrm{lit}\rangle$ is the mean experimental Young's
+	modulus; the last two columns are $E$ MAPE for the composition NN (ML) and
+	the refit MEAM potential.}
+	\label{tab:lit_al}
+	\input{sections/_auto_literature_al}
+\end{table}

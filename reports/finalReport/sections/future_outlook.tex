@@ -1,0 +1,89 @@
+\futureoutlook
+\label{sec:future}
+
+The five-stage pipeline now runs end to end, and inside the aluminium-rich
+design region it reproduces experimental elastic data to within a few percent.
+The honest weakness is everything outside that region, where the refit
+potential turns mechanically unstable (Section~\ref{sec:nnip}). The remaining
+work is therefore about three things: making the optimization better posed,
+widening the chemistry it can cover, and tightening the reference data behind
+it.
+
+\subsection{Upcoming Objectives}
+
+\paragraph{A better-posed optimization.}
+The refit currently moves on the order of $200$ cross-term parameters at once,
+which is more freedom than the elastic targets can constrain. The plan is to
+restrict the search to the single-element-anchored cross-terms that actually
+matter, ranked by a Sobol sensitivity analysis, which cuts the active
+parameter count to a tractable few. The Born--Cauchy stability conditions,
+applied as a hard filter only at the end now, should instead be baked into the
+training loss as a penalty, so the surrogate learns to avoid unstable regions
+rather than being rejected after the fact. The sampling base would also grow,
+through active learning, to at least $500$ composition medoids.
+
+\paragraph{Beyond the aluminium domain.}
+Several target chemistries need elements the current basis does not carry, so
+the basis would be extended to out-of-basis species (C, V, N) that the ferrous
+and titanium alloys depend on. The MD and DFT sampling would be pushed
+deliberately into the HCP region (Ti, Mg, Zn) and the ferrous region
+(Fe--Cr--Ni), which the present corpus barely touches. A symmetry-aware
+elastic extraction that uses the full hexagonal stiffness tensor, rather than
+the cubic strain protocol, would remove a known source of error on the HCP
+metals.
+
+\paragraph{Reference data and validation.}
+For the cross-terms specifically, special quasi-random structure references
+\citep{lewis1995} computed at intermediate compositions would give the fit
+something to anchor to between the pure-element endpoints, and the DFT set
+would be enlarged to span the broadened element domain. The ASM/MatWeb
+comparison of Section~\ref{sec:validation} becomes a standing external check
+that every refit round is measured against, rather than a one-off at the end.
+
+\subsection{Updated Semester Plan}
+
+The Gantt chart of Figure~\ref{fig:gantt} shows the completed schedule. All
+eight work packages, from the literature review through the closed-loop
+inverse optimization and the external validation, finished within the
+semester, leaving the writing and poster preparation for the final weeks.
+
+\begin{figure}[h]
+	\centering
+	\begin{semestergantt}
+		\workpackage{Literature Review}{1}{3}
+		\workpackage{DFT Reference Calculations}{2}{5}
+		\workpackage{MEAM Initialization Pipeline}{4}{7}
+		\workpackage{NN Surrogate Training}{6}{9}
+		\workpackage{Inverse Optimization}{8}{13}
+		\workpackage{Validation \& Testing}{10}{14}
+		\workpackage{Writing \& Documentation}{11}{15}
+		\workpackage{Poster Preparation}{13}{15}
+	\end{semestergantt}
+	\caption{Final semester plan. All eight work packages are complete; the
+	last two weeks were spent on the report and the poster.}
+	\label{fig:gantt}
+\end{figure}
+
+\subsection{Description of Work Packages}
+\begin{itemize}
+	\item \textbf{Literature Review (W1--W3).} Survey of MEAM, EAM, and
+	      neural-network potential work. Complete.
+	\item \textbf{DFT Reference Calculations (W2--W5).} Quantum Espresso build,
+	      pseudopotential management, and the EOS, elastic-constant, and
+	      binary-pair runs. Complete.
+	\item \textbf{MEAM Initialization Pipeline (W4--W7).} Auto-discovery and
+	      merging of the library files, the DFT-to-MEAM analytic mapping, and
+	      the unified twelve-element library. Complete.
+	\item \textbf{NN Surrogate Training (W6--W9).} Parameter-space sampling,
+	      parallel LAMMPS evaluation, and training of both the composition and
+	      parameter surrogates. Complete.
+	\item \textbf{Inverse Optimization (W8--W13).} L-BFGS back-propagation
+	      through the surrogate to fit the elastic targets, with the stability
+	      limitations reported in Section~\ref{sec:nnip}. Complete.
+	\item \textbf{Validation \& Testing (W10--W14).} Comparison against named
+	      industrial alloys and the ASM/MatWeb external set. Complete.
+	\item \textbf{Writing \& Documentation (W11--W15).} Final report and code
+	      documentation.
+	\item \textbf{Poster Preparation (W13--W15).} Poster for the
+	      end-of-semester presentation.
+\end{itemize}

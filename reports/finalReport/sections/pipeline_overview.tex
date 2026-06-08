@@ -1,0 +1,91 @@
+\projectprogress
+\label{sec:progress}
+
+\subsection{Pipeline Architecture}
+The project is implemented as a set of Python modules chained into five
+sequential stages. Each stage is also exposed as a standalone entry point, so
+any part of the workflow can be re-run on its own. All five stages now run end
+to end; the completion status is summarised in
+Table~\ref{tab:pipeline_status}.
+
+\begin{table}[h]
+	\centering
+	\caption{Pipeline stages and implementation status. Stage~5 is split into
+	the auxiliary composition surrogate (5a, Section~\ref{sec:comp_nn}) and
+	the parameter-level optimizer (5b, Section~\ref{sec:nnip}).}
+	\label{tab:pipeline_status}
+	\renewcommand{\arraystretch}{1.2}
+	\begin{tabular}{|c|p{6.5cm}|c|c|}
+		\hline
+		\textbf{Stage} & \textbf{Description} & \textbf{Framework} & \textbf{Status} \\ \hline
+		1  & Random alloy configuration generation       & Python                  & Complete \\ \hline
+		2  & MD elastic-property evaluation               & LAMMPS Python API       & Complete \\ \hline
+		3  & DFT reference calculations                    & Quantum Espresso + ASE  & Complete \\ \hline
+		4  & MEAM initialization and library merging       & Python                  & Complete \\ \hline
+		5a & Composition surrogate (sanity check)          & TensorFlow              & Complete \\ \hline
+		5b & NN parameter optimization (closes the loop)   & TensorFlow + LAMMPS     & Complete \\ \hline
+	\end{tabular}
+\end{table}
+
+Figure~\ref{fig:pipeline} shows the data flow. Stage~1 emits JSON
+descriptions of alloy configurations. Stage~2 simulates them in LAMMPS and
+writes the measured elastic constants to a shared results database. Stage~3
+produces DFT reference values for every selected element and binary pair.
+Stage~4 reads both databases and emits a merged, DFT-initialized MEAM
+library. Stage~5b then consumes that library together with the
+LAMMPS-evaluated $(C_{11},C_{12})$ targets and produces a refitted parameter
+set. The composition-only surrogate (dashed in Figure~\ref{fig:pipeline})
+reads the Stage~2 database as a consistency check; it is described in
+Section~\ref{sec:comp_nn}.
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[
+		stage/.style={rectangle, rounded corners, draw=black, fill=gray!10,
+		              text width=2.6cm, minimum height=1.0cm, align=center, font=\small\bfseries},
+		aux/.style={rectangle, rounded corners, draw=black, dashed, fill=blue!5,
+		              text width=2.6cm, minimum height=1.0cm, align=center, font=\small\bfseries},
+		arrow/.style={-Stealth, thick},
+		auxarrow/.style={-Stealth, thick, dashed},
+		label/.style={font=\scriptsize, align=center},
+		node distance=0.4cm and 0.4cm,
+	]
+		\node[stage] (s1) {Stage 1\\Configurations};
+		\node[stage, right=of s1] (s2) {Stage 2\\MD: $C_{11},C_{12}$};
+		\node[stage, right=of s2] (s3) {Stage 3\\DFT};
+		\node[stage, right=of s3] (s4) {Stage 4\\MEAM init};
+		\node[stage, right=of s4] (s5) {Stage 5b\\NN optim};
+
+		\draw[arrow] (s1) -- (s2);
+		\draw[arrow] (s2) -- (s3);
+		\draw[arrow] (s3) -- (s4);
+		\draw[arrow] (s4) -- (s5);
+
+		\node[label, below=0.1cm of s1] {composition\\records};
+		\node[label, below=0.1cm of s2] {elastic\\database};
+		\node[label, below=0.1cm of s3] {DFT\\reference};
+		\node[label, below=0.1cm of s4] {merged MEAM\\library};
+		\node[label, below=0.1cm of s5] {refitted MEAM\\parameters};
+
+		% Auxiliary composition surrogate: consumes the Stage 2 database
+		% as a consistency check, separate from the potential-fitting flow.
+		\node[aux, above=0.9cm of s3] (ml) {Stage 5a\\composition NN};
+		\draw[auxarrow] (s2.north) |- (ml.west);
+		\node[label, right=0.1cm of ml] {sanity check\\$(C_{11},C_{12})$ predictor};
+	\end{tikzpicture}
+	\caption{Five-stage pipeline. Stages~1 through 4 seed the potential and
+	Stage~5b refits it. The dashed branch above Stage~3 is the composition
+	surrogate of Section~\ref{sec:comp_nn}, which reads the Stage~2 elastic
+	database as a consistency check and never feeds back into the
+	potential-fitting flow.}
+	\label{fig:pipeline}
+\end{figure}
+
+The rest of Section~\ref{sec:progress} reports each stage in turn: what it
+does, what it found, the problems that came up, and how they were handled.
+Stages~1 through 4 are covered in
+Sections~\ref{sec:stage1}--\ref{sec:stage4}, the two Stage~5 branches in
+Sections~\ref{sec:comp_nn} and~\ref{sec:nnip}, and the external validation in
+Section~\ref{sec:validation}.
+
+\newpage

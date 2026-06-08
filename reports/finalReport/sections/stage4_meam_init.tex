@@ -1,0 +1,75 @@
+\subsection{Stage 4 --- MEAM Initialization and Library Merging}
+\label{sec:stage4}
+
+The DFT reference is mapped onto MEAM parameters through analytic relations.
+The single-element mappings are direct,
+\begin{align*}
+	\texttt{esub} &\leftarrow E_\mathrm{coh}, &
+	\texttt{alat} &\leftarrow a_0,
+\end{align*}
+while the Rose shape parameter follows from the universal equation of state
+\citep{vinet1989universal}:
+\begin{equation}
+	\alpha = \sqrt{\frac{9\,B\,\Omega}{E_\mathrm{coh}}}, \qquad
+	\Omega = \begin{cases}
+		a_0^3/4              & \text{FCC}, \\
+		a_0^3/2              & \text{BCC}, \\
+		a_0^3 \sqrt{2}       & \text{HCP (approx.)}, \\
+		a_0^3/8              & \text{diamond},
+	\end{cases}
+	\label{eq:alpha}
+\end{equation}
+where $B$ is converted from GPa to eV/\AA{}$^3$ before substitution. For
+aluminium ($a_0=4.047$~\AA, $E_\mathrm{coh}=3.611$~eV, $B=77.5$~GPa, FCC),
+Eq.~\eqref{eq:alpha} gives $\Omega=16.57$~\AA{}$^3$,
+$B_{\text{eV/\AA{}}^3}=0.484$, and $\alpha\approx 4.47$.
+
+The cross-interaction terms are seeded from the binary formation energies and
+the elemental nearest-neighbour distances:
+\begin{align}
+	E_c(i,j)     &= \tfrac{1}{2}\bigl[\texttt{esub}_i + \texttt{esub}_j\bigr] + E_\mathrm{form}(i,j), \\
+	r_e(i,j)     &= \tfrac{1}{2}\bigl[d_\mathrm{nn}(i) + d_\mathrm{nn}(j)\bigr], \\
+	\alpha(i,j)  &= \tfrac{1}{2}\bigl[\alpha_i + \alpha_j\bigr].
+\end{align}
+
+\paragraph{Automatic library discovery and merging.}
+Because the public MEAM libraries each cover a different subset of elements,
+Stage~4 starts with a discovery and merge pass:
+\begin{enumerate}
+	\item enumerate every available MEAM library file;
+	\item find the smallest set of files whose union covers the requested
+	      element list;
+	\item parse the single-element entries from each chosen file and
+	      concatenate them, keeping only the first occurrence of any duplicated
+	      species;
+	\item fill any cross-interaction entry missing from the merged set with the
+	      DFT-seeded value;
+	\item write the unified library and parameter files to a DFT-initialized
+	      output location.
+\end{enumerate}
+The default twelve-element selection produces one merged library covering Al,
+Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, and Zn. As an example of the merge
+logic, an Al--Cu--Zn--Mg--Fe--Cr--Ti potential draws Al, Cu, Fe, Cr, and Ti
+from the Fe--Mn--Ni--Ti--Cu--Cr--Co--Al library, Mg and Zn from the
+Al--Mg--Zn library, and synthesises the missing cross-terms (Cr--Mg, Ti--Zn,
+and so on) from the DFT formation energies. The whole pass takes about
+$70$\,ms and is cached.
+
+\paragraph{Backfilling incomplete elemental data.}
+A few elements never reach a clean cubic $C_{11}/C_{12}$. The non-cubic
+lattices of Si, Ti, Zn, and Mg skip the cubic elastic-constant computation
+entirely, and the magnetic Fe and Mn rows come out mechanically unstable
+(Section~\ref{sec:stage3}). For these a helper backfills any missing or
+unphysical $C_{ij}$ from the recorded bulk modulus $B$ and a per-element
+Poisson-ratio default, so Stage~4 always receives a complete and
+self-consistent set.
+
+The single-element parameters produced by applying Eq.~\eqref{eq:alpha} to the
+DFT reference are listed in Table~\ref{tab:meam_init}. The Mn row is flagged
+because its EOS scan did not converge for the simplified $\alpha$-Mn
+approximation; its $\alpha$ is a placeholder and is overwritten by the donor
+library entry during the merge. The other rows feed directly into the
+\texttt{esub}, \texttt{alat}, and \texttt{alpha} entries of the
+DFT-initialized parameter file.
+
+\input{sections/_auto_meam_init}

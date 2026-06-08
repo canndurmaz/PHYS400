@@ -1,0 +1,40 @@
+\documentclass{phys400finalreport}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+\usepackage{verbatim}
+\usepackage{booktabs}
+
+\proposaltitle{Automated Construction of Multi-Element MEAM Interatomic Potentials via DFT-Informed Neural Network Optimization}
+\studentname{Can Durmaz}
+\studentid{2587772}
+\advisor{Prof. Dr. Hande Toffoli}
+\studyfield{Computational Materials Science}
+\studytype{Computational}
+\submissiondate{\today}
+
+\begin{document}
+
+\makeproposalcover
+
+%\tableofcontents
+\newpage
+
+\input{sections/abstract}
+
+\input{sections/introduction}
+
+\input{sections/pipeline_overview}
+\input{sections/stage1_config}
+\input{sections/stage2_md}
+\input{sections/stage3_dft}
+\input{sections/stage4_meam_init}
+\input{sections/composition_nn}
+\input{sections/nnip_optimization}
+\input{sections/external_validation}
+
+\input{sections/future_outlook}
+
+\referencessection
+
+\end{document}
