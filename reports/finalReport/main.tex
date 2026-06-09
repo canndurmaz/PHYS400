@@ -5,6 +5,15 @@
 \usepackage{verbatim}
 \usepackage{booktabs}
 
+% Float placement: let figures/tables fill more of a page before spilling,
+% so they settle near their reference instead of drifting to the end.
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{5}
+
 \proposaltitle{Automated Construction of Multi-Element MEAM Interatomic Potentials via DFT-Informed Neural Network Optimization}
 \studentname{Can Durmaz}
 \studentid{2587772}
@@ -31,6 +40,7 @@
 \input{sections/stage4_meam_init}
 \input{sections/composition_nn}
 \input{sections/nnip_optimization}
+\input{sections/meam_app}
 \input{sections/external_validation}
 
 \input{sections/future_outlook}

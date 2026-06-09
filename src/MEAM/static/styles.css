@@ -787,3 +787,71 @@ body[data-state="error"] .led {
 }
 
 ::selection { background: var(--amber); color: #0c0a06; }
+
+/* ─── Light theme ─────────────────────────────────────────────────────
+   Optional paper/blueprint palette. Activated by data-theme="light" on
+   <html> (set by the head init script + the rail toggle). The original
+   surface is dark; this override only restyles colour, not layout.
+   ─────────────────────────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  --bg:        #f3efe6;
+  --bg-deep:   #e8e2d5;
+  --panel:     #fbf9f3;
+  --panel-2:   #f1ede2;
+  --panel-3:   #e8e2d4;
+  --line:      #d8d1c0;
+  --line-bold: #c2b8a2;
+
+  --ink:       #2a2620;
+  --ink-soft:  #4c463a;
+  --ink-dim:   #6e6655;
+  --ink-fade:  #918972;
+  --ink-ghost: #bcb39d;
+  --ink-cool:  #566476;
+
+  --amber:     #b9760f;
+  --amber-glow:rgba(185,118,15,0.20);
+  --amber-deep:#e7a948;
+  --amber-wash:rgba(185,118,15,0.06);
+
+  --phos:      #2f7d3a;
+  --phos-glow: rgba(47,125,58,0.22);
+  --phos-deep: #74b96f;
+
+  --cyan:      #1f7fa8;
+  --rose:      #b5503a;
+  --oxide:     #c0492f;
+  --oxide-glow:rgba(192,73,47,0.22);
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(ellipse 90% 50% at 10% 0%, var(--amber-wash), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 95% 100%, rgba(47,125,58,0.05), transparent 70%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+}
+
+/* The scanline film and dark vignette are tuned for the dark surface. */
+:root[data-theme="light"] .scan,
+:root[data-theme="light"] .vignette { display: none; }
+
+/* Scope plot: swap the near-white grid for a faint dark one. */
+:root[data-theme="light"] .scope__plot {
+  background:
+    repeating-linear-gradient(0deg,  rgba(0,0,0,0.05) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0 1px, transparent 1px 30px),
+    radial-gradient(ellipse 80% 60% at 50% 50%, rgba(47,125,58,0.04), transparent 70%),
+    var(--panel);
+}
+:root[data-theme="light"] .scope__grid line,
+:root[data-theme="light"] .scope__zero line { stroke: rgba(0,0,0,0.10); }
+
+/* Theme toggle button in the rail. */
+.theme-tg {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--ink-dim); font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 6px 10px; cursor: pointer; border-radius: var(--radius);
+}
+.theme-tg:hover { color: var(--ink); border-color: var(--line-bold); }

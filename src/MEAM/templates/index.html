@@ -4,6 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MEAM // Elastic Runner</title>
+  <script>
+    /* Set the colour theme before the stylesheet loads to avoid a flash.
+       The surface is dark by default; a saved choice or the OS preference
+       can switch it to light. */
+    (function () {
+      try {
+        var t = localStorage.getItem('meam-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap">
@@ -40,6 +56,9 @@
         <span class="tape__lbl">BUILD</span>
         <span class="tape__val tape__val--mono">v1 &middot; 12B</span>
       </div>
+      <button class="theme-tg" type="button" id="theme-toggle" aria-label="Toggle colour theme" title="Toggle theme">
+        <span id="theme-toggle-lbl">LIGHT</span>
+      </button>
     </div>
   </header>
 

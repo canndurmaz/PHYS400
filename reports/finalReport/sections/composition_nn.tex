@@ -40,7 +40,7 @@ Figure~\ref{fig:aux_history}.
 
 \input{sections/_auto_ml_metrics}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 	\centering
 	\begin{minipage}[t]{0.48\textwidth}
 		\centering
@@ -59,27 +59,38 @@ Figure~\ref{fig:aux_history}.
 	\end{minipage}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 	\centering
-	\begin{minipage}[t]{0.48\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{figures/training_history.png}
-		\caption{Training history: Huber loss and MAE on the scaled targets.}
-		\label{fig:aux_history}
-	\end{minipage}
-	\hfill
-	\begin{minipage}[t]{0.48\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{figures/ml_app.png}
-		\caption{The surrogate packaged as a portable predictor. A composition
-		is entered on the simplex and the ensemble returns $(E,\nu)$ with a
-		$k$-nearest-neighbour distance flag for out-of-distribution inputs.}
-		\label{fig:aux_app}
-	\end{minipage}
+	\includegraphics[width=0.62\textwidth]{figures/training_history.png}
+	\caption{Training history of the composition surrogate: Huber loss and MAE
+	on the scaled targets over training.}
+	\label{fig:aux_history}
 \end{figure}
 
+\paragraph{Interactive predictor.}
 The surrogate is shipped as a portable application image with a small Flask
 front end, so a composition can be entered and scored without touching the
-training code. A $k$-nearest-neighbour distance in composition space is
-reported alongside each prediction; when an input sits far from the training
-cloud, the flag warns that the answer is an extrapolation.
+training code (Figure~\ref{fig:aux_app}). Entering a composition on the
+12-element simplex returns the predicted $C_{11}$, $C_{12}$, $E$, and $\nu$,
+and the app surfaces the model's own statistics next to each one: per-target
+MAE, RMSE, $R^2$, Pearson $r$, bias, and the 95th-percentile absolute error
+from the held-out split. Because the network is a five-seed ensemble, it also
+reports a per-prediction standard deviation, so a composition the ensemble
+disagrees on is visibly flagged. A $k$-nearest-neighbour distance in
+composition space is shown alongside, and when an input sits far from the
+training cloud the distance warns that the answer is an extrapolation rather
+than an interpolation. The screenshot in Figure~\ref{fig:aux_app} shows the
+AA7075 preset, where the ensemble returns $E=75.5$\,GPa and $\nu=0.334$ and
+places the alloy inside the dense aluminium region of the training map.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.86\textwidth]{figures/ml_app_light.png}
+	\caption{The composition surrogate packaged as a portable predictor, shown
+	here on the AA7075 preset. The left panel is the composition input on the
+	12-element simplex; the right panel returns $(E,\nu,C_{11},C_{12})$ with
+	per-target validation statistics (MAE, RMSE, $R^2$, $r$, bias, P95 error),
+	a per-prediction ensemble spread, and an alloy map that places the query
+	against the training distribution.}
+	\label{fig:aux_app}
+\end{figure}

@@ -14,12 +14,74 @@ slow and expensive. A computational route that was both accurate and cheap
 would let new compositions be screened before any metal is cast.
 
 Molecular dynamics is the natural candidate for that route, but an MD
-prediction is only as good as the interatomic potential behind it. Among the
-analytic forms available, the Modified Embedded Atom Method
-\citep{baskes1992,lee2001} is the standard choice for metallic and covalent
-systems. It adds angular terms to the original embedded-atom picture, so it
-handles FCC, BCC, HCP, and mixed bonding, and it stays cheap and physically
-readable next to a fully machine-learned potential.
+prediction is only as good as the interatomic potential behind it.
+
+\subsection{Elastic Constants and Engineering Design}
+A part fails or survives based on two numbers. Young's modulus $E=\sigma/\varepsilon$
+fixes how much it deflects under load, and Poisson's ratio
+$\nu=-\varepsilon_\mathrm{lat}/\varepsilon_\mathrm{axial}$ fixes how much it
+contracts sideways while it does. For a cubic crystal both reduce to the two
+independent stiffness constants $C_{11}$ and $C_{12}$, which is why this work
+targets those constants directly rather than $E$ and $\nu$. The same pair
+propagates everywhere downstream: a beam deflects as $1/E$, a column buckles
+at a load proportional to $E$, a part rings at a frequency proportional to
+$\sqrt{E/\rho}$, and the bulk modulus is $K=E/[3(1-2\nu)]$. There is also a
+hard physical constraint that the simulations must respect. A cubic crystal is
+only mechanically stable when $C_{11}>C_{12}$, the Born--Cauchy condition, and
+a potential that violates it describes a solid that would spontaneously shear
+apart. This single inequality reappears as the stability filter throughout the
+pipeline.
+
+Table~\ref{tab:applications} gives a sense of the range these constants span
+across real structural materials, from a soft magnesium casting alloy near
+$45$\,GPa to nickel and steel near $200$\,GPa. Aluminium alloys, the design
+target of this project, sit near $71$\,GPa with $\nu\approx0.33$.
+
+\begin{table}[htbp]
+	\centering
+	\caption{Young's modulus and Poisson's ratio for representative structural
+	materials and their typical applications. Aluminium~7075, the running
+	example in this report, is highlighted in the first row.}
+	\label{tab:applications}
+	\renewcommand{\arraystretch}{1.2}
+	\begin{tabular}{|l|l|c|c|}
+		\hline
+		\textbf{Application} & \textbf{Material} & \textbf{$E$ (GPa)} & \textbf{$\nu$} \\ \hline
+		Aerospace fuselage   & Al~7075          & 71--72 & 0.33 \\ \hline
+		Turbine disk         & Inconel 718      & 200    & 0.29 \\ \hline
+		Orthopaedic implant  & Ti-6Al-4V        & 110    & 0.34 \\ \hline
+		Automotive casting   & Mg AZ91          & 45     & 0.35 \\ \hline
+		Structural frame     & Mild steel       & 200    & 0.30 \\ \hline
+		MEMS resonator       & Si (single xtal) & 130    & 0.28 \\ \hline
+	\end{tabular}
+\end{table}
+
+\subsection{Interatomic Potentials and Density Functional Theory}
+An interatomic potential is a closed-form approximation of the many-body
+potential energy $U(\{\mathbf{r}_i\})$, from which the forces follow as
+$\mathbf{F}_i=-\nabla_i U$. The forms used in practice grew more capable over
+time. The earliest were simple pairwise functions like Lennard--Jones and
+Morse, which are too crude for metals because they ignore the way a bond
+weakens as an atom gains more neighbours. The Embedded Atom Method introduced
+in the 1980s fixed that by adding an embedding energy that depends on the local
+electron density, and it works well for close-packed FCC metals. The Modified
+Embedded Atom Method \citep{baskes1992,lee2001} adds an angular dependence to
+that density, which lets one functional form cover FCC, BCC, HCP, and the
+mixed covalent-metallic bonding of silicon. That breadth, plus its analytic
+and interpretable parameters, is why this project builds on MEAM rather than a
+black-box alternative.
+
+The reference data that the MEAM parameters are fit against comes from density
+functional theory. DFT solves the Kohn--Sham equations \citep{kohn1965} for the
+electronic ground state, here in a plane-wave plus pseudopotential basis using
+Quantum Espresso \citep{giannozzi2009}. From it the project takes the cohesive
+energy $E_\mathrm{coh}$, the equilibrium lattice constant $a_0$ and bulk
+modulus $B$, the single-crystal elastic constants $C_{11}$ and $C_{12}$, and
+the binary formation energies $E_\mathrm{form}(i,j)$ that seed the cross-terms.
+The two methods are complementary. DFT is accurate but caps out near $10^3$
+atoms, while MEAM-driven MD is empirical but scales past $10^6$ atoms, so DFT
+supplies the small, trustworthy reference set against which the cheap potential
+is calibrated.
 
 \subsection{The Cross-Interaction Problem}
 The obstacle to using MEAM on real alloys is coverage. A published parameter

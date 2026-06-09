@@ -377,3 +377,25 @@ setState("standby");
 recomputeSum();
 termReset();
 redrawScope();
+
+/* ─── Theme toggle ───────────────────────────────────────────────────
+   The initial data-theme attribute is set by an inline <head> script.
+   This wires the rail button to flip and persist the choice. */
+(function () {
+  const btn = document.getElementById("theme-toggle");
+  const lbl = document.getElementById("theme-toggle-lbl");
+  if (!btn) return;
+  const sync = () => {
+    const cur = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    if (lbl) lbl.textContent = cur === "light" ? "DARK" : "LIGHT";
+  };
+  sync();
+  btn.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    const next = cur === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("meam-theme", next); } catch (e) {}
+    sync();
+  });
+})();
+
