@@ -1,48 +1,51 @@
 % =====================================================================
-% Slide 13: Discussion of results
+% Slide 13: Summary -- what was achieved vs what comes next
+% Two parallel columns reusing the deck badge language:
+%   filled darkred check badge = done; outlined number badge = next.
 % =====================================================================
-\begin{frame}{Further Studies}
+
+% --- local badge / row / header helpers (slide-specific) -------------
+\newcommand{\achbadge}{\tikz[baseline=-0.6ex]{\node[fill=darkred, text=white,
+  rounded corners=2.5pt, minimum size=1.7em, inner sep=0pt,
+  font=\small\bfseries]{\checkmark};}}
+\newcommand{\nextbadge}[1]{\tikz[baseline=-0.6ex]{\node[draw=darkred,
+  line width=0.7pt, text=darkred, rounded corners=2.5pt, minimum size=1.7em,
+  inner sep=0pt, font=\small\bfseries]{#1};}}
+\newcommand{\achrow}[1]{\smallskip\par\noindent
+  \achbadge\hspace{0.7em}\parbox[t]{0.80\columnwidth}{\small #1}\par}
+\newcommand{\nextrow}[2]{\smallskip\par\noindent
+  \nextbadge{#1}\hspace{0.7em}\parbox[t]{0.80\columnwidth}{\small #2}\par}
+
+\begin{frame}{Summary \& Further Studies}
 \begin{columns}[T]
-\column{0.32\textwidth}
-\textbf{Well-posed optimisation}
-\begin{itemize}\scriptsize
-  \item Restrict to single-element-anchored
-        cross-terms, ranked by Sobol sensitivity
-        ($\sim\!200$ params $\to$ a tractable few)
-  \item Physics-informed loss: Born--Cauchy
-        stability penalties baked into training
-  \item Active-learning expansion to
-        $\ge\!500$ composition medoids
-\end{itemize}
 
-\column{0.34\textwidth}
-\textbf{Beyond the aluminium domain}
-\begin{itemize}\scriptsize
-  \item Extend the basis to out-of-basis
-        elements (C, V, N) so ferrous and
-        Ti-alloy chemistries are representable
-  \item Broaden MD/DFT sampling into
-        \emph{hcp} (Ti, Mg, Zn) and ferrous
-        (Fe--Cr--Ni) regions
-  \item Symmetry-aware elastic extraction
-        (hexagonal tensor) --- removes the
-        cubic-strain error on hcp metals
-\end{itemize}
+% ---------- achieved ----------
+\column{0.49\textwidth}
+{\tikz{\node[fill=darkred, text=white, rounded corners=3pt, inner sep=5pt,
+  font=\bfseries\scshape]{Achieved};}}
+\par\vspace{0.4em}
+\achrow{\textbf{Automated 12-element MEAM pipeline} --- an end-to-end
+  workflow that assembles a multi-element potential.}
+\achrow{\textbf{Aluminium-alloy elastic prediction} ---
+  $E,\nu$ and $C_{11},C_{12}$ obtained from composition.}
+\achrow{\textbf{DFT-seeded, NN-trained MEAM} --- first-principles
+  references refit through a neural surrogate.}
 
-\column{0.32\textwidth}
-\textbf{Reference data \& validation}
-\begin{itemize}\scriptsize
-  \item SQS DFT references~\citep{lewis1995}
-        at intermediate compositions
-  \item Enlarged DFT set spanning the
-        broadened element domain
-  \item Re-validate each round against
-        ASM/MatWeb experiment --- a standing
-        external accuracy loop
-\end{itemize}
+% ---------- next ----------
+\column{0.49\textwidth}
+{\tikz{\node[draw=darkred, line width=0.7pt, text=darkred,
+  rounded corners=3pt, inner sep=5pt, font=\bfseries\scshape]{What comes next};}}
+\par\vspace{0.4em}
+\nextrow{1}{\textbf{More data coverage} --- wider sampling across the
+  composition simplex and crystal structures.}
+\nextrow{2}{\textbf{More NN training epochs} --- deeper surrogate
+  convergence before each refit.}
+\nextrow{3}{\textbf{Denser atomic-cell DFT} --- finer $k$-point and
+  supercell sampling for sharper references.}
+
 \end{columns}
 
-\vspace{0.4em}
-{\footnotesize The architecture is established; the remaining work is
-\emph{sampling}, \emph{loss formulation}, and \emph{domain coverage}.}
+\vspace{0.7em}
+\centering{\footnotesize The architecture is established --- the open
+frontier is \emph{data}, \emph{training depth}, and \emph{DFT resolution}.}
 \end{frame}

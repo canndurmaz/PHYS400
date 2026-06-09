@@ -28,6 +28,7 @@
 \setbeamercolor{block body}{bg=gray!10}
 \setbeamercolor{block title}{bg=darkred!75, fg=white}
 \setbeamertemplate{itemize items}[circle]
+\setbeamertemplate{navigation symbols}{}  % drop the nav dots for a clean talk
 
 % --- Tighter spacing for denser slides ---
 \setlength{\leftmargini}{1.1em}
@@ -53,21 +54,100 @@
 \date{PHYS\,400 --- Final Presentation}
 \titlegraphic{\includegraphics[height=1.5cm]{metu.png}}
 
+% --- Section-divider styling -----------------------------------------
+% Restyled TOC entries used on the "where are we now" divider slides.
+% Current section: solid darkred badge + bold darkred title.
+% Other sections : outlined grey badge + muted grey title (they recede).
+\newcommand{\divbadge}[3]{% #1=fill, #2=draw, #3=text color  -> number badge
+  \tikz[baseline=-0.55ex]{\node[fill=#1, draw=#2, line width=0.6pt,
+    text=#3, rounded corners=2.5pt, minimum width=2.1em, minimum height=1.7em,
+    inner sep=0pt, font=\small\bfseries]{\inserttocsectionnumber};}}
+\setbeamertemplate{section in toc}{%
+  \vspace{0.55em}\par\noindent
+  \divbadge{darkred}{darkred}{white}\hspace{0.85em}%
+  {\color{darkred}\normalsize\bfseries\inserttocsection}\par}
+\setbeamertemplate{section in toc shaded}{%
+  \vspace{0.55em}\par\noindent
+  \divbadge{white}{gray!45}{gray!75}\hspace{0.85em}%
+  {\color{gray!75}\normalsize\inserttocsection}\par}
+
+% --- Shared roadmap layout (agenda slide + section dividers) ----------
+% Two zones on a [plain] frame: a darkred accent panel on the left
+% (#1 = its content) and a section list on the right (#2). The agenda and
+% the dividers call this with different panel content and TOC variants, so
+% the two slide types share one visual language and cannot drift apart.
+\newcommand{\rmframe}[2]{%  #1 = left-panel content, #2 = toc invocation
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[darkred!7]
+        (current page.north west) rectangle
+        ([xshift=0.36\paperwidth]current page.south west);
+      \draw[darkred, line width=1.3pt]
+        ([xshift=0.36\paperwidth]current page.north west) --
+        ([xshift=0.36\paperwidth]current page.south west);
+      \node[anchor=west, text width=0.27\paperwidth, align=left]
+        at ([xshift=0.05\paperwidth]current page.west) {#1};
+      % METU logo (plain frames skip the frametitle template that adds it)
+      \node[anchor=north east, xshift=-10pt, yshift=-9pt]
+        at (current page.north east) {\includegraphics[height=0.7cm]{metu.png}};
+    \end{tikzpicture}%
+    \hspace*{0.42\paperwidth}%
+    % Bottom strut lifts the centred list slightly above the page centre so
+    % the last item does not graze the lower edge.
+    \begin{minipage}[c][\paperheight][c]{0.52\paperwidth}%
+      #2\par\vspace*{0.13\paperheight}%
+    \end{minipage}%
+  \end{frame}}
+
+% --- Recurring "where are we now" section divider ---
+% Fires automatically at every \section. The \ifnum guard skips the first
+% section (Motivation), already covered by the standalone agenda slide, so
+% dividers appear only when transitioning into a new section. Left panel:
+% large 0-padded section number + section title. Right: current-highlighted
+% section list.
+\AtBeginSection[]{%
+  \ifnum\value{section}>1
+    \rmframe{%
+      {\fontsize{64}{64}\selectfont\bfseries\color{darkred!85}0\arabic{section}}\\[0.45em]
+      {\small\bfseries\color{darkred!55}\insertsection}%
+    }{\tableofcontents[currentsection]}%
+  \fi
+}
+
+% --- Per-stage framework tag -----------------------------------------
+% A small darkred pill seated in the empty right region of the title bar
+% (left of the METU logo) naming the software framework that powers a
+% stage. Single line so it clears the title bar without touching content.
+% Call \fwtag{<name>} right after \begin{frame}{...} on each stage slide.
+\newcommand{\fwtag}[1]{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=east, fill=darkred, text=white, rounded corners=2pt,
+          inner xsep=6pt, inner ysep=2.5pt, font=\scriptsize\bfseries]
+      at ([xshift=-1.15cm, yshift=-0.40cm]current page.north east) {#1};
+  \end{tikzpicture}%
+}
+
 \begin{document}
 
 % Each \input{} below pulls in one logical section of the deck.
 % Reorder, comment out, or duplicate freely --- the slides are
 % self-contained and have no cross-references.
 \input{slides/00_title}
+\input{slides/00b_outline}
+\section{Motivation}
 \input{slides/01_introduction}
 \input{slides/02_engineering}
+% Note: 03_meam_gap.tex opens \section{Method} between its two frames
+% (the MEAM-gap frame closes Motivation; Proposed Methodology opens Method).
 \input{slides/03_meam_gap}
 \input{slides/04_stage1_generator}
 \input{slides/05_stage2_lammps}
 \input{slides/06_stage3_4_dft_meam_init}   % Stage 3--4 (DFT refs + MEAM init)
+\section{Results}
 \input{slides/07_stage5a_composition_nn}
 \input{slides/08_stage5b_nnip}
 \input{slides/08c_literature_tables}         % external validation vs ASM/MatWeb (tables)
+\section{Discussion \& summary}
 \input{slides/09_discussion_summary}
 \input{slides/10_references}
 

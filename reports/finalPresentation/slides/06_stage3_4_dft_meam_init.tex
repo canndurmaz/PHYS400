@@ -1,48 +1,57 @@
 % =====================================================================
-% Slide 9: Stage 3-4 -- DFT references -> MEAM single-element init
-% (Stage 4's alpha table dropped: its a0/Ecoh duplicate the table below)
+% Slide 9: Stage 3-4 -- how DFT reference data initialises the MEAM potential
+%   Top    : a 3-step conceptual flow (references -> rules -> library)
+%   Bottom : single-element initialisation (alpha) | cross-terms (heatmap)
+% The full 10-row elemental table lives in the report; here we keep only
+% the scope summary so the slide reads as structure, not a data dump.
 % =====================================================================
 \begin{frame}{Stage 3--4: DFT References $\to$ MEAM Initialisation}
-\begin{columns}[T]
-\column{0.45\textwidth}
+\fwtag{Quantum Espresso}
+
+% ---------- top: conceptual flow band ----------
 \centering
+\begin{tikzpicture}[
+    node distance=0.7cm,
+    box/.style={rectangle, rounded corners, draw=darkred, fill=darkred!10,
+                text width=3.0cm, minimum height=1.0cm, align=center,
+                font=\small\bfseries},
+    arr/.style={-{Stealth[length=2.5mm]}, thick, darkred},
+    lab/.style={font=\scriptsize, text=darkred!70!black, midway, above},
+  ]
+  \node[box] (ref) {DFT references\\{\scriptsize + existing MEAM-file\\cross-interactions}};
+  \node[box, right=2.0cm of ref] (init) {MEAM initialisation\\{\scriptsize $\alpha$ + mixing sign}};
+  \node[box, right=2.0cm of init] (lib) {12-element\\MEAM library};
+  \draw[arr] (ref) -- (init);
+  \draw[arr] (init) -- (lib);
+\end{tikzpicture}
+
+\vspace{0.6em}
+
+% ---------- bottom: the two MEAM term families ----------
+\begin{columns}[T]
+\column{0.46\textwidth}
+\textcolor{darkred}{\textbf{Single-element terms}}
+\begin{block}{}
 \scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{0.95}
-\begin{tabular}{llrrr}
-\toprule
-Element & Lat. & $a_{0}$ (\AA) & $E_{\mathrm{coh}}$ & $B$ (GPa) \\
-\midrule
-Al & FCC     & 4.047 & 3.611 &  77.5 \\
-Cu & FCC     & 3.639 & 3.857 & 138.5 \\
-Si & DIAMOND & 5.471 & 5.130 &  89.3 \\
-Ti & HCP     & 2.915 & 6.284 & 114.5 \\
-Zn & HCP     & 2.766 & 0.964 &  68.4 \\
-Cr & BCC     & 2.848 & 3.964 & 213.1 \\
-Fe & BCC     & 2.806 & 6.834 & 420.5 \\
-Mg & HCP     & 3.177 & 1.483 &  47.8 \\
-Mn & BCC     & 2.803 & 3.728 & 225.7 \\
-Mo & BCC     & 3.169 &10.353 & 280.8 \\
-\bottomrule
-\end{tabular}\\[0.2em]
-\textit{Elemental references}
-($E_{\mathrm{coh}}$ in eV/atom; Birch--Murnaghan fits).
+Each element's $(a_{0}, E_{\mathrm{coh}}, B)$ pins the universal binding
+curve --- spacing, well depth, curvature --- fixing the MEAM decay
+exponent
+\[
+  \alpha = a_{0}\sqrt{9 B \Omega / E_{\mathrm{coh}}}\qquad(\Omega:\text{atomic volume}).
+\]
+\end{block}
+\scriptsize
+\textbf{Scope.} 12 elements (FCC/BCC/HCP/diamond);
+$\alpha\!\approx\!4.5$ (Al,\,Si) to $10.9$ (Zn).
+PBE--GGA plane waves (Quantum Espresso); $a_0,B$ from an
+equation-of-state fit.
 
 \column{0.54\textwidth}
 \centering
-\includegraphics[height=3.7cm,keepaspectratio]{figures/formation_energy_heatmap.png}\\[-0.3em]
-\scriptsize Binary formation energies $E_{\mathrm{form}}(i, j)$ (eV/atom):
+\textcolor{darkred}{\textbf{Cross-terms}}\\[0.3em]
+\includegraphics[height=3.6cm,keepaspectratio]{figures/formation_energy_heatmap.png}\\[-0.1em]
+\scriptsize Binary formation energies $E_{\mathrm{form}}(i,j)$ (eV/atom):
 negative $=$ exothermic mixing, positive $=$ limited solubility ---
-these seed the MEAM cross-terms.
-
-\smallskip
-\begin{block}{Stage 4 --- single-element initialisation}
-\scriptsize
-Screening exponent from each DFT triple,\
-$\alpha = a_{0}\sqrt{9 B \Omega / E_{\mathrm{coh}}}$
-($\Omega$: cell volume)
-$\to$ complete 12-element MEAM library ($\sim\!70$\,ms, cached).
-$\alpha$-Mn EOS did not converge $\to$ relaxed-BCC approximation.
-\end{block}
+the sign seeds each cross-term.
 \end{columns}
 \end{frame}

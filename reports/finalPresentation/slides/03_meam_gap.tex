@@ -1,7 +1,7 @@
 % =====================================================================
 % Slide 5: MEAM coverage gap + literature alternatives
 % =====================================================================
-\begin{frame}{The MEAM Coverage Problem}
+\begin{frame}{Why No Existing Potential Suffices: The MEAM Coverage Gap}
 \centering\small
 Published MEAM libraries cover disjoint subsets of elements;
 no single file spans the nine elements specified by Al\,7075.
@@ -42,6 +42,9 @@ physical interpretability of MEAM.
 \end{columns}
 \end{frame}
 
+% --- Motivation ends here; Method section begins with the pipeline overview ---
+\section{Method --- five-stage pipeline}
+
 % =====================================================================
 % Slide 6: Proposed solution -- the five-stage pipeline
 % =====================================================================
@@ -64,7 +67,7 @@ physical interpretability of MEAM.
   \node[stage, right=of s1] (s2) {Stage 2\\MD: $C_{11}, C_{12}$};
   \node[stage, right=of s2] (s3) {Stage 3\\DFT};
   \node[stage, right=of s3] (s4) {Stage 4\\MEAM init};
-  \node[stage, right=of s4] (s5) {Stage 5\\NN optim};
+  \node[stage, right=of s4] (s5) {Stage 5b\\NN optim};
 
   \draw[arrow] (s1) -- (s2);
   \draw[arrow] (s2) -- (s3);
@@ -87,7 +90,7 @@ physical interpretability of MEAM.
 \small
 The four published libraries are merged into a single 12-element
 file; cross-terms are refitted by inverting an NN surrogate of the
-MEAM\,$\to$\,$(C_{11}, C_{12})$ map under L-BFGS, with single-element
-parameters anchored to DFT references.
+MEAM\,$\to$\,$(C_{11}, C_{12})$ map by gradient descent, with
+single-element parameters anchored to DFT references.
 \let\thefootnote\relax\footnotetext{\tiny MD = Molecular Dynamics;\ \ DFT = Density-Functional Theory;\ \ NN = Neural Network.}
 \end{frame}

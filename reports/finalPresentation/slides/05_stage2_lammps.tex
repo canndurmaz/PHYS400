@@ -2,17 +2,17 @@
 % Slide 8: Stage 2 -- LAMMPS MD elastic database
 % =====================================================================
 \begin{frame}{Stage 2: Molecular-Dynamics Elastic Database}
+\fwtag{LAMMPS}
 \begin{columns}[T]
 \column{0.40\textwidth}
 \textbf{Implementation.}~\citep{thompson2022}\\
-\scriptsize Custom LAMMPS build (MEAM species limit raised
-$5 \to 20$).
+\scriptsize LAMMPS molecular dynamics with the merged
+12-element MEAM potential.
 
 \smallskip
 \textbf{Per-configuration protocol:}
 \begin{itemize}\scriptsize
   \item $\sim\!4$\,nm cubic supercell
-  \item Atom-type reassignment to composition $\{c_{i}\}$
   \item Anisotropic energy minimisation
   \item Axial strain $\delta = 10^{-3}$ applied along
         $\pm x, \pm y, \pm z$
@@ -36,7 +36,5 @@ $\nu$     & 0.326 & 0.063 & 0.01 -- 0.50 \\
 \centering
 \includegraphics[width=0.99\linewidth]{figures/E_nu_scatter.png}\\[-0.3em]
 \scriptsize $E$--$\nu$ distribution, coloured by dominant element.
-Mg- and Zn-rich compositions cluster near $\nu \to 0.5$,
-motivating training on $C_{11}, C_{12}$ rather than $(E, \nu)$.
 \end{columns}
 \end{frame}

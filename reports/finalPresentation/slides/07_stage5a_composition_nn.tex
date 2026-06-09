@@ -2,6 +2,7 @@
 % Slide 11: Stage 5a -- composition NN surrogate
 % =====================================================================
 \begin{frame}{Stage 5a: Composition $\to (E, \nu)$ Neural Surrogate}
+\fwtag{TensorFlow / Keras}
 \begin{columns}[T]
 \column{0.42\textwidth}
 \textbf{Architecture.}
@@ -13,18 +14,16 @@ for epistemic uncertainty.
 \medskip
 \begin{block}{Result}
 \small
-Held-out (30\,\% split): $R^{2}_{E} = 0.77$,\ $R^{2}_{\nu} = 0.52$.\\[0.3em]
-\textbf{Al\,7075 preset:} $\hat E = 75.5$\,GPa,\ $\hat\nu = 0.334$\\
+Validation Set (30\,\% of the dataset): $R^{2}_{E} = 0.77$,\ $R^{2}_{\nu} = 0.52$.\\[0.3em]
+\textbf{Al\,7075 Example:} $\hat E = 75.5$\,GPa,\ $\hat\nu = 0.334$\\
 \scriptsize \quad(published: $71{-}72$\,GPa,\ $\nu \approx 0.33$ --- within $\sim\!5\,\%$).
 \end{block}
 
 \smallskip
-\scriptsize\textit{Distributed as a portable application image.}
 
 \column{0.56\textwidth}
 \centering
 \includegraphics[width=0.99\linewidth]{figures/ml_app.png}\\[-0.2em]
-\scriptsize Interactive composition predictor with $k$-nearest-neighbour
-distance-based out-of-distribution flagging.
+\scriptsize Interactive composition predictor.
 \end{columns}
 \end{frame}

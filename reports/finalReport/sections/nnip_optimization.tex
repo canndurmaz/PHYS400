@@ -34,8 +34,8 @@ $1.0$ to about $0.16$ over $10^4$ optimizer steps
 \paragraph{Inverse optimization.}
 With the surrogate $f_\theta$ trained, the refit parameters are found by
 $\hat{\mathbf{p}} = \arg\min_{\mathbf{p}}\,\lVert f_\theta(\mathbf{p}) -
-\mathbf{y}^\star\rVert$, again under the Huber loss, with L-BFGS
-\citep{liu1989lbfgs} descending on the normalised parameter vector. The search
+\mathbf{y}^\star\rVert$, again under the Huber loss, with the Adam optimizer
+\citep{kingma2015adam} descending on the normalised parameter vector. The search
 is clipped to $\pm2.5\sigma$ around the training mean so the optimizer cannot
 wander outside the region where the surrogate is trustworthy.
 
