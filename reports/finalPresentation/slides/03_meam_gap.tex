@@ -4,7 +4,7 @@
 \begin{frame}{Why No Existing Potential Suffices: The MEAM Coverage Gap}
 \centering\small
 Published MEAM libraries cover disjoint subsets of elements;
-no single file spans the nine elements specified by Al\,7075.
+no single file spans the 12 elements treated in this work.
 
 \vspace{0.6em}
 \scriptsize
@@ -43,7 +43,7 @@ physical interpretability of MEAM.
 \end{frame}
 
 % --- Motivation ends here; Method section begins with the pipeline overview ---
-\section{Method --- five-stage pipeline}
+\section{Method: the five-stage pipeline}
 
 % =====================================================================
 % Slide 6: Proposed solution -- the five-stage pipeline
@@ -82,8 +82,7 @@ physical interpretability of MEAM.
 
   \node[aux, above=1.0cm of s3] (ml) {Stage 5a\\composition NN};
   \draw[auxarrow] (s2.north) |- (ml.west);
-  \draw[auxarrow] (ml.east) -| (s5.north);
-  \node[auxlabel, right=0.15cm of ml] {auxiliary surrogate:\\composition $\to (C_{11}, C_{12})$};
+  \node[auxlabel, right=0.15cm of ml] {independent result:\\composition $\to (C_{11}, C_{12})$};
 \end{tikzpicture}
 
 \vspace{0.8em}

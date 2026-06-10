@@ -8,7 +8,9 @@
 \centering\small
 A material's elastic response is captured by two numbers. For a cubic
 crystal both follow from the stiffness constants $C_{11}$ and $C_{12}$,
-the quantities this work predicts.
+the quantities this work predicts:
+$C_{11}$ is the stress needed to stretch the crystal along one axis;
+$C_{12}$ is the sideways stress that builds up while it stretches.
 
 \medskip
 \begin{columns}[c]
@@ -72,6 +74,10 @@ $\nu = -\dfrac{\varepsilon_{\text{lateral}}}{\varepsilon_{\text{axial}}}$
 \end{columns}
 
 \vspace{0.3em}
-\centering{\footnotesize Mechanical stability of a cubic crystal requires
-$C_{11} > C_{12}$ (Born--Cauchy).}
+\centering
+\tikz{\node[draw=darkred, fill=darkred!8, rounded corners=3pt,
+  inner xsep=8pt, inner ysep=5pt]{\footnotesize
+$E = \frac{(C_{11}-C_{12})(C_{11}+2C_{12})}{C_{11}+C_{12}}$,\quad
+$\nu = \frac{C_{12}}{C_{11}+C_{12}}$;\quad
+stability requires $C_{11} > C_{12}$ (Born--Cauchy).};}
 \end{frame}

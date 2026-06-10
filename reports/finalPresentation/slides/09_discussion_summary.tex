@@ -24,11 +24,11 @@
 {\tikz{\node[fill=darkred, text=white, rounded corners=3pt, inner sep=5pt,
   font=\bfseries\scshape]{Achieved};}}
 \par\vspace{0.4em}
-\achrow{\textbf{Automated 12-element MEAM pipeline} --- an end-to-end
+\achrow{\textbf{Automated 12-element MEAM pipeline.} An end-to-end
   workflow that assembles a multi-element potential.}
-\achrow{\textbf{Aluminium-alloy elastic prediction} ---
+\achrow{\textbf{Aluminium-alloy elastic prediction.}
   $E,\nu$ and $C_{11},C_{12}$ obtained from composition.}
-\achrow{\textbf{DFT-seeded, NN-trained MEAM} --- first-principles
+\achrow{\textbf{DFT-seeded, NN-trained MEAM.} First-principles
   references refit through a neural surrogate.}
 
 % ---------- next ----------
@@ -36,16 +36,19 @@
 {\tikz{\node[draw=darkred, line width=0.7pt, text=darkred,
   rounded corners=3pt, inner sep=5pt, font=\bfseries\scshape]{What comes next};}}
 \par\vspace{0.4em}
-\nextrow{1}{\textbf{More data coverage} --- wider sampling across the
+\nextrow{1}{\textbf{More data coverage.} Wider sampling across the
   composition space and crystal structures.}
-\nextrow{2}{\textbf{More NN training epochs} --- deeper surrogate
+\nextrow{2}{\textbf{More NN training epochs.} Deeper surrogate
   convergence before each refit.}
-\nextrow{3}{\textbf{Denser atomic-cell DFT} --- finer cells and
+\nextrow{3}{\textbf{Denser atomic-cell DFT.} Finer cells and
   supercell sampling for sharper references.}
+\nextrow{4}{\textbf{Inverse design.} Specify a target $(E, \nu)$ and
+  invert the composition surrogate to propose candidate alloys.}
 
 \end{columns}
 
 \vspace{0.7em}
 \centering{\footnotesize The pipeline already runs end to end; what is left is
-more data, longer training, and denser DFT.}
+more data, longer training, denser DFT references, and running the predictor
+in reverse.}
 \end{frame}

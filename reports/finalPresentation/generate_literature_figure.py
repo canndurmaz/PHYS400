@@ -36,6 +36,10 @@ FAMILY_LABELS = {
     "nickel_iron": "Ni--Fe (A-286)",
 }
 
+# Families left out of the validation table (A-286 is a single record with
+# no nu literature value and no valid MEAM run -- not a meaningful row).
+EXCLUDED_FAMILIES = {"nickel_iron"}
+
 # Pretty labels for the aluminium alloy series (first digit of the AA number).
 AL_SERIES_LABELS = {
     "2xxx": "2xxx (Al--Cu)",
@@ -96,7 +100,8 @@ def _fmt(x: float | None, prec: int = 1) -> str:
 
 def write_family_table(data: dict, out: Path) -> None:
     """Per-family E and ν MAPE (ML vs MEAM) as a booktabs tabular snippet."""
-    records = data["materials"]
+    records = [r for r in data["materials"]
+               if r["family"] not in EXCLUDED_FAMILIES]
     meam_on = data["metadata"].get("meam_enabled", True)
     fams = [f for f in FAMILY_LABELS
             if any(r["family"] == f for r in records)]
