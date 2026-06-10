@@ -47,9 +47,11 @@ def render(composition, selected, traj_file="traj.lammpstrj"):
     # so the rendering engine picks them up (modifier-based assignment doesn't
     # persist to the renderer in OVITO 3.15).
     data = pipeline.compute()
-    types_prop = pipeline.source.data.particles_.particle_types_
+    particles = pipeline.source.data.particles_
+    types_prop = particles.particle_types_
     for i, elem in enumerate(selected, start=1):
-        pt = types_prop.add_type_id(i)
+        # OVITO >= 3.15 requires the owning container as second argument
+        pt = types_prop.add_type_id(i, particles)
         pt.name = elem.symbol
         pt.color = get_color(elem.symbol)
         pt.radius = 0.8

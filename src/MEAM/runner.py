@@ -84,9 +84,11 @@ def _render_png(composition, selected, traj_file: str, output_path: str) -> None
     pipeline = import_file(traj_file)
     pipeline.add_to_scene()
     pipeline.compute()
-    types_prop = pipeline.source.data.particles_.particle_types_
+    particles = pipeline.source.data.particles_
+    types_prop = particles.particle_types_
     for i, elem in enumerate(selected, start=1):
-        pt = types_prop.add_type_id(i)
+        # OVITO >= 3.15 requires the owning container as second argument
+        pt = types_prop.add_type_id(i, particles)
         pt.name = elem.symbol
         pt.color = get_color(elem.symbol)
         pt.radius = 0.8

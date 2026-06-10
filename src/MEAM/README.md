@@ -33,6 +33,11 @@ Completed jobs are persisted to `src/MEAM/runs.json`, keyed by
 invalidates every cached entry automatically because the MEAM mtime
 changes. Delete `runs.json` to clear by hand.
 
+OVITO renders are written to `src/MEAM/renders/<cache_key>.png` and served
+via `/api/renders/<cache_key>`. A cache hit with `do_viz` set but no PNG on
+disk (earlier render failure, or a deleted file) re-runs the job instead of
+returning the render-less cached result.
+
 ## Tests
 
 ```bash
