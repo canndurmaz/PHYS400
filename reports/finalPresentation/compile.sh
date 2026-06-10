@@ -18,7 +18,7 @@ if [[ "${REGEN:-0}" == "1" ]]; then
     || echo "   (skipped: literature_comparison.json not present)"
 fi
 
-DOC=0900-2587772-meam-nn-final
+DOC=2587772-meam-nn-final
 # bibtex needs the .bib next to its working dir, so copy it into tmp
 cp references.bib tmp/
 

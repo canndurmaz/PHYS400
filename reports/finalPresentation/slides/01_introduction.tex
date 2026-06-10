@@ -1,46 +1,77 @@
 % =====================================================================
-% Slide 2: Motivation -- why two elastic constants matter (merged)
+% Slide: the two elastic constants, explained with deformation figures.
+%   Left  : Young's modulus  -- a bar stretches by dL under axial load F.
+%   Right : Poisson's ratio  -- the same pull makes the block thinner.
+% (Replaces the earlier alloy-applications table.)
 % =====================================================================
-\begin{frame}{Why Two Elastic Constants Govern Structural Design}
-\begin{columns}[T]
-\column{0.44\textwidth}
-\textbf{Every load-bearing part is sized by two numbers:}
-\begin{itemize}\small
-  \item $E = \sigma/\varepsilon$ --- \scriptsize Young's modulus: stiffness (GPa).
-  \item \small $\nu = -\varepsilon_{\text{lat}}/\varepsilon_{\text{axial}}$ --- \scriptsize Poisson's ratio: transverse contraction.
-\end{itemize}
-
-\smallskip
-\small For cubic crystals both follow from the two stiffness constants
-$C_{11}$ and $C_{12}$ --- \textbf{the quantities this work targets from
-first principles}.
+\begin{frame}{Young's Modulus $E$ and Poisson's Ratio $\nu$}
+\centering\small
+A material's elastic response is captured by two numbers. For a cubic
+crystal both follow from the stiffness constants $C_{11}$ and $C_{12}$,
+the quantities this work predicts.
 
 \medskip
-\scriptsize\textbf{They set:} beam deflection $\delta\!\propto\!1/E$,\,
-buckling load $\propto\!E$,\, natural frequency $\propto\!\sqrt{E/\rho}$;\,
-bulk modulus $K=E/[3(1-2\nu)]$, stress concentration, toughness.\\[0.3em]
-\textit{Stability (cubic, Born--Cauchy): $C_{11} > C_{12}$.}
+\begin{columns}[c]
 
-\column{0.55\textwidth}
-\begin{block}{Representative structural applications}
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.1}
-\begin{tabular}{p{2.3cm}lrr}
-\toprule
-Application & Material & $E$ (GPa) & $\nu$ \\
-\midrule
-Aerospace fuselage    & Al Alloys            & 60--80  & 0.3--0.38 \\
-Turbine disk          & Inconel 718          & 200    & 0.29 \\
-Orthopaedic implant   & Ti\,6Al--4V          & 110    & 0.34 \\
-Automotive structure  & Mg AZ91              & 45     & 0.35 \\
-Structural steel      & Mild steel           & 200    & 0.30 \\
-MEMS resonator        & Si (single xtal)     & 130    & 0.28 \\
-\bottomrule
-\end{tabular}
-\end{block}
-\centering\scriptsize
-Same two constants span polymers ($\nu\!\to\!0.4$) to steel --- and
-fix whether a design survives load.
+% ---------------- Young's modulus ----------------
+\column{0.5\textwidth}
+\centering
+\textbf{$E$: resistance to stretching}
+
+\smallskip
+\begin{tikzpicture}[>=Stealth, line width=0.8pt, font=\scriptsize]
+  \useasboundingbox (-0.4,-1.25) rectangle (3.9,1.25);
+  % fixed wall with hatching
+  \draw[gray!70] (0,-0.55) -- (0,0.55);
+  \foreach \y in {-0.5,-0.3,...,0.55}{\draw[gray!55] (0,\y) -- (-0.18,\y-0.18);}
+  % stretched bar
+  \draw[darkred, fill=darkred!8] (0,-0.3) rectangle (2.7,0.3);
+  % original right edge (before load)
+  \draw[gray!65, dashed] (2.0,-0.5) -- (2.0,0.5);
+  % applied force
+  \draw[->, very thick, darkred] (2.7,0) -- (3.6,0) node[right]{$F$};
+  % dimensions
+  \draw[<->, gray!70] (0,-0.68) -- (2.0,-0.68) node[midway,below]{$L$};
+  \draw[<->, darkred] (2.0,0.62) -- (2.7,0.62) node[midway,above]{$\Delta L$};
+\end{tikzpicture}
+
+\smallskip
+$E = \dfrac{\sigma}{\varepsilon} = \dfrac{F/A}{\Delta L/L}$
+
+\smallskip
+{\scriptsize Large $E$ means stiff: steel $\approx 200$, Al $\approx 70$\,GPa.}
+
+% ---------------- Poisson's ratio ----------------
+\column{0.5\textwidth}
+\centering
+\textbf{$\nu$: sideways thinning when pulled}
+
+\smallskip
+\begin{tikzpicture}[>=Stealth, line width=0.8pt, font=\scriptsize]
+  \useasboundingbox (-1.55,-1.25) rectangle (1.55,1.25);
+  % original shape (before load)
+  \draw[gray!60, dashed] (-0.62,-0.55) rectangle (0.62,0.55);
+  % loaded shape: taller and narrower
+  \draw[deepblue, fill=deepblue!8] (-0.40,-0.82) rectangle (0.40,0.82);
+  % axial pull
+  \draw[->, very thick, deepblue] (0,0.82) -- (0,1.18) node[above]{$F$};
+  \draw[->, very thick, deepblue] (0,-0.82) -- (0,-1.18) node[below]{$F$};
+  % lateral contraction (dashed edge -> loaded edge)
+  \draw[->, darkred] (-0.62,0) -- (-0.42,0);
+  \draw[->, darkred] (0.62,0) -- (0.42,0);
+  \node[deepblue, font=\tiny, align=center, right] at (0.66,0.45){axial\\stretch};
+  \node[darkred, font=\tiny, align=center, left] at (-0.66,-0.45){lateral\\contraction};
+\end{tikzpicture}
+
+\smallskip
+$\nu = -\dfrac{\varepsilon_{\text{lateral}}}{\varepsilon_{\text{axial}}}$
+
+\smallskip
+{\scriptsize Stretch it and it thins: most metals $\nu \approx 0.3$.}
+
 \end{columns}
+
+\vspace{0.3em}
+\centering{\footnotesize Mechanical stability of a cubic crystal requires
+$C_{11} > C_{12}$ (Born--Cauchy).}
 \end{frame}
