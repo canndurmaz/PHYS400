@@ -1,0 +1,24 @@
+% =====================================================================
+% Slide: Motivation -- high-level framing, modeled on the mock deck's
+% Motivation slide (three framing bullets + an Objective block). Opens
+% the Motivation section, ahead of the detailed elastic-constants slide.
+% =====================================================================
+\begin{frame}{Motivation}
+\begin{itemize}
+  \item The cubic stiffness constants $C_{11}, C_{12}$, and the derived
+        Young's modulus $E$ and Poisson's ratio $\nu$, are the main design
+        criteria for structural alloys.
+  \item Measuring them is slow and expensive. Classical molecular dynamics
+        recovers the same properties at negligible cost, but only if an
+        accurate interatomic potential is available.
+  \item For metals that potential is usually the Modified Embedded Atom
+        Method (MEAM)~\citep{baskes1992,lee2001}, the standard
+        semi-empirical form.
+\end{itemize}
+
+\vspace{0.6em}
+\begin{block}{Objective}
+Build MEAM potentials automatically for any chosen set of elements, with no
+manual parameter fitting and no experimental input.
+\end{block}
+\end{frame}
