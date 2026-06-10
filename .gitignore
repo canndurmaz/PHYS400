@@ -4,18 +4,16 @@ CLAUDE.md
 GEMINI.md
 *.mp4
 *.lammpstrj
-/src/__pycache__
+__pycache__/
 /.vscode
 /phys
 /src/visualization
 /src/configs/config.json
 /data
-/src/NNIP/__pycache__/
 /src/NNIP/logs
 /src/NNIP/dft_scratch
 /src/NNIP/plots
 /src/NNIP/tmp_nn
-/src/MD/__pycache__
 /src/configs/*.json
 *.aux
 *.bbl
@@ -33,7 +31,6 @@ reports/slideshow/tmp/
 /src/ML/dist/
 /src/ML/AppDir/
 /dist-tools/
-/src/ML/__pycache__/
 # Per-run training splits (regenerated each ./run_nn.sh)
 /src/ML/results_train.json
 /src/ML/results_val.json
