@@ -9,3 +9,9 @@
 **Also remember:** under `set -euo pipefail`, `${FLAGS[-1]:-}` warns ("bad array subscript") when the array is empty. Guard with `if (( ${#FLAGS[@]} > 0 ))` before indexing.
 
 **Bonus:** smoke-tests should cover the *invocation surface*, not just the library API. A unit test that imports the new module passes is necessary but not sufficient — the user-facing command path is where this kind of bug actually bites.
+
+## Commit messages: no Claude/AI attribution
+
+**What I did wrong:** Added the default `Co-Authored-By: Claude …` trailer to a commit; the user rejected it ("no claude affiliation").
+
+**Rule:** Commits and PR bodies in this repo carry no AI-attribution lines of any kind. The user's name is the only author identity.

@@ -76,7 +76,8 @@ def _render_png(composition, selected, traj_file: str, output_path: str) -> None
     """
     import ovito
     from ovito.io import import_file
-    from ovito.vis import Viewport, TachyonRenderer
+    from ovito.vis import Viewport, TachyonRenderer, TextLabelOverlay
+    from PySide6.QtCore import Qt
     from viz import get_color
 
     for p in list(ovito.scene.pipelines):
@@ -84,9 +85,11 @@ def _render_png(composition, selected, traj_file: str, output_path: str) -> None
     pipeline = import_file(traj_file)
     pipeline.add_to_scene()
     pipeline.compute()
-    types_prop = pipeline.source.data.particles_.particle_types_
+    particles = pipeline.source.data.particles_
+    types_prop = particles.particle_types_
     for i, elem in enumerate(selected, start=1):
-        pt = types_prop.add_type_id(i)
+        # OVITO >= 3.15 requires the owning container as second argument
+        pt = types_prop.add_type_id(i, particles)
         pt.name = elem.symbol
         pt.color = get_color(elem.symbol)
         pt.radius = 0.8
@@ -95,6 +98,21 @@ def _render_png(composition, selected, traj_file: str, output_path: str) -> None
     vp.camera_pos = (40, 40, 40)
     vp.camera_dir = (-1, -1, -1)
     vp.zoom_all()
+
+    # Legend: one colored label per element, stacked bottom-right
+    # (mirrors src/MD/viz.py's render())
+    for i, elem in enumerate(selected):
+        label = TextLabelOverlay()
+        frac = composition.get(elem.symbol, 0)
+        label.text = f"● {elem.symbol} ({frac:.0%})"
+        label.text_color = get_color(elem.symbol)
+        label.font_size = 0.04
+        label.alignment = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom
+        label.offset_x = -0.01
+        label.offset_y = 0.01 + i * 0.05
+        label.outline_enabled = True
+        vp.overlays.append(label)
+
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     vp.render_image(filename=output_path, size=(800, 600),
                     renderer=TachyonRenderer())

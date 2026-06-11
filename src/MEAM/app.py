@@ -173,9 +173,12 @@ def create_app(use_pool: bool = True) -> Flask:
         if hit is not None:
             rp = hit.get("render_path")
             render_available = bool(rp) and os.path.isfile(rp)
-            return jsonify(status="done", cached=True, cache_key=k,
-                           result=hit["result"],
-                           render_available=render_available)
+            # If a render was requested but the cached run has none (earlier
+            # OVITO failure, or the PNG was deleted), fall through and re-run.
+            if not do_viz or render_available:
+                return jsonify(status="done", cached=True, cache_key=k,
+                               result=hit["result"],
+                               render_available=render_available)
 
         render_path = (os.path.join(_RENDERS_DIR, f"{k}.png")
                        if do_viz else None)
