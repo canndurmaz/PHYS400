@@ -40,3 +40,4 @@ reports/slideshow/tmp/
 
 # Git worktrees (isolated workspaces for in-flight feature work)
 /.worktrees/
+reports/poster/tmp/
