@@ -15,7 +15,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[osf,sc]{mathpazo}          % Palatino text + matching math
-\linespread{1.06}
+\linespread{1.0}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -26,55 +26,64 @@
 \usepackage{tcolorbox}                  % only for the thin-rule result blocks
 \tcbuselibrary{skins}
 \usepackage{qrcode}
+\usepackage{needspace}
 \usepackage[margin=3cm]{geometry}
 \pagestyle{empty}
 \parindent=0pt
-\parskip=0.45em
+\parskip=0.5em
 
-% --- palette: ink on paper, one accent --------------------------------
+% --- palette: ink on paper, METU red carried through -------------------
 \definecolor{ink}{HTML}{1C1A19}
-\definecolor{accent}{HTML}{8C1414}      % METU darkred, used sparingly
-\definecolor{hairline}{HTML}{B9B2AC}
+\definecolor{accent}{HTML}{CC0000}      % METU red, exact match to the logo
+\colorlet{hairline}{accent!35}          % red-tinted hairlines
 \color{ink}
 
 % --- numbered small-caps section heading with hairline ----------------
 \newcounter{sec}
 \newcommand{\sect}[1]{%
   \stepcounter{sec}%
-  \vspace{1.1em}%
-  {\Large {\color{accent}\bfseries\thesec.}\hspace{0.55em}{\scshape #1}\par}%
+  \Needspace*{8\baselineskip}%
+  \vspace{0.9em}%
+  {\LARGE\raggedright\hyphenpenalty=10000\color{accent}
+   {\bfseries\thesec.}\hspace{0.55em}{\scshape #1}\par}%
   \vspace{0.28em}{\color{hairline}\hrule height 0.6pt}\vspace{0.55em}}
 
 % --- formal figure / table captions ------------------------------------
 \newcounter{fig}
 \newcommand{\figcap}[1]{\stepcounter{fig}\par\vspace{0.3em}%
-  {\footnotesize{\color{accent}\bfseries Figure~\thefig.} \ #1\par}}
+  {\small{\color{accent}\bfseries Figure~\thefig.} \ #1\par}}
 \newcounter{tab}
 \newcommand{\tabcap}[1]{\stepcounter{tab}\par\vspace{0.3em}%
-  {\footnotesize{\color{accent}\bfseries Table~\thetab.} \ #1\par}}
+  {\small{\color{accent}\bfseries Table~\thetab.} \ #1\par}}
 
-% --- key-result block: thin accent rule on the left, no fill -----------
-\newtcolorbox{keyresult}{blanker, borderline west={2.5pt}{0pt}{accent},
-  left=5mm, top=1mm, bottom=1mm, before skip=0.7em, after skip=0.7em,
-  fontupper=\small}
+% --- key-result block: accent rule on the left, light METU-red ground --
+\newtcolorbox{keyresult}{enhanced, frame hidden, colback=accent!5,
+  borderline west={3pt}{0pt}{accent}, sharp corners,
+  left=6mm, right=4mm, top=2mm, bottom=2mm,
+  before skip=0.8em, after skip=0.8em, fontupper=\normalsize}
 
 \begin{document}
 
 % =====================================================================
 % Title block
 % =====================================================================
+\begin{tcolorbox}[enhanced, frame hidden, colback=accent, sharp corners,
+  left=0mm, right=0mm, top=3mm, bottom=3mm, boxsep=0mm]
+  \centering
+  {\large\color{white}\textls{PHYS 400 SENIOR PROJECT \, $\cdot$ \,
+    DEPARTMENT OF PHYSICS \, $\cdot$ \,
+    MIDDLE EAST TECHNICAL UNIVERSITY}\par}
+\end{tcolorbox}
+
+\vspace{0.4em}
 \begin{minipage}[c]{0.10\linewidth}
   \includegraphics[width=0.78\linewidth]{metu.png}
 \end{minipage}\hfill
 \begin{minipage}[c]{0.78\linewidth}
   \centering
-  {\large\color{accent}\textls{PHYS 400 SENIOR PROJECT \, $\cdot$ \,
-    DEPARTMENT OF PHYSICS \, $\cdot$ \,
-    MIDDLE EAST TECHNICAL UNIVERSITY}\par}
-  \vspace{0.55em}
-  {\VeryHuge\bfseries Automated Construction of Multi-Element\par}
+  {\VeryHuge\bfseries\color{accent} Automated Construction of Multi-Element\par}
   \vspace{0.12em}
-  {\VeryHuge\bfseries MEAM Interatomic Potentials\par}
+  {\VeryHuge\bfseries\color{accent} MEAM Interatomic Potentials\par}
   \vspace{0.5em}
   {\LARGE\itshape A DFT-informed neural-network optimization framework\par}
   \vspace{0.85em}
@@ -83,41 +92,41 @@
 \end{minipage}\hfill
 \begin{minipage}[c]{0.082\linewidth}
   \centering
-  \qrcode[height=\linewidth]{https://github.com/canndurmaz/PHYS400}\\[1.5mm]
-  {\scriptsize code \& data}
+  {\color{accent}\qrcode[height=\linewidth]{https://github.com/canndurmaz/PHYS400}}\\[1.5mm]
+  {\scriptsize\color{accent} code \& data}
 \end{minipage}
 
-\vspace{1.0em}
-{\color{ink}\hrule height 1.6pt}\vspace{2.5pt}{\color{ink}\hrule height 0.5pt}
-\vspace{1.2em}
+\vspace{0.7em}
+{\color{accent}\hrule height 1.6pt}\vspace{2.5pt}{\color{accent}\hrule height 0.5pt}
+\vspace{0.8em}
 
 % =====================================================================
 % Figure 1: the pipeline, full width, formal styling
 % =====================================================================
 \begin{center}
 \begin{tikzpicture}[
-    stage/.style={rectangle, draw=ink!75, line width=1pt, fill=white,
-      text width=118mm, minimum height=24mm, align=center, font=\small,
-      inner sep=3.5mm},
-    emphstage/.style={stage, draw=accent, line width=1.8pt},
-    snum/.style={font=\small\bfseries, text=accent},
-    arr/.style={-{Stealth[length=3.6mm]}, line width=1pt, ink!75},
-    lab/.style={font=\footnotesize\itshape, text=ink!75},
+    stage/.style={rectangle, draw=accent!70, line width=1.4pt, fill=accent!3,
+      text width=200mm, minimum height=38mm, align=center, font=\normalsize,
+      inner sep=5mm},
+    emphstage/.style={stage, draw=accent, line width=2.6pt, fill=accent!10},
+    snum/.style={font=\normalsize\bfseries, text=accent},
+    arr/.style={-{Stealth[length=5.5mm]}, line width=1.6pt, accent!75},
+    lab/.style={font=\small\itshape, text=accent!85},
   ]
   % top track: configuration data
   \node[stage] (gen) {{\color{accent}\bfseries 1}\ \ {\scshape Alloy generator}\\
-    {\footnotesize random 12-element compositions --- Python/NumPy}};
-  \node[stage, right=34mm of gen] (md) {{\color{accent}\bfseries 2}\ \ {\scshape MD elastic database}\\
-    {\footnotesize $C_{11},C_{12}\to E,\nu$ for 7\,879 alloys --- LAMMPS}};
-  \node[stage, right=34mm of md] (nn5a) {{\color{accent}\bfseries 5a}\ \ {\scshape Composition surrogate}\\
-    {\footnotesize composition $\to$ elastic moduli --- TensorFlow}};
+    {\small random 12-element compositions --- Python/NumPy}};
+  \node[stage, right=52mm of gen] (md) {{\color{accent}\bfseries 2}\ \ {\scshape MD elastic database}\\
+    {\small $C_{11},C_{12}\to E,\nu$ for 7\,879 alloys --- LAMMPS}};
+  \node[stage, right=52mm of md] (nn5a) {{\color{accent}\bfseries 5a}\ \ {\scshape Composition surrogate}\\
+    {\small composition $\to$ elastic moduli --- TensorFlow}};
   % bottom track: the potential
-  \node[stage, below=14mm of gen] (dft) {{\color{accent}\bfseries 3}\ \ {\scshape DFT references}\\
-    {\footnotesize $a_0$, $E_{\mathrm{coh}}$, $B$, formation energies --- Quantum Espresso}};
-  \node[stage, below=14mm of md] (init) {{\color{accent}\bfseries 4}\ \ {\scshape MEAM initialisation}\\
-    {\footnotesize Rose equation $\to\alpha$; cross-term signs --- 12-element library}};
-  \node[emphstage, below=14mm of nn5a] (nn5b) {{\color{accent}\bfseries 5b}\ \ {\scshape NN inverse optimisation}\\
-    {\footnotesize descend through the frozen surrogate to the target $C_{ij}$}};
+  \node[stage, below=22mm of gen] (dft) {{\color{accent}\bfseries 3}\ \ {\scshape DFT references}\\
+    {\small $a_0$, $E_{\mathrm{coh}}$, $B$, formation energies --- Quantum Espresso}};
+  \node[stage, below=22mm of md] (init) {{\color{accent}\bfseries 4}\ \ {\scshape MEAM initialisation}\\
+    {\small Rose equation $\to\alpha$; cross-term signs --- 12-element library}};
+  \node[emphstage, below=22mm of nn5a] (nn5b) {{\color{accent}\bfseries 5b}\ \ {\scshape NN inverse optimisation}\\
+    {\small descend through the frozen surrogate to the target $C_{ij}$}};
   % flow
   \draw[arr] (gen) -- (md);
   \draw[arr] (md) -- (nn5a);
@@ -130,7 +139,7 @@
 \end{tikzpicture}
 \end{center}
 \begin{center}
-\begin{minipage}{0.62\linewidth}
+\begin{minipage}{0.72\linewidth}
 \figcap{The five-stage pipeline. The upper track assembles a
 composition--property database; the lower track builds the potential
 itself. Stage 5b closes the loop: optimized parameters are re-evaluated
@@ -138,7 +147,7 @@ in LAMMPS, appended to the training set, and the surrogate is retrained.}
 \end{minipage}
 \end{center}
 
-\vspace{0.8em}
+\vspace{0.4em}
 
 % =====================================================================
 % Three-column body
@@ -147,7 +156,6 @@ in LAMMPS, appended to the training set, and the surrogate is retrained.}
 \setlength{\columnseprule}{0.5pt}
 \renewcommand{\columnseprulecolor}{\color{hairline}}
 \begin{multicols}{3}
-\small
 
 % ------------------------------------------------------------ sec 1
 \sect{Motivation \& objective}
@@ -176,10 +184,10 @@ ${\sim}7\,900$ generated configurations, \textbf{7\,815 are retained}
 by the physicality filter
 ($E>0$, $0<\nu<0.48$, $C_{11}>C_{12}$).
 
-\begin{center}
-\includegraphics[width=0.88\linewidth]{figures/element_frequency.png}
-\end{center}
+\begin{center}\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.96\linewidth]{figures/element_frequency.png}
 \figcap{Element occurrence over the retained corpus.}
+\end{minipage}\end{center}
 
 % ------------------------------------------------------------ sec 3
 \sect{Molecular-dynamics elastic database}
@@ -190,11 +198,11 @@ $\pm x,\pm y,\pm z$ yield $C_{11}$ and $C_{12}$ by central differences;
 $E$ and $\nu=C_{12}/(C_{11}+C_{12})$ follow analytically. Median
 $E=103.6$\,GPa and median $\nu=0.326$ over the corpus.
 
-\begin{center}
-\includegraphics[width=0.94\linewidth]{figures/E_nu_scatter.png}
-\end{center}
+\begin{center}\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.96\linewidth]{figures/E_nu_scatter.png}
 \figcap{$E$--$\nu$ distribution coloured by dominant element
 ($N=7\,815$). Named commercial alloys are highlighted.}
+\end{minipage}\end{center}
 
 % ------------------------------------------------------------ sec 4
 \sect{DFT references \& MEAM initialisation}
@@ -210,11 +218,11 @@ ranging from $\alpha\approx4.5$ (Al, Si) to $10.9$ (Zn) across the
 twelve elements (FCC/BCC/HCP/diamond). Sixty-six binary formation
 energies seed the sign of each cross-term.
 
-\begin{center}
-\includegraphics[width=0.80\linewidth]{figures/formation_energy_heatmap.png}
-\end{center}
+\begin{center}\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.84\linewidth]{figures/formation_energy_heatmap.png}
 \figcap{Binary formation energies $E_{\mathrm{form}}(i,j)$ (eV/atom)
 from DFT; negative values indicate exothermic mixing.}
+\end{minipage}\end{center}
 
 % ------------------------------------------------------------ sec 5
 \sect{Composition surrogate (stage 5a)}
@@ -223,11 +231,11 @@ $(C_{11},C_{12})$ under a Huber loss; $E$ and $\nu$ are then recovered
 analytically, since direct $\nu$ regression is ill-conditioned. A deep
 ensemble of five seeds provides epistemic uncertainty.
 
-\begin{center}
-\includegraphics[width=0.82\linewidth]{figures/parity_validation.png}
-\end{center}
+\begin{center}\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.88\linewidth]{figures/parity_validation.png}
 \figcap{Parity between predicted and MD-computed moduli on the held-out
 validation set (30\,\% of the corpus).}
+\end{minipage}\end{center}
 
 \begin{keyresult}
 $R^{2}_{E}=0.77$, $R^{2}_{\nu}=0.52$ on validation. For Al\,7075 the
@@ -244,11 +252,17 @@ surrogate then locates the parameters that reproduce a target
 $(C_{11},C_{12})$. Each optimum is re-evaluated in LAMMPS and appended
 to the training set, closing the active-learning loop.
 
-\begin{center}
-\includegraphics[width=0.88\linewidth]{figures/nnip_verification_errors.png}
-\end{center}
+\begin{center}\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.84\linewidth]{figures/nnip_training_loss.png}
+\figcap{Surrogate training: Huber loss versus epoch for the
+parameter-to-$C_{ij}$ network.}
+\end{minipage}\end{center}
+
+\begin{center}\begin{minipage}{\linewidth}\centering
+\includegraphics[width=0.94\linewidth]{figures/nnip_verification_errors.png}
 \figcap{Verification of the optimized potential against the MD
 reference on unseen alloys.}
+\end{minipage}\end{center}
 
 \begin{keyresult}
 \textbf{Proof of concept.} Of 30 unseen alloys, 11 remained physically
@@ -283,7 +297,7 @@ limitation rather than a methodological one.
 
 % ------------------------------------------------------------ sec 8
 \sect{Conclusions \& outlook}
-\begin{itemize}\setlength\itemsep{0.3em}
+\begin{itemize}\setlength\itemsep{0.2em}
   \item An \textbf{automated, end-to-end 12-element MEAM pipeline}:
         from random compositions to an optimized multi-element
         potential with no hand fitting.
@@ -321,13 +335,13 @@ OVITO.\par}
 
 \end{multicols}
 
-\vspace{0.6em}
-{\color{ink}\hrule height 0.5pt}\vspace{2.5pt}{\color{ink}\hrule height 1.6pt}
-\vspace{0.6em}
-\begin{center}
-{\footnotesize\itshape PHYS\,400 Senior Project --- Department of
+\vspace{0.3em}
+\begin{tcolorbox}[enhanced, frame hidden, colback=accent, sharp corners,
+  left=0mm, right=0mm, top=2.5mm, bottom=2.5mm, boxsep=0mm]
+\centering
+{\footnotesize\color{white}\itshape PHYS\,400 Senior Project --- Department of
 Physics, Middle East Technical University --- 2026\qquad
 \textup{\texttt{github.com/canndurmaz/PHYS400}}}
-\end{center}
+\end{tcolorbox}
 
 \end{document}
