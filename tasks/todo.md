@@ -230,3 +230,93 @@ Decisions worth noting:
   renumbered to 12 slides, total re-summed ~11:05 (665 s, 1550 words, 11
   Background boxes), "closes on Slide 12". Deck 15→14 pages, compiles clean,
   citation [10] renders, no dangling 08b refs.
+
+## TASK 7 — A0 poster: less text, visual explainers, readable plots  (DONE)
+
+### Requirement (frontend-design skill)
+On `reports/poster/`: cut text, visually explain Young's modulus & Poisson's
+ratio, add neural-network graphics, show results as readable plots, make the
+result boxes red. User decisions: keep the refined/journal identity (not a red
+billboard); result boxes = **pale red ground + bold full red border**; result
+plots = **bigger fonts & markers in a NON-red palette** (red reserved for
+boxes/headings). Gated on a freshly-pulled 95 h pipeline run.
+
+### Done
+- [x] Pulled `5c5387b` (95 h run) → new NNIP diagnostics. Recomputed headline
+      numbers with the figure's own physicality logic: **60** unseen alloys,
+      **25** physically stable, **8** within 20% on E, **17** within 20% on ν;
+      training loss 0.29→0.11 over 2,305 steps. (was 30/11/4/4, 10k steps.)
+- [x] New `reports/poster/make_figures.py` — self-contained, oversized-font,
+      teal+categorical (non-red) theme. Regenerates E–ν scatter (legend moved
+      outside, commercial Al alloys starred), element frequency, NNIP training
+      loss, and **nnip_parity** (replaces the confusing bimodal histogram: E_opt
+      vs E_target & ν parity, ±20% band, 35 collapsed runs shown as grey ✕).
+- [x] `poster.tex`: TikZ **E/ν explainer** (unloaded vs pulled bar, σ arrows,
+      ε∥/ε⊥, with E=σ/ε∥ and ν=−ε⊥/ε∥ glosses) in §1; TikZ **12→32→20→2 NN
+      graphic** (nodes/edges, ⋮ truncation) replacing the architecture prose in
+      §5; `keyresult` box → pale red ground + 2 pt full red border; prose
+      trimmed ~40–50% across §1–§8; §6 numbers + training-loss text updated;
+      §6 figure swapped to `nnip_parity.png`.
+- [x] Refit to one A0 page: shrank the top pipeline figure (stage height
+      38→26 mm, gaps 22→14 mm — the efficient lever, since top-of-page space
+      feeds all 3 columns), tightened `\parskip`/`\sect` spacing, trimmed the
+      two kept old-style figures.
+- [x] Removed superseded `figures/nnip_verification_errors.png`; updated header
+      comments in `poster.tex` + `compile.sh` (figures regenerated, not copied).
+
+### Verification (all pass)
+- `make_figures.py` runs clean: 7,815 physical alloys, 25 physical / 35
+  collapsed — matches the recomputed text numbers exactly.
+- `compile.sh` → exit 0, no errors, no overfull boxes. `pdfinfo`: **1 page** A0.
+- Rendered (pdftoppm) and inspected each column: E/ν diagram clean (label
+  collision fixed), NN diagram clean, all four plots legible & teal, every
+  `keyresult` box shows the bold red border, §6 box reads 60/25/17/8.
+
+### Kept as-is (per approved plan; inputs unavailable)
+- `parity_validation.png` (§5 surrogate parity — needs a surrogate retrain) and
+  `formation_energy_heatmap.png` (§4 DFT) stay old-style, only resized.
+
+## TASK 8 — Poster relayout: 3 bordered columns (canvas-design)  (DONE)
+
+### Requirement
+"Change the poster layout: 3 columns with borders — (1) Motivation & background,
+(2) Methodology block diagram, (3) Results & discussion; remove the top block
+diagram; use /canvas-design." User chose to **restyle the LaTeX** (keep the
+editable vector build) while borrowing the canvas-design look — not a
+canvas-design PNG/PDF art object.
+
+### Done
+- [x] `poster_design_philosophy.md` — the canvas-design output: a "Field Ledger"
+      aesthetic (bordered registers, hairline rules, single signal-red) guiding
+      the restyle.
+- [x] Removed the full-width top pipeline figure.
+- [x] Rebuilt the body as **three bordered columns** with red title bars:
+      `1 Motivation & background · 2 Methodology · 3 Results & discussion`.
+- [x] **Methodology = a new vertical block diagram** (6 stages top→bottom, 5b
+      emphasized, side active-learning feedback loop) + Rose α + formation
+      heatmap + NN architecture.
+- [x] Moved references/acknowledgments to a **full-width strip** above the footer.
+
+### Key implementation note (the trap)
+First tried tcolorbox **`tcbraster` + `raster equal height=all`** → it forced all
+panels to the tallest column's height; that exceeded one A0 page, and tcbraster
+**broke the row, placing one column per page (3 pages)**. Switched to **three
+side-by-side `\begin{minipage}[t]{0.323\textwidth}` each holding a `poscol`
+bordered tcolorbox** → predictable side-by-side layout, back to **1 page**.
+
+### Balancing
+Col 1 (motivation) was ~13% shorter than cols 2–3. Filled it with a genuinely
+useful second background visual — teal **E/ν property distributions**
+(new `fig_dataset_distributions` in `make_figures.py`) — so all three bottoms
+align. Dropped the redundant old-style `parity_validation.png` plot from col 3
+(its R² is already in the key-result box), which also improved consistency.
+
+### Verification (all pass)
+- `make_figures.py` clean; `compile.sh` exit 0, no errors/overfull, **1 page** A0.
+- Rendered each column: 3 red-title bordered panels side by side, no top diagram,
+  vertical block diagram in col 2, results+table+conclusions in col 3, aligned
+  bottoms, references strip + footer intact.
+
+### Note
+Bundled `canvas-fonts` not wired in (would need LuaLaTeX/fontspec, risking the
+math build); kept Palatino/`mathpazo`. Offered as a follow-up.
