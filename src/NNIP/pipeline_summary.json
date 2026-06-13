@@ -1,0 +1,511 @@
+{
+  "elements": [
+    "Al",
+    "Co",
+    "Cr",
+    "Cu",
+    "Fe",
+    "Mg",
+    "Mn",
+    "Mo",
+    "Ni",
+    "Si",
+    "Ti",
+    "Zn"
+  ],
+  "n_perturbations": 150,
+  "skip_dft": true,
+  "skip_optimize": false,
+  "skip_verify": false,
+  "stage_timings_sec": {
+    "element_discovery": 0.0,
+    "dft_reference": 0.0,
+    "meam_init": 0.11,
+    "nn_optimization": 338190.83,
+    "verification": 3943.68,
+    "visualization": 1.46,
+    "total": 342136.08
+  },
+  "verification": {
+    "Cu_8998-Zn_0393-Mo_0370-Ti_0202-Ni_0037.json": {
+      "E_opt": 103.67313620755482,
+      "E_target": 77.38,
+      "E_err_pct": 33.98,
+      "nu_opt": 0.4195894000223194,
+      "nu_target": 0.409,
+      "nu_err_pct": 2.59
+    },
+    "Fe_5480-Cr_3056-Mn_1464.json": {
+      "E_opt": 0.0,
+      "E_target": 413.98,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.034,
+      "nu_err_pct": 1370.59
+    },
+    "Mn_8613-Fe_0736-Mo_0386-Si_0265.json": {
+      "E_opt": 0.0,
+      "E_target": 228.18,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.34,
+      "nu_err_pct": 47.06
+    },
+    "Mo_5515-Cr_2375-Mn_1789-Mg_0321.json": {
+      "E_opt": 0.0,
+      "E_target": 214.35,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.352,
+      "nu_err_pct": 42.05
+    },
+    "Mg_7284-Ti_2533-Cu_0156-Zn_0027.json": {
+      "E_opt": 0.0,
+      "E_target": 106.63,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.246,
+      "nu_err_pct": 103.25
+    },
+    "Al_8624-Ni_1376.json": {
+      "E_opt": 57.616081742402045,
+      "E_target": 75.05,
+      "E_err_pct": 23.23,
+      "nu_opt": 0.3922680525774458,
+      "nu_target": 0.361,
+      "nu_err_pct": 8.66
+    },
+    "Mo_6199-Mn_2643-Fe_1158.json": {
+      "E_opt": 0.0,
+      "E_target": 254.51,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.362,
+      "nu_err_pct": 38.12
+    },
+    "Al_9330-Cr_0357-Mn_0168-Ni_0077-Mo_0068.json": {
+      "E_opt": 82.09751536707893,
+      "E_target": 78.09,
+      "E_err_pct": 5.13,
+      "nu_opt": 0.35430403583491066,
+      "nu_target": 0.332,
+      "nu_err_pct": 6.72
+    },
+    "Al_7476-Ni_2412-Si_0112.json": {
+      "E_opt": 0.0,
+      "E_target": 59.39,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.398,
+      "nu_err_pct": 25.63
+    },
+    "Mg_5988-Ti_3537-Si_0475.json": {
+      "E_opt": 0.0,
+      "E_target": 121.96,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.25,
+      "nu_err_pct": 100.0
+    },
+    "Al_5318-Cu_2654-Ni_1937-Zn_0091.json": {
+      "E_opt": 108.16707168066907,
+      "E_target": 155.44,
+      "E_err_pct": 30.41,
+      "nu_opt": 0.3344623975332541,
+      "nu_target": 0.221,
+      "nu_err_pct": 51.34
+    },
+    "Mo_8285-Fe_0684-Zn_0388-Cu_0377-Ni_0266.json": {
+      "E_opt": 147.8355567819518,
+      "E_target": 168.67,
+      "E_err_pct": 12.35,
+      "nu_opt": 0.36236288956436397,
+      "nu_target": 0.383,
+      "nu_err_pct": 5.39
+    },
+    "Mo_9776-Fe_0224.json": {
+      "E_opt": 265.77205951444455,
+      "E_target": 258.06,
+      "E_err_pct": 2.99,
+      "nu_opt": 0.31976226422099907,
+      "nu_target": 0.335,
+      "nu_err_pct": 4.55
+    },
+    "Al_8597-Cu_0607-Zn_0341-Mn_0252-Si_0203.json": {
+      "E_opt": 92.94539893770738,
+      "E_target": 90.88,
+      "E_err_pct": 2.27,
+      "nu_opt": 0.2645499661954842,
+      "nu_target": 0.315,
+      "nu_err_pct": 16.02
+    },
+    "Al_8824-Ti_0467-Fe_0275-Si_0229-Co_0205.json": {
+      "E_opt": 0.0,
+      "E_target": 85.12,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.328,
+      "nu_err_pct": 52.44
+    },
+    "Cr_7827-Fe_2173.json": {
+      "E_opt": 155.77924315139933,
+      "E_target": 245.02,
+      "E_err_pct": 36.42,
+      "nu_opt": 0.3341619230695364,
+      "nu_target": 0.227,
+      "nu_err_pct": 47.21
+    },
+    "Cu_8931-Co_0353-Mn_0346-Ti_0196-Fe_0174.json": {
+      "E_opt": 0.0,
+      "E_target": 80.24,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.403,
+      "nu_err_pct": 24.07
+    },
+    "Mn_8222-Cr_0924-Co_0434-Zn_0420.json": {
+      "E_opt": 0.0,
+      "E_target": 162.45,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.382,
+      "nu_err_pct": 30.89
+    },
+    "Co_7399-Zn_2085-Mg_0516.json": {
+      "E_opt": 0.0,
+      "E_target": 261.67,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.231,
+      "nu_err_pct": 116.45
+    },
+    "Mn_7410-Fe_2590.json": {
+      "E_opt": 0.0,
+      "E_target": 275.24,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.279,
+      "nu_err_pct": 79.21
+    },
+    "Co_8468-Zn_1359-Cr_0173.json": {
+      "E_opt": 497.6041421303684,
+      "E_target": 253.98,
+      "E_err_pct": 95.92,
+      "nu_opt": 0.2524146466459625,
+      "nu_target": 0.255,
+      "nu_err_pct": 1.01
+    },
+    "Mn_7918-Cr_1904-Ni_0178.json": {
+      "E_opt": 0.0,
+      "E_target": 170.48,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.4,
+      "nu_err_pct": 25.0
+    },
+    "Mn_7670-Cr_1049-Fe_0809-Mo_0472.json": {
+      "E_opt": 0.0,
+      "E_target": 220.43,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.349,
+      "nu_err_pct": 43.27
+    },
+    "Mn_7869-Cr_0623-Mo_0620-Ni_0468-Ti_0420.json": {
+      "E_opt": 0.0,
+      "E_target": 210.72,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.369,
+      "nu_err_pct": 35.5
+    },
+    "Al_8703-Co_0465-Mo_0434-Ni_0365-Si_0033.json": {
+      "E_opt": 97.06683782105114,
+      "E_target": 81.71,
+      "E_err_pct": 18.79,
+      "nu_opt": 0.3540713112875098,
+      "nu_target": 0.327,
+      "nu_err_pct": 8.28
+    },
+    "Co_8040-Mg_1752-Ti_0208.json": {
+      "E_opt": 0.0,
+      "E_target": 149.69,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.307,
+      "nu_err_pct": 62.87
+    },
+    "Cr_9494-Ni_0195-Mo_0129-Mn_0110-Mg_0072.json": {
+      "E_opt": 63.73967160948814,
+      "E_target": 197.06,
+      "E_err_pct": 67.65,
+      "nu_opt": 0.44376318808657156,
+      "nu_target": 0.296,
+      "nu_err_pct": 49.92
+    },
+    "Mo_8383-Cr_1617.json": {
+      "E_opt": 90.22662251903027,
+      "E_target": 262.94,
+      "E_err_pct": 65.69,
+      "nu_opt": 0.20195384990496185,
+      "nu_target": 0.323,
+      "nu_err_pct": 37.48
+    },
+    "Fe_8878-Cr_0459-Mn_0428-Ni_0118-Mo_0117.json": {
+      "E_opt": 0.0,
+      "E_target": 195.79,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.288,
+      "nu_err_pct": 73.61
+    },
+    "Al_8399-Cu_0837-Ni_0764.json": {
+      "E_opt": 101.79182147037477,
+      "E_target": 69.82,
+      "E_err_pct": 45.79,
+      "nu_opt": 0.2586418751703476,
+      "nu_target": 0.349,
+      "nu_err_pct": 25.89
+    },
+    "Cr_5153-Mn_4847.json": {
+      "E_opt": 0.0,
+      "E_target": 131.9,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.397,
+      "nu_err_pct": 25.94
+    },
+    "Mn_5954-Fe_4046.json": {
+      "E_opt": 0.0,
+      "E_target": 276.28,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.243,
+      "nu_err_pct": 105.76
+    },
+    "Mo_8918-Ti_0321-Fe_0284-Si_0255-Co_0222.json": {
+      "E_opt": 0.0,
+      "E_target": 260.47,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.34,
+      "nu_err_pct": 47.06
+    },
+    "Mn_6229-Mo_1679-Cr_1160-Fe_0563-Mg_0369.json": {
+      "E_opt": 0.0,
+      "E_target": 198.63,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.369,
+      "nu_err_pct": 35.5
+    },
+    "Mo_8925-Cu_0380-Mg_0336-Ni_0271-Mn_0088.json": {
+      "E_opt": 48.11101392011901,
+      "E_target": 204.79,
+      "E_err_pct": 76.51,
+      "nu_opt": 0.4562172537125554,
+      "nu_target": 0.364,
+      "nu_err_pct": 25.33
+    },
+    "Cr_6550-Fe_3450.json": {
+      "E_opt": 0.0,
+      "E_target": 279.68,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.211,
+      "nu_err_pct": 136.97
+    },
+    "Mn_9012-Fe_0403-Cu_0358-Zn_0210-Co_0017.json": {
+      "E_opt": 0.0,
+      "E_target": 223.19,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.362,
+      "nu_err_pct": 38.12
+    },
+    "Mo_9109-Mg_0383-Zn_0230-Fe_0211-Cu_0067.json": {
+      "E_opt": 185.27568419472564,
+      "E_target": 222.94,
+      "E_err_pct": 16.89,
+      "nu_opt": 0.3591433125539597,
+      "nu_target": 0.354,
+      "nu_err_pct": 1.45
+    },
+    "Fe_5844-Mo_2225-Cr_1931.json": {
+      "E_opt": 0.0,
+      "E_target": 326.42,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.114,
+      "nu_err_pct": 338.6
+    },
+    "Mg_8943-Ti_0387-Mn_0354-Si_0242-Ni_0074.json": {
+      "E_opt": 0.0,
+      "E_target": 71.34,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.239,
+      "nu_err_pct": 109.21
+    },
+    "Mo_5280-Fe_3701-Mn_0458-Co_0385-Mg_0176.json": {
+      "E_opt": 149.77561735467316,
+      "E_target": 88.14,
+      "E_err_pct": 69.93,
+      "nu_opt": 0.42841616785652686,
+      "nu_target": 0.432,
+      "nu_err_pct": 0.83
+    },
+    "Mg_7834-Ti_1964-Fe_0202.json": {
+      "E_opt": 157.13043585869707,
+      "E_target": 105.91,
+      "E_err_pct": 48.36,
+      "nu_opt": 0.09900886946989004,
+      "nu_target": 0.237,
+      "nu_err_pct": 58.22
+    },
+    "Mg_5701-Ti_2922-Co_1377.json": {
+      "E_opt": 0.0,
+      "E_target": 146.95,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.221,
+      "nu_err_pct": 126.24
+    },
+    "Co_5279-Zn_4234-Si_0487.json": {
+      "E_opt": 0.0,
+      "E_target": 319.91,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.208,
+      "nu_err_pct": 140.38
+    },
+    "Al_5965-Cu_4035.json": {
+      "E_opt": 113.82666276948724,
+      "E_target": 192.72,
+      "E_err_pct": 40.94,
+      "nu_opt": 0.19479280681179967,
+      "nu_target": 0.175,
+      "nu_err_pct": 11.31
+    },
+    "Co_5803-Zn_3529-Mg_0668.json": {
+      "E_opt": 0.0,
+      "E_target": 256.27,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.223,
+      "nu_err_pct": 124.22
+    },
+    "Mg_9254-Fe_0343-Mn_0184-Cr_0159-Zn_0060.json": {
+      "E_opt": 0.0,
+      "E_target": 81.64,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.239,
+      "nu_err_pct": 109.21
+    },
+    "Co_8556-Mg_0615-Ti_0493-Ni_0241-Cu_0095.json": {
+      "E_opt": 309.9103423852903,
+      "E_target": 214.92,
+      "E_err_pct": 44.2,
+      "nu_opt": 0.22368583438392411,
+      "nu_target": 0.279,
+      "nu_err_pct": 19.83
+    },
+    "Al_9458-Ni_0236-Si_0206-Co_0066-Mn_0034.json": {
+      "E_opt": 67.72137392446733,
+      "E_target": 74.7,
+      "E_err_pct": 9.34,
+      "nu_opt": 0.3491188433671089,
+      "nu_target": 0.345,
+      "nu_err_pct": 1.19
+    },
+    "Co_8786-Ni_0320-Zn_0320-Cu_0305-Mo_0269.json": {
+      "E_opt": 295.7947139032136,
+      "E_target": 237.02,
+      "E_err_pct": 24.8,
+      "nu_opt": 0.23329777389129977,
+      "nu_target": 0.286,
+      "nu_err_pct": 18.43
+    },
+    "Cu_8915-Mg_0358-Fe_0283-Si_0264-Zn_0180.json": {
+      "E_opt": 71.52327319265056,
+      "E_target": 73.08,
+      "E_err_pct": 2.13,
+      "nu_opt": 0.41522848688229513,
+      "nu_target": 0.413,
+      "nu_err_pct": 0.54
+    },
+    "Co_8868-Zn_0464-Ti_0453-Mg_0122-Mo_0093.json": {
+      "E_opt": 415.40695421591965,
+      "E_target": 224.69,
+      "E_err_pct": 84.88,
+      "nu_opt": 0.29127797728521293,
+      "nu_target": 0.284,
+      "nu_err_pct": 2.56
+    },
+    "Mg_5080-Ti_4348-Mn_0439-Fe_0133.json": {
+      "E_opt": 237.58788413221285,
+      "E_target": 127.57,
+      "E_err_pct": 86.24,
+      "nu_opt": 0.0808769883510814,
+      "nu_target": 0.25,
+      "nu_err_pct": 67.65
+    },
+    "Mn_7627-Fe_1451-Mo_0922.json": {
+      "E_opt": 0.0,
+      "E_target": 251.97,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.306,
+      "nu_err_pct": 63.4
+    },
+    "Cr_9029-Co_0415-Mn_0384-Fe_0172.json": {
+      "E_opt": 0.0,
+      "E_target": 199.7,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.288,
+      "nu_err_pct": 73.61
+    },
+    "Cr_7102-Mn_2898.json": {
+      "E_opt": 0.0,
+      "E_target": 154.73,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.358,
+      "nu_err_pct": 39.66
+    },
+    "Mn_9089-Si_0341-Mg_0238-Mo_0222-Ni_0110.json": {
+      "E_opt": 0.0,
+      "E_target": 124.37,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.399,
+      "nu_err_pct": 25.31
+    },
+    "Al_5654-Ni_4346.json": {
+      "E_opt": 0.0,
+      "E_target": 95.96,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.372,
+      "nu_err_pct": 34.41
+    },
+    "Fe_8201-Cr_1749-Mn_0050.json": {
+      "E_opt": 0.0,
+      "E_target": 361.05,
+      "E_err_pct": 100.0,
+      "nu_opt": 0.5,
+      "nu_target": 0.122,
+      "nu_err_pct": 309.84
+    },
+    "Cr_9352-Ti_0249-Si_0193-Co_0133-Mn_0073.json": {
+      "E_opt": 107.88313566557224,
+      "E_target": 175.38,
+      "E_err_pct": 38.49,
+      "nu_opt": 0.3744333394008635,
+      "nu_target": 0.317,
+      "nu_err_pct": 18.12
+    }
+  }
+}

@@ -141,6 +141,138 @@ def get_elastic_moduli(L, delta=1e-3):
         return 0.0, 0.5
 
 
+# ── Binary formation energies (mirrors dft_reference.py geometry) ────────────
+# Per-element native lattice + experimental a (matches dft_reference.ELEMENT_DATA).
+# We need these to compute LAMMPS E_form at the EXACT same geometry DFT used,
+# so the LAMMPS E_form values are directly comparable to dft_results.json E_form.
+_ELEMENT_LATTICE = {
+    "Al": ("fcc", 4.05),  "Cu": ("fcc", 3.61),  "Fe": ("bcc", 2.87),
+    "Zn": ("hcp", 2.66),  "Mg": ("hcp", 3.21),  "Ti": ("hcp", 2.95),
+    "Cr": ("bcc", 2.91),  "Mn": ("bcc", 2.89),  "Co": ("hcp", 2.48),
+    "Ni": ("fcc", 3.52),  "Si": ("diamond", 5.43), "Mo": ("bcc", 3.15),
+}
+
+# Reference structure per (lattice_A, lattice_B) — verbatim from dft_reference.py.
+_BINARY_LATTICE = {
+    ("bcc", "bcc"): "b2",      ("bcc", "diamond"): "b2",
+    ("bcc", "fcc"): "b2",      ("bcc", "hcp"): "b2",
+    ("diamond", "diamond"): "b2",
+    ("diamond", "fcc"): "l12", ("diamond", "hcp"): "l12",
+    ("fcc", "fcc"): "l12",     ("fcc", "hcp"): "l12",
+    ("hcp", "hcp"): "b2",
+}
+
+
+def _norm_lat(l):
+    return "diamond" if l.startswith("dia") else l
+
+
+def _lammps_lat_name(l):
+    """Translate library lattice strings to LAMMPS lattice keywords.
+
+    The library file uses 'dia' (3-char convention); LAMMPS' `lattice` command
+    requires the full 'diamond' keyword. Other lattice names match already.
+    """
+    return "diamond" if l.startswith("dia") else l
+
+
+def _lammps_single_point(lib_path, params_path, lib_data, lat_cmd, atom_types):
+    """Run a single LAMMPS evaluation and return total potential energy.
+
+    Args:
+        lat_cmd: full "lattice ..." command string (e.g. "lattice fcc 3.83")
+        atom_types: list of 1-based MEAM type indices, one per basis atom.
+            E.g. for B2 with A=type 5 and B=type 8: [5, 8]
+    """
+    all_syms = list(lib_data.keys())
+    library_elements = " ".join(all_syms)
+    L = lammps(cmdargs=["-log", "none", "-screen", "none"])
+    try:
+        L.command("units metal")
+        L.command("atom_style atomic")
+        L.command("boundary p p p")
+        L.command(lat_cmd)
+        L.command("region box block 0 1 0 1 0 1")
+        L.command(f"create_box {len(all_syms)} box")
+        L.command("create_atoms 1 box")
+        # Re-assign types per the requested basis pattern.
+        for atom_id, t in enumerate(atom_types, start=1):
+            L.command(f"set atom {atom_id} type {t}")
+        L.command("pair_style meam")
+        L.command(f"pair_coeff * * {lib_path} {library_elements} "
+                  f"{params_path} {library_elements}")
+        for i, s in enumerate(all_syms, start=1):
+            mass = lib_data[s]["header"][3]
+            L.command(f"mass {i} {mass}")
+        L.command("run 0")
+        e_total = L.get_thermo("pe")
+        n_atoms = L.get_natoms()
+        return float(e_total), int(n_atoms)
+    finally:
+        L.close()
+
+
+def compute_pure_bulk_energies(lib_path, params_path, lib_data):
+    """Per-element e_per_atom at the library's a_lat. Constant across Phase-1
+    (since opt_spec only touches binary cross-terms — library is frozen)."""
+    pure_e = {}
+    for sym in lib_data:
+        lat_type = _lammps_lat_name(lib_data[sym]["header"][0].lower())
+        a_lat = lib_data[sym]["params"]["alat"]
+        sym_idx = list(lib_data.keys()).index(sym) + 1
+        # n_basis = how many atoms in 1x1x1 lattice cell
+        n_basis = {"fcc": 4, "bcc": 2, "hcp": 4, "diamond": 8}.get(lat_type, 4)
+        e_total, n = _lammps_single_point(
+            lib_path, params_path, lib_data,
+            f"lattice {lat_type} {a_lat:.4f}",
+            [sym_idx] * n_basis,
+        )
+        pure_e[sym] = e_total / n
+    return pure_e
+
+
+def compute_binary_form_energy(lib_path, params_path, lib_data, sym_a, sym_b, pure_e):
+    """LAMMPS E_form (eV/atom) for binary AB at the DFT-reference geometry.
+
+    Uses B2 (2-atom AB) or L1₂ (4-atom A₃B) per _BINARY_LATTICE, with
+    a_mix = (a_exp_A + a_exp_B)/2 from _ELEMENT_LATTICE.
+    Pure-element refs come from pure_e (precomputed via compute_pure_bulk_energies).
+
+    Returns None if either symbol is missing from _ELEMENT_LATTICE.
+    """
+    if sym_a not in _ELEMENT_LATTICE or sym_b not in _ELEMENT_LATTICE:
+        return None
+    lat_a, a_exp_a = _ELEMENT_LATTICE[sym_a]
+    lat_b, a_exp_b = _ELEMENT_LATTICE[sym_b]
+    ref_lat = _BINARY_LATTICE.get(
+        tuple(sorted([_norm_lat(lat_a), _norm_lat(lat_b)])),
+        "l12",
+    )
+    a_mix = (a_exp_a + a_exp_b) / 2.0
+    all_syms = list(lib_data.keys())
+    idx_a = all_syms.index(sym_a) + 1
+    idx_b = all_syms.index(sym_b) + 1
+
+    if ref_lat == "l12":
+        # LAMMPS fcc basis: (0,0,0), (0,a/2,a/2), (a/2,0,a/2), (a/2,a/2,0).
+        # L1₂ = A₃B; by symmetry, the choice of which basis atom is B doesn't
+        # affect total energy. We put B at atom 2.
+        atom_types = [idx_a, idx_b, idx_a, idx_a]
+        lat_cmd = f"lattice fcc {a_mix:.4f}"
+        n_a, n_b = 3, 1
+    else:  # b2
+        atom_types = [idx_a, idx_b]
+        lat_cmd = f"lattice bcc {a_mix:.4f}"
+        n_a, n_b = 1, 1
+
+    e_total, n_atoms = _lammps_single_point(
+        lib_path, params_path, lib_data, lat_cmd, atom_types,
+    )
+    e_mix = e_total / n_atoms
+    e_ref = (n_a * pure_e[sym_a] + n_b * pure_e[sym_b]) / (n_a + n_b)
+    return e_mix - e_ref
+
+
 def _run_lammps_composition(lib_path, params_path, composition, worker_id=""):
     """Run LAMMPS for a single composition dict and return (E_GPa, nu).
 
@@ -168,7 +300,7 @@ def _run_lammps_composition(lib_path, params_path, composition, worker_id=""):
     dominant = max(active_syms, key=lambda s: comp[s])
     lat_type = lib_data[dominant]["header"][0].lower()
 
-    n_rep = max(1, round(40.0 / a_m))  # ~4nm box
+    n_rep = max(1, round(28.0 / a_m))  # ~2.8nm box (rep=7 fcc / 10 bcc-hcp; ~1-2k atoms)
 
     library_elements = " ".join(lib_elements)
     active_elements = " ".join(active_syms)
@@ -226,8 +358,19 @@ def _run_lammps_composition(lib_path, params_path, composition, worker_id=""):
         L.close()
 
 
-def eval_all_entries(vec, names, base_lib, base_params, entries, tmp_dir, worker_id=""):
-    """Evaluate LAMMPS for all results.json entries. Returns list of (E, nu) pairs."""
+def eval_all_entries(vec, names, base_lib, base_params, entries, tmp_dir,
+                     pure_e=None, binary_pairs=None, worker_id=""):
+    """Evaluate LAMMPS for all results.json entries.
+
+    Returns (alloy_results, binary_forms) where
+      alloy_results = list of (E, nu) pairs (one per entry), and
+      binary_forms = list of E_form (eV/atom), one per pair in binary_pairs,
+                    in matching order. None if pure_e or binary_pairs not given.
+
+    Binary E_forms use the optimizer's *current* perturbed params (the same
+    lib_path/params_path written from vec) — that's what makes them a useful
+    training signal against the fixed DFT targets.
+    """
     lib_path, params_path = vector_to_files(vec, names, base_lib, base_params, tmp_dir)
     results = []
     n = len(entries)
@@ -242,7 +385,19 @@ def eval_all_entries(vec, names, base_lib, base_params, entries, tmp_dir, worker
         status = "OK" if (E > 10 and 0.0 < nu < NU_FILTER_MAX) else "FAILED"
         logger.info(f"           {tag}E={E:.2f} GPa, nu={nu:.3f} — {status} ({dt:.1f}s)")
         results.append((E, nu))
-    return results
+
+    binary_forms = None
+    if pure_e is not None and binary_pairs is not None:
+        binary_forms = []
+        for (sa, sb) in binary_pairs:
+            try:
+                ef = compute_binary_form_energy(lib_path, params_path, base_lib,
+                                                sa, sb, pure_e)
+            except Exception as exc:
+                logger.warning(f"    {tag}binary E_form ({sa}-{sb}) failed: {exc}")
+                ef = 0.0
+            binary_forms.append(ef if ef is not None else 0.0)
+    return results, binary_forms
 
 
 class _LammpsTimeout(Exception):
@@ -264,28 +419,37 @@ def _eval_sample_worker(args):
     OMP_NUM_THREADS is set per-worker for LAMMPS internal OpenMP parallelism.
     Times out after SAMPLE_TIMEOUT_SEC seconds to prevent hung LAMMPS runs.
     """
-    vec, names, base_lib, base_params, entries, worker_dir, omp_threads = args
+    (vec, names, base_lib, base_params, entries, worker_dir, omp_threads,
+     pure_e, binary_pairs) = args
     os.environ["OMP_NUM_THREADS"] = str(omp_threads)
     os.makedirs(worker_dir, exist_ok=True)
+
+    n_binary = len(binary_pairs) if binary_pairs is not None else 0
+    n_outputs = len(entries) * 2 + n_binary
 
     # Set alarm-based timeout (Unix only)
     old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.alarm(SAMPLE_TIMEOUT_SEC)
     try:
         worker_id = worker_dir.rsplit("_", 1)[-1]
-        results = eval_all_entries(vec, names, base_lib, base_params, entries, worker_dir,
-                                   worker_id=worker_id)
-        # Flatten as [C11_1, C12_1, C11_2, C12_2, ...]; unphysical (E, nu)
-        # entries become (0, 0) so the dispatcher's rejection logic can
-        # treat them as failed.
+        results, binary_forms = eval_all_entries(
+            vec, names, base_lib, base_params, entries, worker_dir,
+            pure_e=pure_e, binary_pairs=binary_pairs, worker_id=worker_id,
+        )
+        # Flatten as [C11_1, C12_1, ..., C11_N, C12_N,  E_form_1, ..., E_form_M].
+        # Unphysical (E, nu) entries become (0, 0); failed E_forms become 0.
+        # Rejection logic in the dispatcher only inspects the first 2N entries
+        # (C_ij), so a zero E_form doesn't cause sample rejection on its own.
         flat = []
         for E, nu in results:
             C11, C12 = _e_nu_pair_to_cij(E, nu)
             flat.extend([C11, C12])
+        if binary_forms is not None:
+            flat.extend(binary_forms)
         return np.array(flat)
     except _LammpsTimeout:
         # Return zeros so caller treats it as a failed sample
-        return np.zeros(len(entries) * 2)
+        return np.zeros(n_outputs)
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, old_handler)
@@ -361,7 +525,8 @@ def _save_checkpoint(path, config_hash, param_names, X_samples, y_samples):
 
 def _evaluate_candidates_parallel(candidates, names, base_lib, base_params,
                                    entries, tmp_dir, omp_threads, n_parallel,
-                                   n_entries, label="batch"):
+                                   n_entries, pure_e=None, binary_pairs=None,
+                                   label="batch"):
     """Run LAMMPS on each candidate in parallel; return list of (vec, y) pairs
     for those that pass the C_REJECT_MIN acceptance gate.
 
@@ -373,7 +538,8 @@ def _evaluate_candidates_parallel(candidates, names, base_lib, base_params,
         return accepted
     worker_args = [
         (vec, names, base_lib, base_params, entries,
-         os.path.join(tmp_dir, f"al_{label}_{i}"), omp_threads)
+         os.path.join(tmp_dir, f"al_{label}_{i}"), omp_threads,
+         pure_e, binary_pairs)
         for i, vec in enumerate(candidates)
     ]
     t0 = time.time()
@@ -388,7 +554,9 @@ def _evaluate_candidates_parallel(candidates, names, base_lib, base_params,
                 logger.info(f"  [active/{label}] worker failed: {exc}")
                 continue
             timed_out = np.all(y == 0)
-            valid = sum(1 for k in range(0, len(y), 2) if y[k] > C_REJECT_MIN)
+            # Acceptance gate inspects only the C_ij portion (first 2*n_entries);
+            # binary E_forms are appended after and aren't used for rejection.
+            valid = sum(1 for k in range(0, 2 * n_entries, 2) if y[k] > C_REJECT_MIN)
             if timed_out:
                 logger.info(f"  [active/{label}] TIMED OUT (valid={valid}/{n_entries})")
             elif valid >= n_entries // 2:
@@ -406,7 +574,7 @@ def _phase1_active_loop(initial_vec, names, base_lib, base_params, entries,
                          X_samples, y_samples, budget, batch_size,
                          seed_size, ensemble_size, pool_size, n_parallel,
                          omp_threads, tmp_dir, seed, checkpoint_fn,
-                         n_entries):
+                         n_entries, pure_e=None, binary_pairs=None):
     """Active-learning Phase 1: seed with Sobol, then iterate (ensemble
     train → variance score pool → diverse batch select → LAMMPS) until
     ``budget`` accepted samples are collected.
@@ -428,7 +596,7 @@ def _phase1_active_loop(initial_vec, names, base_lib, base_params, entries,
         accepted = _evaluate_candidates_parallel(
             seed_pool[:seed_target * 2], names, base_lib, base_params,
             entries, tmp_dir, omp_threads, n_parallel, n_entries,
-            label="seed")
+            pure_e=pure_e, binary_pairs=binary_pairs, label="seed")
         for vec, y in accepted:
             if len(X_samples) >= budget:
                 break
@@ -459,6 +627,7 @@ def _phase1_active_loop(initial_vec, names, base_lib, base_params, entries,
         accepted = _evaluate_candidates_parallel(
             [v for v in next_batch], names, base_lib, base_params,
             entries, tmp_dir, omp_threads, n_parallel, n_entries,
+            pure_e=pure_e, binary_pairs=binary_pairs,
             label=f"iter{iteration}")
         if not accepted:
             logger.warning(f"  [active/iter {iteration}] no candidates accepted — "
@@ -611,25 +780,106 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
     base_params = parse_params(params_path)
 
     if opt_spec is None:
-        # Default: optimize all binary pair Ec, re, alpha
+        # Default: optimize all binary pair Ec, re, alpha, MINUS pairs whose
+        # (Ec, re, alpha) all come from a previous .meam file. Those are baked
+        # into base_params at the literature value and stay frozen.
         n_elements = len(base_lib)
+        # Map MEAM 1-based index -> element symbol via the library ordering.
+        lib_symbols = list(base_lib.keys())  # parse_library preserves order
+        frozen_idx_pairs = set()
+        literature_path = os.path.join(os.path.dirname(__file__), "literature_pairs.json")
+        if os.path.exists(literature_path):
+            from src.NNIP.literature_pairs import known_pair_set
+            with open(literature_path) as f:
+                literature_table = json.load(f)
+            frozen_syms = known_pair_set(literature_table)
+            for (sa, sb) in frozen_syms:
+                if sa in lib_symbols and sb in lib_symbols:
+                    i = lib_symbols.index(sa) + 1
+                    j = lib_symbols.index(sb) + 1
+                    frozen_idx_pairs.add(tuple(sorted([i, j])))
+
         par_keys = []
         for i in range(1, n_elements + 1):
             for j in range(i + 1, n_elements + 1):
+                if (i, j) in frozen_idx_pairs:
+                    continue
                 for pname in ("Ec", "re", "alpha"):
                     par_keys.append(f"{pname}({i},{j})")
         # Filter to keys that actually exist in the params file
         existing_keys = {k for k, _ in base_params}
         par_keys = [k for k in par_keys if k in existing_keys]
         opt_spec = {"params": par_keys}
+        if frozen_idx_pairs:
+            logger.info(f"Literature override: froze {len(frozen_idx_pairs)} binary pairs "
+                        f"({3 * len(frozen_idx_pairs)} parameters)")
 
     initial_vec, names = params_to_vector(base_lib, base_params, opt_spec)
     logger.info(f"Optimizing {len(names)} parameters: {names}")
+
+    # ── Binary E_form targets from DFT (independent ground truth, Option A) ──
+    # Only the FREE (non-literature-frozen) pairs get E_form targets. Frozen
+    # pairs' Ec/re/alpha can't be adjusted, so penalizing their baseline
+    # mismatch (which is real — literature Ec values weren't fit against DFT
+    # E_form) would just be a constant loss term the optimizer can't reduce.
+    import itertools as _it
+    all_lib_pairs = list(_it.combinations(list(base_lib.keys()), 2))
+    # Reverse-derive frozen-pair symbols from opt_spec (the params it touches).
+    # Free pair = at least one of par:Ec/re/alpha for that pair is in opt_spec.
+    import re as _re_local
+    free_idx_pairs = set()
+    for k in opt_spec.get("params", []):
+        m = _re_local.match(r"(Ec|re|alpha)\((\d+),(\d+)\)", k)
+        if m:
+            i, j = sorted([int(m.group(2)), int(m.group(3))])
+            free_idx_pairs.add((i, j))
+    lib_symbols = list(base_lib.keys())
+    free_sym_pairs = {tuple(sorted([lib_symbols[i - 1], lib_symbols[j - 1]]))
+                      for (i, j) in free_idx_pairs}
+    binary_pairs = [p for p in all_lib_pairs if p in free_sym_pairs]
+
+    dft_results_path = os.path.join(os.path.dirname(__file__), "dft_results.json")
+    dft_e_form_target = []
+    n_with_dft = 0
+    if os.path.exists(dft_results_path) and binary_pairs:
+        with open(dft_results_path) as f:
+            _dft = json.load(f)
+        _dft_pairs = _dft.get("binary_pairs", {})
+        for (sa, sb) in binary_pairs:
+            v = (_dft_pairs.get(f"{sa}-{sb}") or _dft_pairs.get(f"{sb}-{sa}") or {})
+            ef = v.get("E_form")
+            if ef is not None:
+                n_with_dft += 1
+                dft_e_form_target.append(float(ef))
+            else:
+                dft_e_form_target.append(0.0)
+        logger.info(f"DFT E_form targets: {n_with_dft}/{len(binary_pairs)} FREE pairs "
+                     f"loaded ({len(all_lib_pairs) - len(binary_pairs)} frozen pairs skipped)")
+    else:
+        if not os.path.exists(dft_results_path):
+            logger.warning(f"  No dft_results.json at {dft_results_path}; "
+                           f"binary E_form targets disabled.")
+        binary_pairs = []
+        dft_e_form_target = []
+    target_vec = np.concatenate([target_vec, np.array(dft_e_form_target)])
+    n_binary = len(binary_pairs)
+
+    # Pure-element bulk energies under the current library (constant across
+    # Phase 1 — only binary cross-terms are perturbed). Cached once.
+    pure_e = None
+    if n_binary > 0:
+        logger.info(f"Computing pure-element bulk energies (one-time)...")
+        t_pure = time.time()
+        pure_e = compute_pure_bulk_energies(lib_path, params_path, base_lib)
+        logger.info(f"  pure_e: " +
+                    ", ".join(f"{s}={pure_e[s]:.3f}" for s in pure_e) +
+                    f"  ({time.time()-t_pure:.1f}s)")
 
     # 1. Sample parameter space (parallel)
     logger.info(f"\n{'='*60}")
     logger.info(f"PHASE 1: Sampling {n_perturbations} points ({n_parallel} workers)")
     logger.info(f"  Per-sample timeout: {SAMPLE_TIMEOUT_SEC}s")
+    logger.info(f"  Outputs per sample: {2*n_entries} C_ij + {n_binary} E_form = {2*n_entries+n_binary}")
     logger.info(f"{'='*60}")
     t_phase1 = time.time()
     X_samples = []
@@ -659,12 +909,17 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
                              X_samples, y_samples)
 
     def eval_to_flat(vec):
-        """Run LAMMPS for all entries, return [C11_1, C12_1, C11_2, ...]."""
-        results = eval_all_entries(vec, names, base_lib, base_params, entries, tmp_dir)
+        """Run LAMMPS for all entries + binary E_forms;
+        returns [C11_1, C12_1, ..., C11_N, C12_N,  E_form_1, ..., E_form_M]."""
+        results, binary_forms = eval_all_entries(
+            vec, names, base_lib, base_params, entries, tmp_dir,
+            pure_e=pure_e, binary_pairs=binary_pairs)
         flat = []
         for E, nu in results:
             C11, C12 = _e_nu_pair_to_cij(E, nu)
             flat.extend([C11, C12])
+        if binary_forms is not None:
+            flat.extend(binary_forms)
         return np.array(flat)
 
     # Baseline (always sequential — need it before anything else)
@@ -705,6 +960,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
             seed=sampling_seed,
             checkpoint_fn=_checkpoint_now,
             n_entries=n_entries,
+            pure_e=pure_e, binary_pairs=binary_pairs,
         )
         candidates = []  # downstream oneshot block is a no-op for active
     else:
@@ -732,9 +988,10 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
         for i, vec in enumerate(my_candidates):
             worker_dir = os.path.join(tmp_dir, f"r{_MPI_RANK}_w{i}")
             y = _eval_sample_worker(
-                (vec, names, base_lib, base_params, entries, worker_dir, omp_threads)
+                (vec, names, base_lib, base_params, entries, worker_dir,
+                 omp_threads, pure_e, binary_pairs)
             )
-            valid = sum(1 for k in range(0, len(y), 2) if y[k] > C_REJECT_MIN)
+            valid = sum(1 for k in range(0, 2 * n_entries, 2) if y[k] > C_REJECT_MIN)
             if valid >= n_entries // 2:
                 my_results.append((vec, y))
             status = "accepted" if valid >= n_entries // 2 else "rejected"
@@ -758,7 +1015,8 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
         # ── Local multiprocessing mode ───────────────────────────────────
         worker_args = [
             (vec, names, base_lib, base_params, entries,
-             os.path.join(tmp_dir, f"w{i}"), omp_threads)
+             os.path.join(tmp_dir, f"w{i}"), omp_threads,
+             pure_e, binary_pairs)
             for i, vec in enumerate(candidates)
         ]
         n_evaluated = 0
@@ -791,7 +1049,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
                                 f"(OK {len(X_samples)}/{n_perturbations}, {elapsed:.0f}s elapsed): {e}")
                     continue
                 vec = futures[future]
-                valid = sum(1 for k in range(0, len(y), 2) if y[k] > C_REJECT_MIN)
+                valid = sum(1 for k in range(0, 2 * n_entries, 2) if y[k] > C_REJECT_MIN)
                 timed_out = np.all(y == 0)
                 if timed_out:
                     n_timed_out += 1
@@ -826,7 +1084,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
             t_sample = time.time()
             y = eval_to_flat(vec)
             dt_sample = time.time() - t_sample
-            valid = sum(1 for k in range(0, len(y), 2) if y[k] > C_REJECT_MIN)
+            valid = sum(1 for k in range(0, 2 * n_entries, 2) if y[k] > C_REJECT_MIN)
             elapsed = time.time() - t_seq
             if valid >= n_entries // 2:
                 X_samples.append(vec)
@@ -862,7 +1120,8 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
     # 2. Train NN Surrogate
     t_phase2 = time.time()
     logger.info(f"\n{'='*60}")
-    logger.info(f"PHASE 2: Training NN surrogate ({len(initial_vec)} -> {n_entries * 2})")
+    n_outputs = 2 * n_entries + n_binary
+    logger.info(f"PHASE 2: Training NN surrogate ({len(initial_vec)} -> {n_outputs})")
     logger.info(f"  Training data shape: X={X_train.shape}, y={y_train.shape}")
     logger.info(f"{'='*60}")
     model = tf.keras.Sequential([
@@ -870,7 +1129,7 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
         tf.keras.layers.Dense(20, activation="relu"),
         tf.keras.layers.Dense(20, activation="relu"),
         tf.keras.layers.Dense(10, activation="relu"),
-        tf.keras.layers.Dense(n_entries * 2),
+        tf.keras.layers.Dense(n_outputs),
     ])
     model.compile(optimizer="adam",
                   loss=tf.keras.losses.Huber(delta=HUBER_DELTA))
@@ -925,11 +1184,63 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
     v_opt = tf.Variable(tf.zeros((1, len(initial_vec)), dtype=tf.float32))
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
+    # ── Option C: per-pair signal-weighted seed regularization ──────────────
+    # For each parameter, compute the composition-weighted training signal of
+    # the pair it belongs to. Weak-signal pairs get a large weight that pins
+    # v_opt toward 0 (the DFT seed); strong-signal pairs have a small weight
+    # that lets the data move them. This prevents the inverse pass from drifting
+    # weak-signal pairs to spurious values just because the surrogate's gradient
+    # in their direction is small.
+    pair_signal_for_name = {}
+    if entries:
+        import re as _re
+        lib_symbols = list(base_lib.keys())
+        # Composition-weighted ρ for every pair touched by `names`.
+        pair_rho = {}
+        for entry_data in entries.values():
+            comp = entry_data.get("composition", {})
+            for sa in lib_symbols:
+                for sb in lib_symbols:
+                    if sa >= sb:
+                        continue
+                    rho = 2 * comp.get(sa, 0.0) * comp.get(sb, 0.0)
+                    pair_rho[(sa, sb)] = pair_rho.get((sa, sb), 0.0) + rho
+        for k in pair_rho:
+            pair_rho[k] /= max(len(entries), 1)
+        for name in names:
+            m = _re.match(r"par:(Ec|re|alpha)\((\d+),(\d+)\)", name)
+            if not m:
+                continue
+            i, j = sorted([int(m.group(2)), int(m.group(3))])
+            sa, sb = sorted([lib_symbols[i - 1], lib_symbols[j - 1]])
+            pair_signal_for_name[name] = pair_rho.get((sa, sb), 0.0)
+
+    # Weights = 1 / max(ρ_pair, ρ_floor); clipped so the weakest pair doesn't
+    # blow up to infinity. ρ_floor=1e-3 ⇒ weakest-signal pair gets weight 1000,
+    # then everything is normalized so the *mean* weight is 1 — that keeps the
+    # regularization term comparable to the data-fit term in magnitude.
+    rho_floor = 1e-3
+    raw_w = np.array([1.0 / max(pair_signal_for_name.get(n, 1.0), rho_floor)
+                      for n in names], dtype=np.float32)
+    # Normalize so mean(w) = 1; absolute size of the reg term is then governed
+    # by lambda_reg below, not by an accident of the pair-signal distribution.
+    weights = raw_w / max(raw_w.mean(), 1e-12)
+    w_tf = tf.constant(weights.reshape(1, -1))
+    lambda_reg = 0.01
+
+    n_weak = int(np.sum(weights > 5.0))
+    n_strong = int(np.sum(weights < 0.5))
+    logger.info(f"  Seed regularization: λ={lambda_reg}, ρ_floor={rho_floor}")
+    logger.info(f"    {n_weak} params strongly pinned (weight > 5x mean)")
+    logger.info(f"    {n_strong} params lightly pinned (weight < 0.5x mean)")
+
     opt_losses = []
     for step in range(n_opt_steps):
         with tf.GradientTape() as tape:
             pred_norm = model(v_opt)
-            loss = tf.reduce_mean(tf.square(pred_norm - target_norm))
+            data_loss = tf.reduce_mean(tf.square(pred_norm - target_norm))
+            reg_loss = lambda_reg * tf.reduce_mean(w_tf * tf.square(v_opt))
+            loss = data_loss + reg_loss
         grads = tape.gradient(loss, v_opt)
         optimizer.apply_gradients([(grads, v_opt)])
         # Constrain optimization to region near training samples (+/- 2.5 std devs)
@@ -938,7 +1249,8 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
         if step % 500 == 0 or step == n_opt_steps - 1:
             elapsed = time.time() - t_phase3
             grad_norm = float(tf.norm(grads).numpy()) if grads is not None else 0.0
-            logger.info(f"  Step {step}/{n_opt_steps}: loss={loss.numpy():.6f}, "
+            logger.info(f"  Step {step}/{n_opt_steps}: loss={loss.numpy():.6f} "
+                        f"(data={data_loss.numpy():.6f}, reg={reg_loss.numpy():.6f}), "
                         f"grad_norm={grad_norm:.6f}, {elapsed:.1f}s elapsed")
 
     dt_phase3 = time.time() - t_phase3
@@ -955,15 +1267,37 @@ def optimize_nn(lib_path, params_path, opt_spec=None, n_perturbations=150,
     old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
     signal.alarm(SAMPLE_TIMEOUT_SEC)
     try:
-        val_pairs = eval_all_entries(optimized_vec, names, base_lib, base_params,
-                                     val_entries, tmp_dir)
+        val_pairs, val_binary_forms = eval_all_entries(
+            optimized_vec, names, base_lib, base_params, val_entries, tmp_dir,
+            pure_e=pure_e, binary_pairs=binary_pairs)
     except _LammpsTimeout:
         logger.error(f"  Validation timed out after {SAMPLE_TIMEOUT_SEC}s — "
                       f"optimized potential may be unstable")
         val_pairs = [(0.0, 0.5)] * n_val
+        val_binary_forms = [0.0] * n_binary
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, old_handler)
+
+    # ── Phase-4 binary E_form diagnostic ─────────────────────────────────────
+    # The optimizer was trained against DFT E_form; this is the ground-truth
+    # comparison. Pairs with large residual are where the surrogate couldn't
+    # reach DFT — either because Phase-1 lacked signal there, or because the
+    # parameter ±10% box was too narrow.
+    if n_binary > 0 and val_binary_forms is not None:
+        logger.info("\n  Binary E_form residuals (optimized MEAM vs DFT):")
+        residuals = []
+        for (sa, sb), e_opt, e_dft in zip(binary_pairs, val_binary_forms,
+                                           dft_e_form_target):
+            err = e_opt - e_dft
+            residuals.append((sa, sb, e_dft, e_opt, err))
+        # Sort by absolute residual to surface worst-fit pairs at the bottom.
+        for sa, sb, e_dft, e_opt, err in sorted(residuals, key=lambda r: abs(r[4])):
+            logger.info(f"    {sa}-{sb:4s}  DFT={e_dft:+.3f}  opt={e_opt:+.3f}  "
+                        f"err={err:+.3f} eV/atom")
+        max_err = max(abs(r[4]) for r in residuals) if residuals else 0.0
+        rms_err = (sum(r[4] ** 2 for r in residuals) / len(residuals)) ** 0.5 if residuals else 0.0
+        logger.info(f"    RMS error: {rms_err:.4f} eV/atom; max: {max_err:.4f} eV/atom")
 
     logger.info("\n" + "=" * 60)
     logger.info("VALIDATION RESULTS (held-out — never seen during training)")

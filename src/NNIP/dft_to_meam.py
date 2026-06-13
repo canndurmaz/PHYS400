@@ -46,7 +46,9 @@ def _atomic_volume(lattice, a_lat):
     return a_lat ** 3 / 4.0  # fallback
 
 
-def initialize_meam_from_dft(dft_results, elements, eam_dir, merge_config_path=None, output_dir=None):
+def initialize_meam_from_dft(dft_results, elements, eam_dir,
+                             merge_config_path=None, output_dir=None,
+                             literature_path=None):
     """Update MEAM library/params with DFT-derived values.
 
     Args:
@@ -55,6 +57,11 @@ def initialize_meam_from_dft(dft_results, elements, eam_dir, merge_config_path=N
         eam_dir: directory containing base MEAM files
         merge_config_path: path to merge config JSON (if base files need generating)
         output_dir: output directory for initialized files
+        literature_path: path to literature_pairs.json. After DFT-derived
+            cross-terms are written (Step 3), any pair listed here has its
+            (Ec, re, alpha) overridden with the literature value. Pass an
+            explicit empty string ("") to disable the override pass.
+            Default: src/NNIP/literature_pairs.json if it exists.
 
     Returns:
         (lib_path, params_path) — paths to the written files
@@ -167,6 +174,37 @@ def initialize_meam_from_dft(dft_results, elements, eam_dir, merge_config_path=N
         alpha_j = lib_data[sym_j]["params"]["alpha"]
         param_dict[f"alpha({idx_i},{idx_j})"] = round((alpha_i + alpha_j) / 2.0, 4)
 
+    # Step 4: Override DFT-derived cross-terms with literature values where
+    # a previous .meam file already provides them. Pairs not in the literature
+    # table keep their DFT seeds from Step 3 and are free to optimize.
+    if literature_path is None:
+        literature_path = os.path.join(os.path.dirname(__file__), "literature_pairs.json")
+    n_overridden = 0
+    overridden_pairs = []
+    if literature_path and os.path.exists(literature_path):
+        with open(literature_path) as f:
+            literature = json.load(f)
+        for pair_key, entry in literature.items():
+            sym_i, sym_j = pair_key.split("-")
+            if sym_i not in elements or sym_j not in elements:
+                continue
+            idx_i = elements.index(sym_i) + 1
+            idx_j = elements.index(sym_j) + 1
+            if idx_i > idx_j:
+                idx_i, idx_j = idx_j, idx_i
+            applied = []
+            for name in ("Ec", "re", "alpha"):
+                if name not in entry:
+                    continue
+                param_dict[f"{name}({idx_i},{idx_j})"] = round(entry[name]["value"], 6)
+                applied.append(name)
+            if applied:
+                n_overridden += 1
+                overridden_pairs.append((pair_key, applied))
+        print(f"Literature override: {n_overridden} pairs overridden from {literature_path}")
+    elif literature_path:
+        print(f"Literature override: file not found at {literature_path}, skipping")
+
     # Rebuild param entries list preserving order, adding new keys at end
     updated_entries = []
     seen_keys = set()
@@ -185,6 +223,17 @@ def initialize_meam_from_dft(dft_results, elements, eam_dir, merge_config_path=N
     # Write output files
     lib_out = os.path.join(output_dir, f"library_{prefix}.meam")
     par_out = os.path.join(output_dir, f"{prefix}.meam")
+
+    # Backup any existing output before overwriting so a prior init can be
+    # recovered (the optimizer's checkpoint is keyed on the input file hash).
+    # Timestamp suffix so successive runs don't clobber earlier backups.
+    import datetime
+    bak_suffix = datetime.datetime.now().strftime(".bak.%Y%m%d_%H%M%S")
+    for path in (lib_out, par_out):
+        if os.path.exists(path):
+            bak = path + bak_suffix
+            os.replace(path, bak)
+            print(f"  Backup: {os.path.basename(path)} -> {os.path.basename(bak)}")
 
     write_library(lib_data, elements, lib_out)
     write_params(updated_entries, par_out)
@@ -205,11 +254,18 @@ if __name__ == "__main__":
     parser.add_argument("--eam-dir", default=None, help="EAM directory")
     parser.add_argument("--merge-config", default=None, help="Path to merge config JSON")
     parser.add_argument("--output-dir", default=None, help="Output directory")
+    parser.add_argument("--literature-pairs", default=None,
+                        help="Path to literature_pairs.json. Default: "
+                             "src/NNIP/literature_pairs.json if it exists.")
+    parser.add_argument("--no-literature", action="store_true",
+                        help="Disable the literature override pass (use only DFT seeds).")
     args = parser.parse_args()
 
     eam_dir = args.eam_dir or os.path.join(project_root, "EAM")
+    lit = "" if args.no_literature else args.literature_pairs
     initialize_meam_from_dft(
         args.dft_results, args.elements, eam_dir,
         merge_config_path=args.merge_config,
         output_dir=args.output_dir,
+        literature_path=lit,
     )

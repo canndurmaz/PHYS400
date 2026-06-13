@@ -1,0 +1,888 @@
+{
+  "Al-Co": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.634
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.0
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.3668
+    }
+  },
+  "Al-Cr": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.1562
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.1048
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.3028
+    }
+  },
+  "Al-Cu": {
+    "Ec": {
+      "method": "agree",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.5058
+    },
+    "alpha": {
+      "method": "mean",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.825
+    },
+    "re": {
+      "method": "mean",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4642
+    }
+  },
+  "Al-Fe": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.8779
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.8678
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.3983
+    }
+  },
+  "Al-Mg": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "AlMgZn.meam"
+      ],
+      "value": 2.06796
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "AlMgZn.meam"
+      ],
+      "value": 5.01674
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "AlMgZn.meam"
+      ],
+      "value": 3.09646
+    }
+  },
+  "Al-Mn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.3369
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.2179
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 1.8979
+    }
+  },
+  "Al-Ni": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.3817
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.0
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.434
+    }
+  },
+  "Al-Si": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 3.995
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 4.78
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.607737
+    }
+  },
+  "Al-Ti": {
+    "Ec": {
+      "method": "agree",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.2975
+    },
+    "alpha": {
+      "method": "agree",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.0
+    },
+    "re": {
+      "method": "agree",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.59
+    }
+  },
+  "Al-Zn": {
+    "Ec": {
+      "method": "agree",
+      "sources": [
+        "AlMgZn.meam",
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.84
+    },
+    "alpha": {
+      "method": "agree",
+      "sources": [
+        "AlMgZn.meam",
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 4.57
+    },
+    "re": {
+      "method": "agree",
+      "sources": [
+        "AlMgZn.meam",
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.856
+    }
+  },
+  "Co-Cr": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.2219
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.9937
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4409
+    }
+  },
+  "Co-Cu": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.6975
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.9984
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4488
+    }
+  },
+  "Co-Fe": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.5375
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.0
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4009
+    }
+  },
+  "Co-Mn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.2951
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.9963
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.5423
+    }
+  },
+  "Co-Ni": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.9818
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.0
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4136
+    }
+  },
+  "Co-Ti": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.0309
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.0
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.2759
+    }
+  },
+  "Cr-Cu": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.8453
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.4158
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.414
+    }
+  },
+  "Cr-Fe": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.8153
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.5129
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.5229
+    }
+  },
+  "Cr-Mn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.5954
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.0
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.5267
+    }
+  },
+  "Cr-Ni": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.5253
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.9958
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4822
+    }
+  },
+  "Cr-Ti": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.0364
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.8794
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.6776
+    }
+  },
+  "Cu-Fe": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.6206
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.7851
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.2768
+    }
+  },
+  "Cu-Mn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.2689
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.8786
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.3717
+    }
+  },
+  "Cu-Mo": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "CuMo.meam"
+      ],
+      "value": 4.095
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "CuMo.meam"
+      ],
+      "value": 6.613093
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "CuMo.meam"
+      ],
+      "value": 2.7296
+    }
+  },
+  "Cu-Ni": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.9622
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.0742
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.292
+    }
+  },
+  "Cu-Si": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 4.085
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 4.99
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.455709
+    }
+  },
+  "Cu-Ti": {
+    "Ec": {
+      "method": "agree",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.9529
+    },
+    "alpha": {
+      "method": "agree",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.5075
+    },
+    "re": {
+      "method": "agree",
+      "sources": [
+        "AlCuSiTiZn.meam",
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4663
+    }
+  },
+  "Cu-Zn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.4325
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 6.03
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.672363
+    }
+  },
+  "Fe-Mn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.8946
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.3314
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4901
+    }
+  },
+  "Fe-Ni": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.6323
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 5.0
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.3137
+    }
+  },
+  "Fe-Ti": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.2798
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.7968
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.45
+    }
+  },
+  "Mg-Zn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "AlMgZn.meam"
+      ],
+      "value": 1.47
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "AlMgZn.meam"
+      ],
+      "value": 5.71
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "AlMgZn.meam"
+      ],
+      "value": 3.04
+    }
+  },
+  "Mn-Ni": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.3371
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.9651
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.0007
+    }
+  },
+  "Mn-Ti": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.4941
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.2942
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.6096
+    }
+  },
+  "Ni-Ti": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 3.9581
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 4.256
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "FeMnNiTiCuCrCoAl.meam"
+      ],
+      "value": 2.5646
+    }
+  },
+  "Si-Ti": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 4.75
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 4.7839
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.635846
+    }
+  },
+  "Si-Zn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.9775
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 5.91
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.568346
+    }
+  },
+  "Ti-Zn": {
+    "Ec": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 3.0975
+    },
+    "alpha": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 5.8239
+    },
+    "re": {
+      "method": "single",
+      "sources": [
+        "AlCuSiTiZn.meam"
+      ],
+      "value": 2.8525
+    }
+  }
+}

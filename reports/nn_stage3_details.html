@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NN Stage 3 — Cross-Term Optimization Details (PHYS 400)</title>
+<style>
+  :root {
+    --deepred: #8C1414;
+    --deepred-soft: #c47272;
+    --bg-block: #f4f4f4;
+    --bg-tip: #fef6e8;
+    --border-tip: #d9a441;
+    --bg-warn: #fdecea;
+    --border-warn: #c43232;
+    --bg-good: #ecf6e8;
+    --border-good: #4a8b37;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+    --accent: #2c5fa0;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 4rem 0;
+    background: #fafafa;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--deepred);
+    color: white;
+    padding: 0.9rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    z-index: 10;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  header h1 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.02em; }
+  header .meta {
+    font-size: 0.85rem;
+    opacity: 0.92;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  }
+  main { max-width: 880px; margin: 2rem auto; padding: 0 1.5rem; }
+  h2 {
+    color: var(--deepred);
+    border-bottom: 2px solid var(--deepred-soft);
+    padding-bottom: 0.3rem;
+    margin-top: 2.5rem;
+    font-size: 1.4rem;
+  }
+  h3 { color: var(--accent); font-size: 1.05rem; margin-top: 1.6rem; }
+  h4 { color: var(--muted); font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  p { margin: 0.6rem 0; }
+  code, .mono {
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    background: var(--bg-block);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  pre {
+    background: var(--bg-block);
+    border-left: 3px solid var(--deepred);
+    padding: 0.8rem 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; }
+  .intro {
+    background: white;
+    border-left: 4px solid var(--deepred);
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .intro p:first-child { margin-top: 0; }
+  .intro p:last-child  { margin-bottom: 0; }
+  .tip, .warn, .good {
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    border-left: 4px solid;
+    border-radius: 3px;
+    font-size: 0.95rem;
+  }
+  .tip  { background: var(--bg-tip);  border-color: var(--border-tip); }
+  .warn { background: var(--bg-warn); border-color: var(--border-warn); }
+  .good { background: var(--bg-good); border-color: var(--border-good); }
+  .tip strong, .warn strong, .good strong { font-weight: 600; }
+
+  .step {
+    background: white;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    padding: 0.9rem 1.2rem 0.9rem 3.3rem;
+    margin: 0.8rem 0;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .step .n {
+    position: absolute;
+    left: 0.7rem;
+    top: 0.9rem;
+    background: var(--deepred);
+    color: white;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .step h3 { margin: 0 0 0.3rem 0; color: var(--deepred); font-size: 1rem; }
+  .step .ref { color: var(--muted); font-size: 0.82rem; font-family: ui-monospace, monospace; }
+  .step.new { border-left: 4px solid var(--accent); }
+  .step.new::after {
+    content: 'NEW';
+    position: absolute;
+    right: 0.7rem;
+    top: 0.7rem;
+    background: var(--accent);
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  th, td {
+    border: 1px solid #d6d6d6;
+    padding: 0.45rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--bg-block);
+    color: var(--deepred);
+    font-weight: 600;
+  }
+  td.num { font-family: ui-monospace, monospace; text-align: right; font-size: 0.85rem; }
+  tr.strong-signal td { background: #f7fbf4; }
+  tr.weak-signal td   { background: #fdf4f3; }
+
+  .diagram {
+    background: white;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .toc {
+    background: white;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    padding: 1rem 1.4rem;
+    margin: 1rem 0 2rem 0;
+    font-size: 0.9rem;
+  }
+  .toc h4 { margin: 0 0 0.5rem 0; color: var(--deepred); }
+  .toc ol { margin: 0; padding-left: 1.3rem; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .card {
+    background: white;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    padding: 0.9rem 1.1rem;
+  }
+  .card h4 { margin-top: 0; }
+  @media (max-width: 720px) {
+    .grid2 { grid-template-columns: 1fr; }
+    header { padding: 0.7rem 1rem; }
+    main { padding: 0 1rem; }
+  }
+  .signal-bar {
+    display: inline-block;
+    background: linear-gradient(to right, var(--border-good), var(--border-warn));
+    height: 0.6rem;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+  }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 2rem 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Stage 3 — NN cross-term optimization</h1>
+  <span class="meta">PHYS 400 · run-id: --perturbations 150 --sampling active</span>
+</header>
+
+<main>
+
+<section class="intro">
+  <p><strong>Purpose.</strong> This document explains how the NN-based MEAM
+  optimization stage works after the recent additions of (A) DFT formation-energy
+  targets and (C) per-pair signal-weighted regularization. The central question:
+  <em>how does the optimizer learn binary cross-terms for element pairs that
+  barely co-occur in the random-alloy training set?</em></p>
+  <p><strong>Setup.</strong> 84 free parameters · 28 free binary pairs · 38 pairs
+  frozen at literature values · 308-dim y vector (280 C<sub>ij</sub> + 28 E<sub>form</sub>) ·
+  budget 150 samples · active learning · ~1.8 days wall-clock.</p>
+</section>
+
+<div class="toc">
+  <h4>Contents</h4>
+  <ol>
+    <li><a href="#flow">End-to-end pipeline flow (15 steps)</a></li>
+    <li><a href="#unknown">How can the NN learn pairs with no shared composition?</a></li>
+    <li><a href="#signals">The four signal sources, per pair</a></li>
+    <li><a href="#geometry">Why the binary E<sub>form</sub> targets are valid (geometry matching)</a></li>
+    <li><a href="#phase3">Phase 3 loss: how the regularization keeps weak-signal pairs honest</a></li>
+    <li><a href="#diagnostic">Reading the Phase-4 E<sub>form</sub> residual table</a></li>
+    <li><a href="#refs">Code references</a></li>
+  </ol>
+</div>
+
+<h2 id="flow">1. End-to-end pipeline flow</h2>
+
+<p>Each numbered card is one step. Cards marked <strong>NEW</strong> are the
+additions from Options A and C; the others are the pre-existing pipeline
+preserved as-is.</p>
+
+<div class="step">
+  <span class="n">1</span>
+  <h3>Pipeline entry</h3>
+  <p><span class="ref">run_pipeline.sh → pipeline.py</span></p>
+  <p>Sources <code>phys/</code> venv, exports <code>LD_LIBRARY_PATH</code> for
+  the custom LAMMPS build, forwards flags to <code>pipeline.py</code>.</p>
+</div>
+
+<div class="step">
+  <span class="n">2</span>
+  <h3>Stage 1 skipped</h3>
+  <p><span class="ref">--skip-dft flag</span></p>
+  <p>Loads existing <code>dft_results.json</code> (12 elements + 66 binary
+  E<sub>form</sub>). No new QE runs.</p>
+</div>
+
+<div class="step">
+  <span class="n">3</span>
+  <h3>Stage 2 resumes</h3>
+  <p><span class="ref">pipeline.py:218 (_stage2_complete)</span></p>
+  <p>Detects existing
+  <code>EAM/dft_initialized/AlCoCrCuFeMgMnMoNiSiTiZn.meam</code>
+  (the literature-overlaid MEAM you already built) and skips
+  <code>dft_to_meam.py</code>.</p>
+</div>
+
+<div class="step">
+  <span class="n">4</span>
+  <h3>Stage 3 prep — k-means split</h3>
+  <p><span class="ref">select_representatives.build_subset</span></p>
+  <p>Reads 7879 alloys from <code>results.json</code>, clusters to 200 k-means
+  medoids in 12-d composition space (<code>k_representatives=200</code>,
+  <code>pipeline.py:95</code>), splits 70/30 →
+  <code>results_train.json</code> (140 alloys) and
+  <code>results_val.json</code> (60 alloys). Held-out val is never seen
+  until Phase 4.</p>
+</div>
+
+<div class="step">
+  <span class="n">5</span>
+  <h3>optimize_nn setup</h3>
+  <p><span class="ref">nn_optimizer.py:715</span></p>
+  <p>Parses <code>lib_init</code>, <code>par_init</code>. Builds initial
+  280-dim C<sub>ij</sub> target vector (140 train alloys × 2) from train entries.</p>
+</div>
+
+<div class="step new">
+  <span class="n">6</span>
+  <h3>Literature override filter</h3>
+  <p><span class="ref">nn_optimizer.py:773</span> · added in earlier session</p>
+  <p>Loads <code>literature_pairs.json</code> → identifies 38 frozen pairs
+  (Al-Mg, Al-Cu, …) → opt_spec restricted to 28 free pairs ×
+  {Ec, re, alpha} = <strong>84 free parameters</strong>.</p>
+</div>
+
+<div class="step new">
+  <span class="n">7</span>
+  <h3>Option A: extract free-pair list and DFT E<sub>form</sub> targets</h3>
+  <p><span class="ref">nn_optimizer.py:809</span></p>
+  <p>Walks <code>opt_spec.params</code> to identify the 28 free pairs.
+  Loads each pair's DFT E<sub>form</sub> from <code>dft_results.json</code>.
+  Appends 28 entries to target_vec.
+  <strong>target_vec length: 280 + 28 = 308</strong>.
+  Frozen pairs are explicitly skipped (their literature Ec values weren't
+  fit against DFT E<sub>form</sub>, so penalizing baseline mismatch would
+  add an unfixable constant loss).</p>
+</div>
+
+<div class="step new">
+  <span class="n">8</span>
+  <h3>Pure-element bulk-energy cache</h3>
+  <p><span class="ref">nn_optimizer.py:858 → compute_pure_bulk_energies</span></p>
+  <p>One-time LAMMPS single-point on each of the 12 pure-element unit cells
+  using each element's library a<sub>lat</sub>. Cached in memory because
+  library parameters are frozen across Phase 1 — only binary cross-terms get
+  perturbed. Takes 1.7 s. Used as reference state for every binary E<sub>form</sub>
+  computation downstream.</p>
+</div>
+
+<div class="step">
+  <span class="n">9</span>
+  <h3>Phase 1: baseline</h3>
+  <p><span class="ref">nn_optimizer.py:891</span></p>
+  <p>Evaluates <code>initial_vec</code> on 140 train alloys + 28 binary
+  intermetallics → <code>y0</code> (308-dim). First checkpoint sample.</p>
+</div>
+
+<div class="step">
+  <span class="n">10</span>
+  <h3>Phase 1: active-learning seed</h3>
+  <p><span class="ref">_phase1_active_loop seed phase</span></p>
+  <p>20 Sobol bootstrap candidates around <code>initial_vec</code>
+  (±10 % box per parameter). Workers evaluate in parallel
+  (6 at a time). Per-sample workload: 140 alloys × elastic SCF
+  (~25 s each) + 28 binary single-points (~50 ms each) ≈ 1 h serial,
+  ~10 min wall-clock per batch of 6.
+  Accepted samples (C<sub>ij</sub> valid on ≥50 % of alloys) join the
+  checkpoint.</p>
+</div>
+
+<div class="step">
+  <span class="n">11</span>
+  <h3>Phase 1: active-learning iterations</h3>
+  <p><span class="ref">nnal.pick_next_batch + _evaluate_candidates_parallel</span></p>
+  <p>Repeat until budget = 150:</p>
+  <ol>
+    <li>Train an ensemble of 5 small NNs on current accepted samples.</li>
+    <li>Score a 500-point Sobol pool by ensemble-variance (high disagreement =
+    high information value).</li>
+    <li>Greedy-select 6 most diverse-and-uncertain candidates.</li>
+    <li>Evaluate them in parallel.</li>
+    <li>Append accepted to checkpoint.</li>
+  </ol>
+  <p>~25 iterations to fill budget. Total Phase 1: ~43 hours.</p>
+</div>
+
+<div class="step">
+  <span class="n">12</span>
+  <h3>Phase 2: train the surrogate NN</h3>
+  <p><span class="ref">nn_optimizer.py:1100</span></p>
+  <p>Architecture: 84 → Dense(20) → Dense(20) → Dense(10) → Dense(308).
+  Huber loss, Adam, EarlyStopping(patience=200) or loss &lt; 0.005 or 10k
+  epochs. Trained on 150 (X, y) samples. ~1–5 min.</p>
+</div>
+
+<div class="step new">
+  <span class="n">13</span>
+  <h3>Phase 3: inverse optimization (with Option C reg term)</h3>
+  <p><span class="ref">nn_optimizer.py:1165</span></p>
+  <p>3000 Adam steps in parameter space:</p>
+  <pre><code>loss = mean((NN(v) − target_norm)²)               ← data fit
+     + 0.01 × mean(w_pair × v²)                   ← seed-regularization</code></pre>
+  <p><code>target_norm</code> includes both 280 C<sub>ij</sub> and 28
+  E<sub>form</sub> targets, jointly z-scored.
+  <code>w_pair</code> is large for weak-signal pairs (Ni-Zn ≈ 10) and small
+  for strong-signal pairs (Cr-Mo ≈ 0.04), normalised so
+  <code>mean(w)=1</code>. Clip <code>v</code> to ±2.5σ each step.</p>
+</div>
+
+<div class="step new">
+  <span class="n">14</span>
+  <h3>Phase 4: held-out validation + E<sub>form</sub> residual table</h3>
+  <p><span class="ref">nn_optimizer.py:1190</span></p>
+  <p>Evaluate optimized vec on 30 val alloys + all 28 free binary pairs.
+  Print per-pair E<sub>form</sub> residual sorted by absolute error, plus
+  RMS and max. This is the diagnostic that tells you whether Option A
+  actually moved the cross-terms toward DFT-consistent values.</p>
+</div>
+
+<div class="step">
+  <span class="n">15</span>
+  <h3>Outputs</h3>
+  <p><span class="ref">EAM/optimized/ + src/NNIP/</span></p>
+  <p><code>optimized_library_*.meam</code>, <code>optimized_*.meam</code>,
+  <code>pipeline_summary.json</code>, <code>nn_diagnostics.json</code>, plots.</p>
+</div>
+
+<hr>
+
+<h2 id="unknown">2. How can the NN learn pairs with no shared composition?</h2>
+
+<p>This is the central question. The honest answer: <strong>no binary pair in
+this 12-element system is genuinely composition-free in the training set</strong>.
+Every pair has at least some signal — but signal strength varies by ~300×
+across pairs.</p>
+
+<p>However, even for the <em>weakest</em>-signal pairs, the optimizer has
+<strong>three additional, composition-independent signals</strong> that constrain the
+cross-term values.</p>
+
+<h3>The four signal sources, in order of strength</h3>
+
+<div class="diagram">
+For a pair (A, B):
+
+  Source 1 — random-alloy C_ij           [varies 300× across pairs]
+  ───────────────────────────────────
+  Composition-weighted gradient via 140 training alloys.
+  ρ_pair = mean over alloys of 2·f_A·f_B (≈ 0.0001 for Ni-Zn, 0.027 for Cr-Mo).
+  Strong for Cr-Mo (has Mo₆₂Cr₃₈ binary alloy in training set).
+  Negligible for Ni-Zn (max alloy is Al₈₈Ni₆Zn₄).
+
+  Source 2 — DFT E_form direct target    [Option A — uniform across pairs]
+  ───────────────────────────────────
+  LAMMPS computes E_form for AB at the exact B2 or L1₂ geometry DFT used.
+  Target value = DFT E_form from dft_results.json.
+  Independent of any composition in results.json — depends only on the
+  binary intermetallic geometry, which we synthesize on the fly.
+
+  Source 3 — DFT-derived initial seed     [the prior]
+  ───────────────────────────────────
+  Each Ec(A,B) starts at (esub_A + esub_B)/2 + E_form_DFT.
+  In normalized parameter space, the seed corresponds to v_opt = 0.
+
+  Source 4 — Option-C regularization      [pulls weak pairs toward seed]
+  ───────────────────────────────────
+  Loss += 0.01 × w_pair × v² where w_pair = 1 / max(ρ_pair, 1e-3).
+  For weak-signal pairs (w_pair ≈ 10), the regularization dominates →
+  parameter stays near the DFT seed.
+  For strong-signal pairs (w_pair ≈ 0.04), regularization is light →
+  data signal moves the parameter freely.
+</div>
+
+<p><strong>Concrete walk-through for Ni-Zn</strong> (worst-case pair —
+ρ = 0.0001, no binary intermetallic in training):</p>
+
+<ul>
+  <li>Source 1: essentially zero. The composition-weighted gradient through the
+  NN surrogate, evaluated at Ni-Zn parameters, is ~250× smaller than for Cr-Mo.
+  Ni-Zn moves negligibly from data alone.</li>
+  <li>Source 2: <em>full strength</em>. We compute LAMMPS E<sub>form</sub>(Ni-Zn)
+  for an L1₂ Ni₃Zn cell at a<sub>mix</sub> = (3.52 + 2.66)/2 = 3.09 Å
+  every Phase-1 sample. Target = DFT E<sub>form</sub>(Ni-Zn) = +1.6744 eV.
+  This is one row in the 28-row E<sub>form</sub> target block and carries
+  the same weight as every other.</li>
+  <li>Source 3: starting Ec(Ni,Zn) = (4.7287 + 0.9642)/2 + 1.6744 = 4.52 eV.
+  v_opt = 0 means "stay at this value".</li>
+  <li>Source 4: w_Ni-Zn ≈ 10. Reg contribution at v=1σ is
+  10 × 1 × 0.01 = 0.10 — comparable to the data loss at that drift. Pulls
+  v toward 0 unless data has equal force pushing it away.</li>
+</ul>
+
+<p>So Ni-Zn ends up <em>jointly</em> constrained by (a) its DFT E<sub>form</sub>
+target and (b) the L2 prior on its DFT-seed value. Neither requires Ni-Zn to
+appear in any training alloy.</p>
+
+<div class="warn">
+  <strong>Honest caveat.</strong> The <strong>direction</strong> of Ni-Zn's
+  optimization is well-constrained. The <strong>magnitude</strong> isn't,
+  because Option A's E<sub>form</sub> target is only sensitive to a particular
+  linear combination of Ec, re, α (the energy of the L1₂ cell at fixed
+  geometry). Three free parameters per pair → one scalar constraint = an
+  under-determined 2-d subspace. The reg term picks out the
+  minimum-norm-drift solution within that subspace.
+</div>
+
+<hr>
+
+<h2 id="signals">3. Signal strength per free pair</h2>
+
+<p>Empirical signal table from <code>results_train.json</code> (140 alloys),
+sorted by composition-coverage strength. The four columns map to the four
+signal sources from §2.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Pair</th>
+      <th>ρ (composition signal)</th>
+      <th>DFT E<sub>form</sub> target (eV)</th>
+      <th>DFT-seed Ec (eV)</th>
+      <th>Option-C weight</th>
+      <th>Outcome</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="strong-signal">
+      <td>Cr-Mo</td>
+      <td class="num">0.0266</td>
+      <td class="num">−0.93</td>
+      <td class="num">4.78</td>
+      <td class="num">0.04</td>
+      <td>Data-driven; reg negligible</td>
+    </tr>
+    <tr class="strong-signal">
+      <td>Mn-Mo</td>
+      <td class="num">0.0252</td>
+      <td class="num">−0.68</td>
+      <td class="num">4.65</td>
+      <td class="num">0.04</td>
+      <td>Data-driven</td>
+    </tr>
+    <tr class="strong-signal">
+      <td>Co-Mg</td>
+      <td class="num">0.0252</td>
+      <td class="num">+0.09</td>
+      <td class="num">3.65</td>
+      <td class="num">0.04</td>
+      <td>Data-driven</td>
+    </tr>
+    <tr class="strong-signal">
+      <td>Fe-Mo</td>
+      <td class="num">0.0251</td>
+      <td class="num">−0.85</td>
+      <td class="num">5.06</td>
+      <td class="num">0.04</td>
+      <td>Data-driven</td>
+    </tr>
+    <tr>
+      <td>Co-Zn</td>
+      <td class="num">0.0057</td>
+      <td class="num">+0.84</td>
+      <td class="num">4.13</td>
+      <td class="num">0.18</td>
+      <td>Mixed: data + E<sub>form</sub></td>
+    </tr>
+    <tr>
+      <td>Mg-Ti</td>
+      <td class="num">0.0045</td>
+      <td class="num">+0.55</td>
+      <td class="num">4.43</td>
+      <td class="num">0.22</td>
+      <td>Mixed</td>
+    </tr>
+    <tr>
+      <td>Al-Mo</td>
+      <td class="num">0.0036</td>
+      <td class="num">+1.21</td>
+      <td class="num">4.20</td>
+      <td class="num">0.28</td>
+      <td>Mixed</td>
+    </tr>
+    <tr>
+      <td>Mg-Mo</td>
+      <td class="num">0.0029</td>
+      <td class="num">+0.88</td>
+      <td class="num">2.80</td>
+      <td class="num">0.35</td>
+      <td>Mixed</td>
+    </tr>
+    <tr>
+      <td>…</td><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td>
+    </tr>
+    <tr class="weak-signal">
+      <td>Mg-Ni</td>
+      <td class="num">0.0006</td>
+      <td class="num">+1.39</td>
+      <td class="num">4.49</td>
+      <td class="num">1.65</td>
+      <td>E<sub>form</sub>-driven; reg active</td>
+    </tr>
+    <tr class="weak-signal">
+      <td>Mo-Ni</td>
+      <td class="num">0.0003</td>
+      <td class="num">+0.02</td>
+      <td class="num">5.79</td>
+      <td class="num">3.33</td>
+      <td>E<sub>form</sub>-driven; reg dominant</td>
+    </tr>
+    <tr class="weak-signal">
+      <td>Ni-Si</td>
+      <td class="num">0.0003</td>
+      <td class="num">+1.47</td>
+      <td class="num">4.40</td>
+      <td class="num">3.33</td>
+      <td>E<sub>form</sub>-driven; reg dominant</td>
+    </tr>
+    <tr class="weak-signal">
+      <td>Ni-Zn</td>
+      <td class="num">0.0001</td>
+      <td class="num">+1.67</td>
+      <td class="num">4.52</td>
+      <td class="num">10.0</td>
+      <td>E<sub>form</sub> + seed prior dominate</td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="font-size:0.85rem; color: var(--muted);">
+Green rows: data-rich, optimizer free to move parameters.
+Red rows: data-poor, optimizer relies on E<sub>form</sub> target and seed prior.
+Option C's weight column reads as <code>1 / max(ρ, 0.001)</code> normalized so
+mean weight = 1.
+</p>
+
+<hr>
+
+<h2 id="geometry">4. Why the binary E<sub>form</sub> targets are valid</h2>
+
+<p>Option A only works if the LAMMPS E<sub>form</sub> calculation matches DFT's
+calculation <em>exactly</em>. Otherwise the comparison is apples-to-oranges and
+the target is meaningless.</p>
+
+<p>Both DFT and LAMMPS use:</p>
+
+<ul>
+  <li><strong>Same structure</strong>: B2 (2-atom AB) when at least one element
+  is BCC or diamond; L1₂ (4-atom A₃B) when both are FCC or HCP-FCC compatible.
+  Mapping in <code>_BINARY_LATTICE</code>, identical in both files.</li>
+  <li><strong>Same lattice parameter</strong>: a<sub>mix</sub> = (a<sub>exp,A</sub>
+  + a<sub>exp,B</sub>)/2, using experimental a values listed in
+  <code>_ELEMENT_LATTICE</code>. <em>Not</em> the DFT-equilibrium a from
+  <code>dft_results.json</code> — DFT used the experimental a, and we follow
+  suit.</li>
+  <li><strong>Same energy evaluation</strong>: single-point at the unrelaxed
+  geometry. No structure relaxation. DFT does one SCF; LAMMPS does one
+  <code>run 0</code>.</li>
+  <li><strong>Same formula</strong>: E<sub>form</sub> = E<sub>mix</sub>/n<sub>atoms</sub>
+  − (n<sub>A</sub>·E<sub>pure,A</sub> + n<sub>B</sub>·E<sub>pure,B</sub>)/n<sub>atoms</sub>.</li>
+</ul>
+
+<div class="tip">
+  The pure-element reference energies (E<sub>pure,A</sub>, E<sub>pure,B</sub>)
+  are computed by LAMMPS using the same MEAM library, at each element's
+  library a<sub>lat</sub>. DFT's references come from DFT SCF at
+  DFT-equilibrium a<sub>lat</sub>. These two reference energies differ by
+  a constant (the absolute energy scale of the two methods), but the
+  <em>formation</em> energy — being a difference of energies at the same
+  geometry — cancels that constant out. So the comparison is valid up to
+  the limit of how well MEAM reproduces DFT atomic energetics.
+</div>
+
+<hr>
+
+<h2 id="phase3">5. Phase 3: how the regularization keeps weak-signal pairs honest</h2>
+
+<p>Without Option C, the inverse optimization (Phase 3) can drift weak-signal
+parameters to values that minimize the surrogate's loss but have no physical
+basis. The surrogate's gradient in those directions is small but nonzero,
+and over 3000 Adam steps a tiny gradient becomes a meaningful drift.</p>
+
+<h3>The math</h3>
+
+<pre><code>v_opt = tf.Variable(zeros((1, 84)))         ← in normalized parameter space
+                                              v=0 ⇔ initial DFT seed
+                                              v=±1 ⇔ ±1σ from training mean
+
+target_norm = (target_vec − y_mean) / y_std ← 308-dim z-scored target
+
+for step in 3000:
+    pred = NN(v_opt)
+    data_loss = mean((pred − target_norm)²)
+    reg_loss  = 0.01 × mean(w_pair × v_opt²)
+    loss      = data_loss + reg_loss
+    v_opt   −= 0.01 × ∂loss/∂v_opt           ← Adam update
+    v_opt    = clip(v_opt, ±2.5)</code></pre>
+
+<h3>The weight vector</h3>
+
+<pre><code># Done once at start of Phase 3:
+for name in names:                                 # e.g. "par:Ec(9,12)"
+    pair = sym_pair(name)                          # → ("Ni", "Zn")
+    pair_signal[name] = mean(2·f_A·f_B for train alloys)
+
+raw_w  = 1 / max(pair_signal[name], 1e-3)         # cap so no infinity
+w_pair = raw_w / mean(raw_w)                       # normalize: mean(w) = 1</code></pre>
+
+<p>Concretely:</p>
+
+<table>
+  <thead>
+    <tr><th>Pair</th><th>ρ</th><th>raw_w = 1/ρ</th><th>normalized w</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Cr-Mo</td><td class="num">0.027</td><td class="num">37</td><td class="num">0.04</td></tr>
+    <tr><td>Al-Mo</td><td class="num">0.004</td><td class="num">277</td><td class="num">0.28</td></tr>
+    <tr><td>Mg-Ni</td><td class="num">0.0006</td><td class="num">1666</td><td class="num">1.65</td></tr>
+    <tr><td>Ni-Zn</td><td class="num">0.0001</td><td class="num">10000</td><td class="num">10.0</td></tr>
+    <tr><td>(mean)</td><td>—</td><td>~1000</td><td class="num">1.00</td></tr>
+  </tbody>
+</table>
+
+<p>So Phase-3's reg loss at v = (1σ, 1σ, …) ≈ 0.01 (=λ). At v = (Cr-Mo: 1σ,
+Ni-Zn: 0σ), reg loss ≈ 0.01·0.04/84 ≈ 5×10⁻⁶. At v = (Cr-Mo: 0σ, Ni-Zn: 1σ),
+reg loss ≈ 0.01·10/84 ≈ 1.2×10⁻³. So Ni-Zn drift is ~240× more "expensive"
+than Cr-Mo drift, even though both have the same data loss sensitivity in
+normalized space.</p>
+
+<div class="good">
+  <strong>Net effect.</strong> The optimizer freely tunes Cr-Mo/Mn-Mo/Co-Mg/Fe-Mo
+  (the pairs you have direct binary alloy data on) toward the joint
+  C<sub>ij</sub> + E<sub>form</sub> optimum. It conservatively pins Ni-Zn /
+  Mo-Ni / Ni-Si near the DFT seed unless the E<sub>form</sub> target gradient
+  is genuinely large there.
+</div>
+
+<hr>
+
+<h2 id="diagnostic">6. Reading the Phase-4 E<sub>form</sub> residual table</h2>
+
+<p>At the end of Phase 4, the log emits something like:</p>
+
+<pre><code>Binary E_form residuals (optimized MEAM vs DFT):
+  Cr-Mo   DFT=-0.931  opt=-0.945  err=-0.014 eV/atom
+  Mn-Mo   DFT=-0.682  opt=-0.701  err=-0.019 eV/atom
+  Co-Mg   DFT=+0.092  opt=+0.067  err=-0.025 eV/atom
+  Fe-Mo   DFT=-0.850  opt=-0.810  err=+0.040 eV/atom
+  ...
+  Ni-Zn   DFT=+1.674  opt=+1.420  err=-0.254 eV/atom
+  Mo-Ni   DFT=+0.021  opt=+0.180  err=+0.159 eV/atom
+  ...
+  RMS error: 0.087 eV/atom; max: 0.254 eV/atom</code></pre>
+
+<h3>What to look for</h3>
+
+<table>
+  <thead>
+    <tr><th>Pattern</th><th>Interpretation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Strong-signal pairs (Cr-Mo, Mn-Mo, …) all &lt; 0.05 eV/atom</td>
+      <td>Surrogate worked well. Option A injected useful info beyond C<sub>ij</sub>.</td>
+    </tr>
+    <tr>
+      <td>Weak-signal pairs (Ni-Zn, Mo-Ni, …) at 0.1–0.4 eV/atom</td>
+      <td>Expected. Reg term traded direct fit for stability near DFT seed. This is the right behavior.</td>
+    </tr>
+    <tr>
+      <td>Any pair &gt; 1 eV/atom</td>
+      <td>MEAM functional form bottleneck. Ec/re/α can't reach the DFT target
+      because angular terms (Cmin, Cmax) are frozen. To improve, you'd unfreeze those.</td>
+    </tr>
+    <tr>
+      <td>RMS &gt; 0.3 eV/atom</td>
+      <td>Surrogate didn't converge to the joint optimum. Re-run with higher
+      <code>--perturbations</code> or check that Phase-2 training loss
+      bottomed out.</td>
+    </tr>
+    <tr>
+      <td>Strong-signal pairs got worse than baseline</td>
+      <td>C<sub>ij</sub> targets are dominating and Option A's E<sub>form</sub>
+      targets are being sacrificed. Increase the E<sub>form</sub> entries'
+      relative weight in the y-normalization (advanced tuning).</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="refs">7. Code references</h2>
+
+<div class="grid2">
+  <div class="card">
+    <h4>Option A (E<sub>form</sub> targets)</h4>
+    <ul style="font-size:0.85rem; padding-left: 1.1rem; margin: 0.3rem 0;">
+      <li><code>nn_optimizer.py:147</code> — _ELEMENT_LATTICE / _BINARY_LATTICE</li>
+      <li><code>nn_optimizer.py:179</code> — _lammps_single_point</li>
+      <li><code>nn_optimizer.py:201</code> — compute_pure_bulk_energies</li>
+      <li><code>nn_optimizer.py:220</code> — compute_binary_form_energy</li>
+      <li><code>nn_optimizer.py:809</code> — free-pair filter + target-vec build</li>
+      <li><code>nn_optimizer.py:858</code> — pure-element cache call</li>
+      <li><code>nn_optimizer.py:1199</code> — Phase-4 residual table</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4>Option C (per-pair regularization)</h4>
+    <ul style="font-size:0.85rem; padding-left: 1.1rem; margin: 0.3rem 0;">
+      <li><code>nn_optimizer.py:1170</code> — pair_signal computation</li>
+      <li><code>nn_optimizer.py:1196</code> — weight normalization</li>
+      <li><code>nn_optimizer.py:1210</code> — reg loss term in Phase-3 loop</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4>Literature override (earlier session)</h4>
+    <ul style="font-size:0.85rem; padding-left: 1.1rem; margin: 0.3rem 0;">
+      <li><code>literature_pairs.py</code> — extraction + conflict resolution</li>
+      <li><code>literature_pairs.json</code> — 38 frozen pairs</li>
+      <li><code>dft_to_meam.py:170</code> — override pass in Step 4</li>
+      <li><code>nn_optimizer.py:773</code> — opt_spec filter</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4>Data sources</h4>
+    <ul style="font-size:0.85rem; padding-left: 1.1rem; margin: 0.3rem 0;">
+      <li><code>src/ML/results.json</code> — 7879 alloys (LAMMPS-evaluated)</li>
+      <li><code>src/NNIP/dft_results.json</code> — 12 elements + 66 binary E<sub>form</sub></li>
+      <li><code>EAM/dft_initialized/</code> — literature-overlaid init MEAM</li>
+      <li><code>EAM/AlMgZn.meam</code>, etc. — source previous MEAMs</li>
+    </ul>
+  </div>
+</div>
+
+<hr>
+
+<p style="text-align: center; color: var(--muted); font-size: 0.85rem;">
+PHYS 400 · NN Stage 3 details · generated alongside the Option A + C wiring
+</p>
+
+</main>
+</body>
+</html>
