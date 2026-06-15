@@ -179,10 +179,67 @@ def write_aluminium_table(data: dict, out: Path) -> None:
     print(f"[literature] wrote {out}")
 
 
+def write_aluminium_detail_table(data: dict, out: Path) -> None:
+    """Aluminium resolved to individual alloy grades, with E and nu MAPE.
+
+    One row per AA grade (tempers of a grade share a composition and so a
+    prediction; ``N`` counts the datasheet entries collapsed into the row),
+    grouped under italic per-series subheaders. Used by the final report only.
+    """
+    records = data["materials"]
+    meam_on = data["metadata"].get("meam_enabled", True)
+    al = [r for r in records if r["family"] == "aluminium"]
+
+    def grade(rec: dict) -> str | None:
+        m = re.search(r"(\d{4})", rec["name"])
+        return m.group(1) if m else None
+
+    def gser(g: str) -> str:
+        return f"{g[0]}xxx"
+
+    grades: dict[str, list[dict]] = {}
+    for r in al:
+        grades.setdefault(grade(r), []).append(r)
+
+    def row(label, rs, bold=False):
+        ml_e = _subset_mape(rs, "ML", "E_GPa")
+        ml_nu = _subset_mape(rs, "ML", "nu")
+        mm_e = _fmt(_subset_mape(rs, "MEAM", "E_GPa")) if meam_on else "---"
+        mm_nu = _fmt(_subset_mape(rs, "MEAM", "nu")) if meam_on else "---"
+        e_ml = f"\\textbf{{{_fmt(ml_e)}}}" if bold else _fmt(ml_e)
+        nu_ml = f"\\textbf{{{_fmt(ml_nu)}}}" if bold else _fmt(ml_nu)
+        return (f" {label} & {len(rs)} & {_fmt(_mean_lit_E(rs))} "
+                f"& {e_ml} & {mm_e} & {nu_ml} & {mm_nu} \\\\")
+
+    lines = [
+        _HEADER,
+        "\\begin{tabular}{lrrcccc}",
+        "\\toprule",
+        " & & & \\multicolumn{2}{c}{$E$ MAPE (\\%)} "
+        "& \\multicolumn{2}{c}{$\\nu$ MAPE (\\%)} \\\\",
+        "\\cmidrule(lr){4-5}\\cmidrule(lr){6-7}",
+        " Alloy & $N$ & $\\langle E_\\mathrm{lit}\\rangle$ & ML & MEAM & ML & MEAM \\\\",
+    ]
+    last = None
+    for g, rs in sorted(grades.items(), key=lambda kv: (gser(kv[0]), kv[0])):
+        s = gser(g)
+        if s != last:
+            lines.append("\\midrule")
+            lines.append(f" \\multicolumn{{7}}{{l}}{{\\itshape {s} series}} \\\\")
+            last = s
+        lines.append(row(f"\\quad {g}", rs))
+    lines.append("\\midrule")
+    lines.append(row("\\textbf{All aluminium}", al, bold=True))
+    lines += ["\\bottomrule", "\\end{tabular}", ""]
+    out.write_text("\n".join(lines))
+    print(f"[literature] wrote {out}")
+
+
 def main() -> None:
     data = _load()
     write_family_table(data, SEC_DIR / "_auto_literature_family.tex")
     write_aluminium_table(data, SEC_DIR / "_auto_literature_al.tex")
+    write_aluminium_detail_table(data, SEC_DIR / "_auto_literature_al_detail.tex")
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ if [[ "${REGEN:-0}" == "1" ]]; then
   # The literature generator writes into the presentation's sections/; mirror
   # the fresh copies into this report.
   cp "$HERE/../finalPresentation/sections/_auto_literature_al.tex" "$HERE/sections/" 2>/dev/null || true
+  cp "$HERE/../finalPresentation/sections/_auto_literature_al_detail.tex" "$HERE/sections/" 2>/dev/null || true
   cp "$HERE/../finalPresentation/sections/_auto_literature_family.tex" "$HERE/sections/" 2>/dev/null || true
   for t in md_stats dft_elements meam_init ml_metrics; do
     cp "$HERE/../interim/sections/_auto_${t}.tex" "$HERE/sections/" 2>/dev/null || true

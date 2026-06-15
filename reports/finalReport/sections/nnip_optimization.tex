@@ -1,4 +1,4 @@
-\subsection{Stage 5b --- NN-Driven MEAM Parameter Optimization}
+\subsection{Stage 5b: NN-Driven MEAM Parameter Optimization}
 \label{sec:nnip}
 
 Stage~5b is the part that closes the loop. It refits the cross-interaction
@@ -28,7 +28,7 @@ vector to the per-composition $(C_{11},C_{12})$ under a Huber loss
 \citep{tensorflow2015}. Predicting the stiffness constants rather than $\nu$,
 and using a robust loss, are the two lessons carried over from the composition
 surrogate of Section~\ref{sec:comp_nn}. The surrogate Huber loss falls from
-$1.0$ to about $0.16$ over $10^4$ optimizer steps
+$0.29$ to $0.105$ over roughly $2{,}300$ training steps
 (Figure~\ref{fig:nnip_loss}).
 
 \paragraph{Inverse optimization.}
@@ -48,34 +48,39 @@ An active-learning variant focuses the next sampling round on the parameter
 regions the surrogate is least sure about.
 
 \paragraph{Results.}
-The refit potential was validated on 30 held-out alloys by re-running them in
+The refit potential was validated on 60 held-out alloys by re-running them in
 LAMMPS and comparing against the MD targets. The outcome is honest but mixed
-(Figure~\ref{fig:nnip_errors}). Of the 30, only 11 pass the Born--Cauchy
-stability filter; the other 19 come out mechanically unstable
-($C_{11}<C_{12}$). Among the 11 stable alloys the median error is $23\,\%$ on
-$E$ and $26\,\%$ on $\nu$, and 4 fall within the $20\,\%$ tolerance on both.
-The instability is concentrated, as expected, in the non-aluminium chemistries
-where the Stage~2 sampling and the DFT reference are both thinnest. Inside the
-aluminium-rich region the refit holds up well, which the external validation
-of Section~\ref{sec:validation} quantifies. The gap on the unstable 19 is the
-clearest signal of where the method needs more work, and it sets the agenda in
-Section~\ref{sec:future}.
+(Figure~\ref{fig:nnip_errors}). Of the 60, 25 return a physical elastic
+response that clears the stability filter; the other 35 collapse to an
+unphysical result ($C_{11}<C_{12}$ or $\nu$ driven onto the $0.5$ singularity)
+and are rejected. Across the 25 stable alloys the mean error is $39.3\,\%$ on
+$E$ and $19.6\,\%$ on $\nu$ (medians $36\,\%$ and $11\,\%$), and 8 fall within
+the $20\,\%$ tolerance on both. The stable, in-tolerance cases cluster in the
+aluminium-rich region, while the collapses concentrate, as expected, in the
+non-aluminium chemistries where the Stage~2 sampling and the DFT reference are
+both thinnest. Inside the aluminium-rich region the refit holds up well, which
+the external validation of Section~\ref{sec:validation} quantifies. The gap on
+the 35 rejected alloys is the clearest signal of where the method needs more
+work, and it sets the agenda in Section~\ref{sec:future}.
 
 \begin{figure}[htbp]
 	\centering
 	\begin{minipage}[t]{0.48\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{figures/nnip_training_loss.png}
-		\caption{Surrogate Huber loss over $10^4$ optimizer steps, falling from
-		$1.0$ to about $0.16$.}
+		\caption{Surrogate Huber loss over $\sim$2{,}300 training steps, falling
+		from $0.29$ to $0.105$.}
 		\label{fig:nnip_loss}
 	\end{minipage}
 	\hfill
 	\begin{minipage}[t]{0.48\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{figures/nnip_verification_errors.png}
-		\caption{Verification error on the 30 held-out alloys, with a separate
-		bar for the runs rejected as mechanically unstable.}
+		\caption{Verification error over the 25 physical predictions among the
+		60 held-out alloys, for $E$ (left) and $\nu$ (right); the dashed line
+		marks the $20\,\%$ tolerance. Eight of the 25 land within tolerance on
+		$E$ and 17 on $\nu$; the 35 alloys with unphysical outputs are excluded
+		from the histograms.}
 		\label{fig:nnip_errors}
 	\end{minipage}
 \end{figure}

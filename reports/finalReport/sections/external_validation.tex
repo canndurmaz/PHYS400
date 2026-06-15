@@ -4,7 +4,7 @@
 The internal checks so far compare the surrogates against the project's own MD
 output. The real test is experiment. Both the composition surrogate of
 Section~\ref{sec:comp_nn} and the refit MEAM potential of
-Section~\ref{sec:nnip} were run on 43 named alloys whose elements the merged
+Section~\ref{sec:nnip} were run on 42 named alloys whose elements the merged
 basis covers, and the predicted $(E,\nu)$ were compared against published
 elastic data from ASM and MatWeb \citep{asmmatweb}. Mean absolute percentage
 error (MAPE) is the figure of merit. Unphysical MEAM runs are excluded from
@@ -16,7 +16,7 @@ methods do well: the composition NN reaches $2.3\,\%$ MAPE on $E$ and the
 refit MEAM $7.4\,\%$, with $\nu$ within $4$ to $5\,\%$ for both. Moving off the
 aluminium domain, the two methods part ways. The composition NN degrades
 gently, staying near $12\,\%$ on titanium and only failing badly on the
-stainless and Ni--Fe alloys it has almost no training support for. The MEAM
+stainless alloys it has almost no training support for. The MEAM
 potential degrades steeply: its error on titanium and stainless runs into the
 hundreds of percent, which is the same instability seen on the held-out alloys
 in Section~\ref{sec:nnip}, now measured against experiment.
@@ -24,7 +24,7 @@ in Section~\ref{sec:nnip}, now measured against experiment.
 \begin{table}[htbp]
 	\centering
 	\caption{Validation against ASM/MatWeb experimental elastic data, by
-	material family ($N=43$ alloys). Values are MAPE in percent for the
+	material family ($N=42$ alloys). Values are MAPE in percent for the
 	composition NN (ML) and the refit MEAM potential. Unphysical MEAM runs are
 	excluded.}
 	\label{tab:lit_family}
@@ -43,10 +43,51 @@ composition leaves that region.
 
 \begin{table}[htbp]
 	\centering
-	\caption{Aluminium validation drilled down by AA series ($N=33$ of the 43
+	\caption{Aluminium validation drilled down by AA series ($N=33$ of the 42
 	alloys). $\langle E_\mathrm{lit}\rangle$ is the mean experimental Young's
 	modulus; the last two columns are $E$ MAPE for the composition NN (ML) and
 	the refit MEAM potential.}
 	\label{tab:lit_al}
 	\input{sections/_auto_literature_al}
+\end{table}
+
+Table~\ref{tab:lit_al_detail} resolves the same comparison to individual alloy
+grades. The composition surrogate is uniformly accurate on $E$: every grade in
+the 2xxx, 5xxx, and 7xxx series lands within $3\,\%$ and the 6xxx grades within
+$4\,\%$, with 2024 and 2017 the closest at $1.0$ and $1.2\,\%$. The refit MEAM
+is more scattered, from $3.1\,\%$ on 6061 to $13.2\,\%$ on 5083. Its largest
+errors fall on the higher-solute grades 5083, 2017, and 2219, where the Cu-,
+Mn-, and Mg-bearing cross-terms are the least constrained by the Stage~2
+sampling. The 6xxx series is the one place the physics-based potential matches
+or beats the surrogate on $E$: 6061 comes in at $3.1\,\%$ for MEAM against
+$3.8\,\%$ for the NN, because its dilute Al--Mg--Si chemistry sits closest to
+the well-covered single-element aluminium reference.
+
+The Poisson-ratio columns tell a complementary story. The surrogate holds
+$\nu$ between $2.2$ and $5.4\,\%$ across every grade, while the MEAM error
+swings from $0.1\,\%$ on 2017 to $7.2\,\%$ on 5083. Both models sit slightly
+high on $\nu$, near $0.34$ to $0.35$ against the datasheet $0.33$. For
+Al~7075, the running example, the surrogate stays within $2.6\,\%$ on $E$ and
+$2.8\,\%$ on $\nu$, while the refit MEAM reaches $10.2$ and $5.1\,\%$, so the
+data-driven route is the more reliable predictor for the design-target alloy.
+
+One caveat is built into the table. The $N$ column counts datasheet entries,
+which for a given grade are mostly different tempers of a single composition,
+for example 2024-O, 2024-T3, and 2024-T4. Heat treatment changes the
+microstructure but not the bulk composition, so both models return one
+prediction per grade and the experimental $E$ varies by at most $1$\,GPa across
+a grade's tempers. The comparison therefore measures how well composition alone
+fixes the elastic constants, not how either model would track a temper or
+precipitate state, which neither is built to capture.
+
+\begin{table}[htbp]
+	\centering
+	\caption{Aluminium validation resolved to individual alloy grades. $N$ is
+	the number of datasheet entries (tempers) per grade and
+	$\langle E_\mathrm{lit}\rangle$ their mean experimental Young's modulus in
+	GPa; the remaining columns are $E$ and $\nu$ MAPE in percent for the
+	composition NN (ML) and the refit MEAM potential. Unphysical MEAM runs are
+	excluded.}
+	\label{tab:lit_al_detail}
+	\input{sections/_auto_literature_al_detail}
 \end{table}

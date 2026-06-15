@@ -80,5 +80,61 @@
     "render_path": "/home/kenobi/Workspaces/PHYS400/src/MEAM/renders/eeba48e295c3717847773fdcf0b5e6cfece843d7.png",
     "completed_at": "2026-06-10T19:41:36+00:00",
     "meam_mtime": 1780781752.7961318
+  },
+  "38cc8f38822bd416524b48f029bbdd0512cd09de": {
+    "composition": {
+      "Al": 0.7211538461538461,
+      "Co": 0.02403846153846154,
+      "Cr": 0.04807692307692308,
+      "Cu": 0.036057692307692304,
+      "Fe": 0.02403846153846154,
+      "Ti": 0.1466346153846154
+    },
+    "knobs": {
+      "box_size_m": 5e-09,
+      "temperature": 300.0,
+      "total_steps": 1000,
+      "thermo_interval": 10,
+      "dump_interval": 50
+    },
+    "do_viz": true,
+    "result": {
+      "C11_GPa": 145.5210695725855,
+      "C12_GPa": 82.02991383115733,
+      "E_GPa": 86.37909916670047,
+      "nu": 0.3604902629034653,
+      "physical": true,
+      "physical_reason": null
+    },
+    "render_path": "/home/kenobi/Workspaces/PHYS400/src/MEAM/renders/38cc8f38822bd416524b48f029bbdd0512cd09de.png",
+    "completed_at": "2026-06-10T20:02:35+00:00",
+    "meam_mtime": 1780781752.7961318
+  },
+  "b61174d58bb91b9e7bf09c1c03c5cee0b6488774": {
+    "composition": {
+      "Al": 0.847457627118644,
+      "Co": 0.01694915254237288,
+      "Cr": 0.03389830508474576,
+      "Mg": 0.1016949152542373
+    },
+    "knobs": {
+      "box_size_m": 5e-09,
+      "temperature": 300.0,
+      "total_steps": 1000,
+      "thermo_interval": 10,
+      "dump_interval": 50
+    },
+    "do_viz": true,
+    "result": {
+      "C11_GPa": 132.82294520150666,
+      "C12_GPa": 70.90962770893952,
+      "E_GPa": 83.46240132784126,
+      "nu": 0.34805248221210533,
+      "physical": true,
+      "physical_reason": null
+    },
+    "render_path": "/home/kenobi/Workspaces/PHYS400/src/MEAM/renders/b61174d58bb91b9e7bf09c1c03c5cee0b6488774.png",
+    "completed_at": "2026-06-11T07:16:55+00:00",
+    "meam_mtime": 1780781752.7961318
   }
 }

@@ -30,7 +30,55 @@ hard physical constraint that the simulations must respect. A cubic crystal is
 only mechanically stable when $C_{11}>C_{12}$, the Born--Cauchy condition, and
 a potential that violates it describes a solid that would spontaneously shear
 apart. This single inequality reappears as the stability filter throughout the
-pipeline.
+pipeline. Figure~\ref{fig:elastic_def} sketches the two deformations that
+define $E$ and $\nu$ and writes the cubic-crystal reduction out explicitly.
+
+\begin{figure}[htbp]
+	\centering
+	\begin{minipage}[b]{0.46\linewidth}
+		\centering
+		{\small\textbf{$E$: resistance to stretching}}\\[3pt]
+		\begin{tikzpicture}[>=Stealth, line width=0.8pt, font=\scriptsize]
+			\useasboundingbox (-0.4,-1.15) rectangle (3.9,1.15);
+			\draw[gray!70] (0,-0.55) -- (0,0.55);
+			\foreach \y in {-0.5,-0.3,...,0.55}{\draw[gray!55] (0,\y) -- (-0.18,\y-0.18);}
+			\draw[BrickRed, fill=BrickRed!8] (0,-0.3) rectangle (2.7,0.3);
+			\draw[gray!65, dashed] (2.0,-0.5) -- (2.0,0.5);
+			\draw[->, very thick, BrickRed] (2.7,0) -- (3.6,0) node[right]{$F$};
+			\draw[<->, gray!70] (0,-0.68) -- (2.0,-0.68) node[midway,below]{$L$};
+			\draw[<->, BrickRed] (2.0,0.62) -- (2.7,0.62) node[midway,above]{$\Delta L$};
+		\end{tikzpicture}\\[3pt]
+		{\footnotesize$E = \dfrac{\sigma}{\varepsilon} = \dfrac{F/A}{\Delta L/L}$}
+	\end{minipage}\hfill
+	\begin{minipage}[b]{0.46\linewidth}
+		\centering
+		{\small\textbf{$\nu$: sideways thinning when pulled}}\\[3pt]
+		\begin{tikzpicture}[>=Stealth, line width=0.8pt, font=\scriptsize]
+			\useasboundingbox (-1.55,-1.2) rectangle (1.55,1.2);
+			\draw[gray!60, dashed] (-0.62,-0.55) rectangle (0.62,0.55);
+			\draw[RoyalBlue, fill=RoyalBlue!8] (-0.40,-0.82) rectangle (0.40,0.82);
+			\draw[->, very thick, RoyalBlue] (0,0.82) -- (0,1.18) node[above]{$F$};
+			\draw[->, very thick, RoyalBlue] (0,-0.82) -- (0,-1.18) node[below]{$F$};
+			\draw[->, BrickRed] (-0.62,0) -- (-0.42,0);
+			\draw[->, BrickRed] (0.62,0) -- (0.42,0);
+		\end{tikzpicture}\\[3pt]
+		{\footnotesize$\nu = -\dfrac{\varepsilon_\mathrm{lat}}{\varepsilon_\mathrm{axial}}$}
+	\end{minipage}
+
+	\medskip
+	\setlength{\fboxsep}{6pt}%
+	\fbox{$\displaystyle E = \frac{(C_{11}-C_{12})(C_{11}+2C_{12})}{C_{11}+C_{12}},\qquad
+	\nu = \frac{C_{12}}{C_{11}+C_{12}},\qquad C_{11}>C_{12}\ \text{(Born--Cauchy)}$}
+
+	\caption{The two elastic moduli this work predicts. \emph{Left:} a uniaxial
+	force $F$ stretches a bar by $\Delta L$, and the stiffness
+	$E=\sigma/\varepsilon$ is the stress-to-strain ratio. \emph{Right:} the same
+	axial pull makes the block contract laterally, and $\nu$ is the negated
+	ratio of lateral to axial strain. For a cubic crystal both reduce to the two
+	independent stiffness constants $C_{11}$ and $C_{12}$ (boxed), and mechanical
+	stability requires $C_{11}>C_{12}$.}
+	\label{fig:elastic_def}
+\end{figure}
 
 Table~\ref{tab:applications} gives a sense of the range these constants span
 across real structural materials, from a soft magnesium casting alloy near
