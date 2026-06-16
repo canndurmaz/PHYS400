@@ -11,8 +11,10 @@ compositions.
 
 Each input vector has 12 entries, one mass fraction per element in
 $\{$Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, Zn$\}$. The network is a
-fully-connected $12\to32\to20\to2$ MLP with ReLU activations, trained under a
-70/30 train/validation split with Adam. To get a usable uncertainty estimate,
+fully connected $12\to32\to20\to2$ MLP with ReLU activations, trained under a
+70/30 train/validation split with Adam over the $7839$ records that pass the
+$\nu<0.48$ cap (slightly more than the $7815$-record Stage~2 corpus of
+Section~\ref{sec:stage2}, which additionally drops $E\geq400$\,GPa). To get a usable uncertainty estimate,
 five copies are trained from different random seeds and combined as a deep
 ensemble \citep{lakshminarayanan2017}; the spread across the ensemble flags
 inputs the network is unsure about.
@@ -21,7 +23,7 @@ inputs the network is unsure about.
 The two outputs are $C_{11}$ and $C_{12}$, and $(E,\nu)$ are recovered from
 Eq.~\eqref{eq:elastic} afterwards, for the conditioning reason given in
 Section~\ref{sec:stage2}. Records with $\nu\geq0.48$ are dropped to remove
-compositions that sit on the mechanical-stability bound and destabilise the
+compositions that sit on the mechanical-stability bound and destabilize the
 fit. The loss is Huber ($\delta=1$ in scaled units) rather than MSE, which
 caps the gradient pull of outliers, mostly the Mg- and Zn-rich runs that
 occasionally return extreme moduli.
@@ -33,9 +35,12 @@ Table~\ref{tab:nn_aux}. The lower $\nu$ score is the expected cost of taking a
 ratio of two learned constants near the point where their difference is small.
 As a concrete check, feeding the Al~7075 composition through the ensemble
 returns $\hat E = 75.5$\,GPa and $\hat\nu = 0.334$, against the published
-$71$ to $72$\,GPa and $\nu\approx0.33$, an error of about $5\,\%$. The parity
-plots in Figure~\ref{fig:aux_parity} show this both on the raw $(C_{11},C_{12})$
-targets and on the derived $(E,\nu)$, and the training history is in
+$71$ to $72$\,GPa and $\nu\approx0.33$, an error of about $5\,\%$ for this
+nominal 7075 preset; on the specific ASM datasheet compositions the
+grade-resolved validation of Section~\ref{sec:validation} puts the surrogate at
+$2.6\,\%$ on $E$. The parity plots show this both on the raw $(C_{11},C_{12})$
+targets (Figure~\ref{fig:aux_parity}) and on the derived $(E,\nu)$
+(Figure~\ref{fig:aux_parity_val}), and the training history is in
 Figure~\ref{fig:aux_history}.
 
 \input{sections/_auto_ml_metrics}

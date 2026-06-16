@@ -2,16 +2,11 @@
 
 \subsection{Motivation}
 Industrial alloys such as steels and aluminium grades are chosen for
-load-bearing parts on the basis of their elastic response. The Young's
-modulus $E$ sets the stiffness and the Poisson's ratio $\nu$ sets the
-transverse contraction under load. For a cubic crystal both quantities
-follow from just two independent stiffness constants, $C_{11}$ and
-$C_{12}$. These constants size almost every structural calculation an
-engineer runs: beam deflection scales as $1/E$, the buckling load and the
-natural frequency scale with $E$, and the bulk modulus is
-$K = E/[3(1-2\nu)]$. At present they are measured experimentally, which is
-slow and expensive. A computational route that was both accurate and cheap
-would let new compositions be screened before any metal is cast.
+load-bearing parts on the basis of their elastic response, captured by the
+Young's modulus $E$ and the Poisson's ratio $\nu$. At present these are
+measured experimentally, which is slow and expensive. A computational route
+that is both accurate and cheap would let new compositions be screened before
+any metal is cast.
 
 Molecular dynamics is the natural candidate for that route, but an MD
 prediction is only as good as the interatomic potential behind it.
@@ -26,11 +21,11 @@ targets those constants directly rather than $E$ and $\nu$. The same pair
 propagates everywhere downstream: a beam deflects as $1/E$, a column buckles
 at a load proportional to $E$, a part rings at a frequency proportional to
 $\sqrt{E/\rho}$, and the bulk modulus is $K=E/[3(1-2\nu)]$. There is also a
-hard physical constraint that the simulations must respect. A cubic crystal is
-only mechanically stable when $C_{11}>C_{12}$, the Born--Cauchy condition, and
-a potential that violates it describes a solid that would spontaneously shear
-apart. This single inequality reappears as the stability filter throughout the
-pipeline. Figure~\ref{fig:elastic_def} sketches the two deformations that
+hard physical constraint that the simulations must respect. Among the Born
+mechanical-stability conditions for a cubic crystal, the one that binds here is
+$C_{11}>C_{12}$, and a potential that violates it describes a solid that would
+spontaneously shear apart. This inequality reappears as the stability filter
+throughout the pipeline. Figure~\ref{fig:elastic_def} sketches the two deformations that
 define $E$ and $\nu$ and writes the cubic-crystal reduction out explicitly.
 
 \begin{figure}[htbp]
@@ -68,7 +63,7 @@ define $E$ and $\nu$ and writes the cubic-crystal reduction out explicitly.
 	\medskip
 	\setlength{\fboxsep}{6pt}%
 	\fbox{$\displaystyle E = \frac{(C_{11}-C_{12})(C_{11}+2C_{12})}{C_{11}+C_{12}},\qquad
-	\nu = \frac{C_{12}}{C_{11}+C_{12}},\qquad C_{11}>C_{12}\ \text{(Born--Cauchy)}$}
+	\nu = \frac{C_{12}}{C_{11}+C_{12}},\qquad C_{11}>C_{12}\ \text{(Born stability)}$}
 
 	\caption{The two elastic moduli this work predicts. \emph{Left:} a uniaxial
 	force $F$ stretches a bar by $\Delta L$, and the stiffness

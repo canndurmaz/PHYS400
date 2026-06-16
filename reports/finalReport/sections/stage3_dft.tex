@@ -33,7 +33,7 @@ EOS strain points and the binary SCF runs are dispatched to a process pool,
 which made the full reference set tractable on a single workstation.
 
 \paragraph{Magnetic elements.}
-The 3$d$ transition metals Fe, Cr, and Mn need spin polarisation, and a plain
+The 3$d$ transition metals Fe, Cr, and Mn need spin polarization, and a plain
 collinear SCF for them tended to settle into the wrong magnetic state. These
 elements were rerun with a fixed-moment SCF that constrains the total moment
 during the self-consistency loop. Even so, the elastic-constant extraction for
@@ -44,7 +44,7 @@ into Stage~4 and are corrected there from $B$ and a Poisson-ratio default
 (Section~\ref{sec:stage4}).
 
 The current reference set covers ten elements (Al, Cu, Si, Ti, Zn, Cr, Fe, Mg,
-Mn, Mo) and 40 binary pairs. The fitted elemental properties are listed in
+Mn, Mo) and all $45$ of their binary pairs. The fitted elemental properties are listed in
 Table~\ref{tab:dft_elements}, and the EOS fits are shown in
 Figure~\ref{fig:eos}. The Mn row was kept at its tabulated value because the
 EOS scan would not converge for the simplified $\alpha$-Mn approximation.
@@ -60,7 +60,7 @@ EOS scan would not converge for the simplified $\alpha$-Mn approximation.
 	\label{fig:eos}
 \end{figure}
 
-The 40 binary formation energies $E_\mathrm{form}(i,j)$ are summarised as a
+The 45 binary formation energies $E_\mathrm{form}(i,j)$ are summarized as a
 symmetric heatmap in Figure~\ref{fig:formation}. Negative values (blue) mark
 exothermic mixing, as expected for compatible pairs such as Al--Ti or Cu--Ti,
 while strongly positive values (red) flag low mutual solubility, most visibly

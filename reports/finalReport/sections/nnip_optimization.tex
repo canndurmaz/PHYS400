@@ -28,14 +28,14 @@ vector to the per-composition $(C_{11},C_{12})$ under a Huber loss
 \citep{tensorflow2015}. Predicting the stiffness constants rather than $\nu$,
 and using a robust loss, are the two lessons carried over from the composition
 surrogate of Section~\ref{sec:comp_nn}. The surrogate Huber loss falls from
-$0.29$ to $0.105$ over roughly $2{,}300$ training steps
+$0.29$ to $0.105$ over roughly $2300$ training steps
 (Figure~\ref{fig:nnip_loss}).
 
 \paragraph{Inverse optimization.}
 With the surrogate $f_\theta$ trained, the refit parameters are found by
 $\hat{\mathbf{p}} = \arg\min_{\mathbf{p}}\,\lVert f_\theta(\mathbf{p}) -
 \mathbf{y}^\star\rVert$, again under the Huber loss, with the Adam optimizer
-\citep{kingma2015adam} descending on the normalised parameter vector. The search
+\citep{kingma2015adam} descending on the normalized parameter vector. The search
 is clipped to $\pm2.5\sigma$ around the training mean so the optimizer cannot
 wander outside the region where the surrogate is trustworthy.
 
@@ -54,21 +54,25 @@ LAMMPS and comparing against the MD targets. The outcome is honest but mixed
 response that clears the stability filter; the other 35 collapse to an
 unphysical result ($C_{11}<C_{12}$ or $\nu$ driven onto the $0.5$ singularity)
 and are rejected. Across the 25 stable alloys the mean error is $39.3\,\%$ on
-$E$ and $19.6\,\%$ on $\nu$ (medians $36\,\%$ and $11\,\%$), and 8 fall within
-the $20\,\%$ tolerance on both. The stable, in-tolerance cases cluster in the
+$E$ and $19.6\,\%$ on $\nu$ (medians $36\,\%$ and $11\,\%$); 8 of the 25 clear
+the $20\,\%$ tolerance on $E$ and 17 on $\nu$, with the same 8 clearing both. The stable, in-tolerance cases cluster in the
 aluminium-rich region, while the collapses concentrate, as expected, in the
 non-aluminium chemistries where the Stage~2 sampling and the DFT reference are
 both thinnest. Inside the aluminium-rich region the refit holds up well, which
 the external validation of Section~\ref{sec:validation} quantifies. The gap on
 the 35 rejected alloys is the clearest signal of where the method needs more
 work, and it sets the agenda in Section~\ref{sec:future}.
+Figure~\ref{fig:nnip_timings} breaks down the wall-clock cost of one full
+cycle: the LAMMPS sampling dominates while the surrogate training and inverse
+optimization are comparatively cheap, which is the whole reason for fitting a
+surrogate rather than optimizing against LAMMPS directly.
 
 \begin{figure}[htbp]
 	\centering
 	\begin{minipage}[t]{0.48\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{figures/nnip_training_loss.png}
-		\caption{Surrogate Huber loss over $\sim$2{,}300 training steps, falling
+		\caption{Surrogate Huber loss over $\sim$2300 training steps, falling
 		from $0.29$ to $0.105$.}
 		\label{fig:nnip_loss}
 	\end{minipage}

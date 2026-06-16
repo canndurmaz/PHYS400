@@ -16,7 +16,7 @@ The refit currently moves all $84$ free cross-term parameters at once,
 which is more freedom than the elastic targets can constrain. The plan is to
 restrict the search to the single-element-anchored cross-terms that actually
 matter, ranked by a Sobol sensitivity analysis, which cuts the active
-parameter count to a tractable few. The Born--Cauchy stability conditions,
+parameter count to a tractable few. The Born stability conditions,
 applied as a hard filter only at the end now, should instead be baked into the
 training loss as a penalty, so the surrogate learns to avoid unstable regions
 rather than being rejected after the fact. The sampling base would also grow,
