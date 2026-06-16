@@ -2,7 +2,7 @@
 \label{sec:validation}
 
 The internal checks so far compare the surrogates against the project's own MD
-output. The real test is experiment. Both the composition surrogate of
+output. A stronger test is comparison against experiment. Both the composition surrogate of
 Section~\ref{sec:comp_nn} and the refit MEAM potential of
 Section~\ref{sec:nnip} were run on 42 named alloys whose elements the merged
 basis covers, and the predicted $(E,\nu)$ were compared against published
@@ -36,7 +36,7 @@ by AA series. The composition NN holds between $1.3$ and $3.8\,\%$ on $E$
 across the 2xxx, 5xxx, 6xxx, and 7xxx series, and the refit MEAM stays under
 $10\,\%$ across all four. For the 7xxx series, which includes the Al~7075 case
 used as a running example, the NN lands at $2.8\,\%$ and the MEAM at $9.3\,\%$.
-The takeaway is consistent with the rest of the report: within the
+This is consistent with the rest of the report: within the
 aluminium-rich region the pipeline produces a potential that matches
 experiment to within a few percent, and the accuracy falls off only once the
 composition leaves that region.
@@ -63,7 +63,7 @@ or beats the surrogate on $E$: 6061 comes in at $3.1\,\%$ for MEAM against
 $3.8\,\%$ for the NN, because its dilute Al--Mg--Si chemistry sits closest to
 the well-covered single-element aluminium reference.
 
-The Poisson-ratio columns tell a complementary story. The surrogate holds
+The Poisson-ratio columns show a different pattern. The surrogate holds
 $\nu$ between $2.2$ and $5.4\,\%$ across every grade, while the MEAM error
 swings from $0.1\,\%$ on 2017 to $7.2\,\%$ on 5083. Both models sit slightly
 high on $\nu$, near $0.34$ to $0.35$ against the datasheet $0.33$. For

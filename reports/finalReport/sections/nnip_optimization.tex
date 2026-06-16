@@ -49,7 +49,7 @@ regions the surrogate is least sure about.
 
 \paragraph{Results.}
 The refit potential was validated on 60 held-out alloys by re-running them in
-LAMMPS and comparing against the MD targets. The outcome is honest but mixed
+LAMMPS and comparing against the MD targets. The outcome is mixed
 (Figure~\ref{fig:nnip_errors}). Of the 60, 25 return a physical elastic
 response that clears the stability filter; the other 35 collapse to an
 unphysical result ($C_{11}<C_{12}$ or $\nu$ driven onto the $0.5$ singularity)
@@ -59,9 +59,9 @@ the $20\,\%$ tolerance on $E$ and 17 on $\nu$, with the same 8 clearing both. Th
 aluminium-rich region, while the collapses concentrate, as expected, in the
 non-aluminium chemistries where the Stage~2 sampling and the DFT reference are
 both thinnest. Inside the aluminium-rich region the refit holds up well, which
-the external validation of Section~\ref{sec:validation} quantifies. The gap on
-the 35 rejected alloys is the clearest signal of where the method needs more
-work, and it sets the agenda in Section~\ref{sec:future}.
+the external validation of Section~\ref{sec:validation} quantifies. The 35
+rejected alloys show most clearly where the method needs more work, and they
+set the agenda in Section~\ref{sec:future}.
 Figure~\ref{fig:nnip_timings} breaks down the wall-clock cost of one full
 cycle: the LAMMPS sampling dominates while the surrogate training and inverse
 optimization are comparatively cheap, which is the whole reason for fitting a
@@ -94,7 +94,6 @@ surrogate rather than optimizing against LAMMPS directly.
 	\includegraphics[width=0.7\textwidth]{figures/nnip_stage_timings.png}
 	\caption{Per-stage wall-clock time for one full Stage~5b cycle (log scale).
 	The LAMMPS sampling dominates; the surrogate training and inverse
-	optimization are comparatively cheap, which is exactly why the surrogate is
-	worth building.}
+	optimization are comparatively cheap.}
 	\label{fig:nnip_timings}
 \end{figure}
