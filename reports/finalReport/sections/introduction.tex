@@ -12,10 +12,10 @@ Molecular dynamics is the natural candidate for that route, but an MD
 prediction is only as good as the interatomic potential behind it.
 
 \subsection{Elastic Constants and Engineering Design}
-A part fails or survives based on two numbers. Young's modulus $E=\sigma/\varepsilon$
+A part is designed based on two numbers. Young's modulus $E=\sigma/\varepsilon$
 fixes how much it deflects under load, and Poisson's ratio
 $\nu=-\varepsilon_\mathrm{lat}/\varepsilon_\mathrm{axial}$ fixes how much it
-contracts sideways while it does. For a cubic crystal both reduce to the two
+contracts sideways while it elongates. For a cubic crystal both reduce to the two
 independent stiffness constants $C_{11}$ and $C_{12}$, which is why this work
 targets those constants directly rather than $E$ and $\nu$. The same pair
 propagates everywhere downstream: a beam deflects as $1/E$, a column buckles
@@ -78,7 +78,7 @@ define $E$ and $\nu$ and writes the cubic-crystal reduction out explicitly.
 Table~\ref{tab:applications} gives a sense of the range these constants span
 across real structural materials, from a soft magnesium casting alloy near
 $45$\,GPa to nickel and steel near $200$\,GPa. Aluminium alloys, the design
-target of this project, sit near $71$\,GPa with $\nu\approx0.33$.
+target of this project, sit near $70$\,GPa with $\nu\approx0.30$.
 
 \begin{table}[htbp]
 	\centering
@@ -99,7 +99,7 @@ target of this project, sit near $71$\,GPa with $\nu\approx0.33$.
 	\end{tabular}
 \end{table}
 
-\subsection{Interatomic Potentials and Density Functional Theory}
+\subsection{Physics Background: Interatomic Potentials and Density Functional Theory}
 An interatomic potential is a closed-form approximation of the many-body
 potential energy $U(\{\mathbf{r}_i\})$, from which the forces follow as
 $\mathbf{F}_i=-\nabla_i U$. The forms used in practice grew more capable over
@@ -114,16 +114,16 @@ mixed covalent-metallic bonding of silicon. That breadth, plus its analytic
 and interpretable parameters, is why this project builds on MEAM rather than a
 black-box alternative.
 
-The reference data that the MEAM parameters are fit against comes from density
+The reference data that the MEAM parameters are fit against in this project will come from density
 functional theory. DFT solves the Kohn--Sham equations \citep{kohn1965} for the
 electronic ground state, here in a plane-wave plus pseudopotential basis using
-Quantum Espresso \citep{giannozzi2009}. From it the project takes the cohesive
+Quantum Espresso \citep{giannozzi2009}. From the DFT, the project takes the cohesive
 energy $E_\mathrm{coh}$, the equilibrium lattice constant $a_0$ and bulk
 modulus $B$, the single-crystal elastic constants $C_{11}$ and $C_{12}$, and
 the binary formation energies $E_\mathrm{form}(i,j)$ that seed the cross-terms.
 The two methods are complementary. DFT is accurate but caps out near $10^3$
 atoms, while MEAM-driven MD is empirical but scales past $10^6$ atoms, so DFT
-supplies the small, trustworthy reference set against which the cheap potential
+supplies the small, trustworthy reference set against which the computationally cheap potential
 is calibrated.
 
 \subsection{The Cross-Interaction Problem}

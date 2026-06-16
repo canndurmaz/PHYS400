@@ -73,10 +73,10 @@ Figure~\ref{fig:aux_history}.
 \end{figure}
 
 \paragraph{Interactive predictor.}
-The surrogate is shipped as a portable application image with a small Flask
+The surrogate is shipped as a portable application with a small Flask
 front end, so a composition can be entered and scored without touching the
 training code (Figure~\ref{fig:aux_app}). Entering a composition on the
-12-element simplex returns the predicted $C_{11}$, $C_{12}$, $E$, and $\nu$,
+12-element space returns the predicted $C_{11}$, $C_{12}$, $E$, and $\nu$,
 and the app surfaces the model's own statistics next to each one: per-target
 MAE, RMSE, $R^2$, Pearson $r$, bias, and the 95th-percentile absolute error
 from the held-out split. Because the network is a five-seed ensemble, it also

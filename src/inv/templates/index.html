@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inverse Alloy Design — Target (E, ν) → Composition</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='3' fill='%237fd1b9'/></svg>">
+  <script id="cloud-data" type="application/json">{{ cloud|tojson if cloud else '[]' }}</script>
+  <script id="metrics-data" type="application/json">{{ metrics|tojson if metrics else '{}' }}</script>
+</head>
+<body>
+
+  <div class="grain" aria-hidden="true"></div>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div class="brand__text">
+        <span class="brand__name">PHYS&middot;400 / Inverse Alloy Design</span>
+        <span class="brand__sub">Target (E, &nu;) &rarr; Composition</span>
+      </div>
+    </div>
+    <div class="topbar__meta">
+      <span class="meta__pill"><span class="dot"></span>MODEL READY</span>
+      <span class="meta__build">build&nbsp;·&nbsp;(C<sub>11</sub>,C<sub>12</sub>)&rarr;32&rarr;20&rarr;12 &middot; cycle-loss</span>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Toggle colour theme" title="Toggle theme">
+        <span class="theme-toggle__opt" data-th="dark" aria-hidden="true">
+          <svg viewBox="0 0 12 12" width="11" height="11"><path d="M9.5 7.5A4 4 0 0 1 4.5 2.5 4 4 0 1 0 9.5 7.5z" fill="currentColor"/></svg>
+        </span>
+        <span class="theme-toggle__opt" data-th="light" aria-hidden="true">
+          <svg viewBox="0 0 12 12" width="11" height="11">
+            <circle cx="6" cy="6" r="2.2" fill="currentColor"/>
+            <g stroke="currentColor" stroke-width="1" stroke-linecap="round">
+              <line x1="6" y1="1.2" x2="6" y2="2.6"/><line x1="6" y1="9.4" x2="6" y2="10.8"/>
+              <line x1="1.2" y1="6" x2="2.6" y2="6"/><line x1="9.4" y1="6" x2="10.8" y2="6"/>
+              <line x1="2.5" y1="2.5" x2="3.5" y2="3.5"/><line x1="8.5" y1="8.5" x2="9.5" y2="9.5"/>
+              <line x1="2.5" y1="9.5" x2="3.5" y2="8.5"/><line x1="8.5" y1="3.5" x2="9.5" y2="2.5"/>
+            </g>
+          </svg>
+        </span>
+        <span class="theme-toggle__thumb" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage">
+
+    <!-- ─── TARGET PANEL ──────────────────────────────────────────────── -->
+    <section class="panel panel--input" aria-labelledby="tgt-h">
+      <div class="panel__head">
+        <span class="panel__index">01</span>
+        <h2 id="tgt-h" class="panel__title"><em>Target&nbsp;properties</em></h2>
+        <span class="panel__hint">enter the elastic response you want</span>
+      </div>
+
+      <form id="suggest-form" class="panel__body" autocomplete="off" novalidate>
+
+        <div class="target">
+          <label class="target__field">
+            <span class="target__lbl">E <span class="target__unit">Young&rsquo;s modulus &middot; GPa</span></span>
+            <input class="target__input" type="number" id="in-E" name="E_GPa"
+                   min="1" max="400" step="1" inputmode="decimal" placeholder="70" required>
+          </label>
+          <label class="target__field">
+            <span class="target__lbl">&nu; <span class="target__unit">Poisson&rsquo;s ratio</span></span>
+            <input class="target__input" type="number" id="in-nu" name="nu"
+                   min="0.01" max="0.49" step="0.005" inputmode="decimal" placeholder="0.33" required>
+          </label>
+        </div>
+
+        <div class="preset">
+          <label for="preset-select" class="preset__lbl">target preset</label>
+          <select id="preset-select" class="preset__sel">
+            <option value="">— choose —</option>
+            <option value="al">Wrought Al (E≈70, ν≈0.33)</option>
+            <option value="stiff">Stiff &amp; light (E≈110, ν≈0.30)</option>
+            <option value="compliant">Compliant (E≈50, ν≈0.36)</option>
+          </select>
+        </div>
+
+        <!-- ── Element constraints ─────────────────────────────────────── -->
+        <div class="constraints">
+          <div class="constraints__head">
+            <span class="constraints__lbl">element constraints</span>
+            <span class="constraints__hint">click to cycle: free &rarr; require &rarr; forbid</span>
+          </div>
+          <div class="cstgrid" role="group" aria-label="Element constraints">
+            {% for el in elements %}
+            <button type="button" class="cst" data-el="{{ el }}" data-state="free"
+                    style="--i: {{ loop.index0 }}" aria-label="Constraint for {{ el }}">
+              <span class="cst__sym">{{ el }}</span>
+              <span class="cst__tag" data-tag></span>
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="actions">
+          <label class="toggle">
+            <input type="checkbox" id="refine-toggle" checked>
+            <span class="toggle__box"></span>
+            <span class="toggle__lbl">refine candidates <span class="hint">(local polish)</span></span>
+          </label>
+          <button class="btn-predict" id="btn-suggest" type="submit">
+            <span class="btn-predict__spin" aria-hidden="true"></span>
+            <span class="btn-predict__label">Suggest compositions</span>
+            <span class="btn-predict__kbd">&#9166;</span>
+          </button>
+          <button class="btn-clear" id="btn-clear" type="button">clear</button>
+        </div>
+
+        <div class="notice" id="notice" hidden></div>
+      </form>
+    </section>
+
+    <!-- ─── CANDIDATES PANEL ──────────────────────────────────────────── -->
+    <section class="panel panel--out" aria-labelledby="res-h">
+      <div class="panel__head">
+        <span class="panel__index">02</span>
+        <h2 id="res-h" class="panel__title"><em>Suggested&nbsp;alloys</em></h2>
+        <span class="panel__hint">
+          {% if metrics and metrics.val %}
+            <span class="cal-chip" title="Round-trip validation R² (target→comp→forward)">
+              <span class="cal-chip__lbl">CAL</span><span class="cal-chip__sep"></span>
+              n={{ metrics.n_total }} &middot;
+              R&sup2;<sub>E</sub>={{ '%.2f'|format(metrics.val.E_GPa.R2) }} &middot;
+              R&sup2;<sub>&nu;</sub>={{ '%.2f'|format(metrics.val.nu.R2) }}
+            </span>
+          {% else %}
+            inverse surrogate · forward-checked
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="panel__body">
+
+        <!-- Empty state -->
+        <div class="empty" id="empty-state">
+          <p class="empty__line1"><em>Awaiting a target.</em></p>
+          <p class="empty__line2">enter E and &nu; &middot; press <kbd>&#9166;</kbd> or <kbd>&#8984;&#9166;</kbd></p>
+        </div>
+
+        <div class="readout" id="readout" hidden>
+
+          <!-- Achievability strip -->
+          <div class="uncert-strip">
+            <span class="ood-pill" id="ach-pill" data-class="unknown">
+              <span class="ood-pill__dot"></span>
+              <span class="ood-pill__label" id="ach-label">—</span>
+              <span class="ood-pill__hint" id="ach-hint"></span>
+            </span>
+            <span class="ens-pill"><span class="ens-pill__lbl">evaluated</span>
+              <span class="ens-pill__val" id="n-eval">—</span></span>
+          </div>
+
+          <!-- Ashby map: target + candidate landings -->
+          <section class="viz viz--ashby" aria-labelledby="viz-ashby-h">
+            <header class="viz__head">
+              <span class="viz__index">A</span>
+              <h3 id="viz-ashby-h" class="viz__title"><em>Ashby map</em> &middot; (&nu;,&thinsp;E)</h3>
+              <span class="viz__hint">target &amp; where candidates land</span>
+            </header>
+            <div class="viz__body">
+              <svg class="ashby" viewBox="0 0 520 280" preserveAspectRatio="none" aria-hidden="true">
+                <g class="ashby__grid"   id="ashby-grid"></g>
+                <g class="ashby__cloud"  id="ashby-cloud"></g>
+                <g class="ashby__axes"   id="ashby-axes"></g>
+                <g class="ashby__marker" id="ashby-marker"></g>
+              </svg>
+              <div class="viz__caption">
+                <span><span class="dot dot--cloud"></span>training samples (n=<span id="ashby-n">0</span>)</span>
+                <span><span class="dot dot--mark"></span>target</span>
+                <span><span class="dot dot--cand"></span>candidates</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Candidate list -->
+          <div class="cands" id="cands"></div>
+
+          <details class="rawout">
+            <summary>raw response</summary>
+            <pre id="raw-json"></pre>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__row footer__row--top">
+      <span><code>(C<sub>11</sub>,C<sub>12</sub>) = f<sub>cubic</sub>(E, &nu;)</code></span>
+      <span><code>composition = inv-net(C<sub>11</sub>,C<sub>12</sub>)</code></span>
+      <span class="footer__r">PHYS&middot;400 &middot; Durmaz</span>
+    </div>
+    {% if metrics and metrics.val %}
+    <div class="footer__row footer__row--cal">
+      <span class="cal-label">ROUND-TRIP&nbsp;LEDGER</span>
+      <span>n<sub>total</sub>&nbsp;=&nbsp;{{ metrics.n_total }}</span>
+      <span>n<sub>val</sub>&nbsp;=&nbsp;{{ metrics.n_val }}</span>
+      <span>ens&nbsp;=&nbsp;{{ metrics.ensemble_size }}</span>
+      <span>MAPE&nbsp;E&nbsp;=&nbsp;{{ '%.2f'|format(metrics.val.E_GPa.MAPE) }}%</span>
+      <span>MAPE&nbsp;&nu;&nbsp;=&nbsp;{{ '%.2f'|format(metrics.val.nu.MAPE) }}%</span>
+    </div>
+    {% endif %}
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
