@@ -46,6 +46,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 RESULTS_JSON = REPO / "src" / "ML" / "results.json"
 NNIP = REPO / "src" / "NNIP"
+DFT_RESULTS_JSON = NNIP / "dft_results.json"
 FIG_DIR = HERE / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -296,12 +297,54 @@ def fig_nnip_parity(summary: dict) -> None:
     print(f"[nnip_parity] physical={len(phys)} collapsed={len(coll)}")
 
 
+def fig_formation_heatmap(D: dict) -> None:
+    """Poster copy of the DFT binary formation-energy heatmap.
+
+    Same data as ``src/stats/dft_stats.py``, but rendered with oversized,
+    bold in-cell numbers and large tick labels so the values stay readable
+    at arm's length on the A0 sheet (the report version uses 8 pt text).
+    """
+    els = list(D["elements"].keys())
+    n = len(els)
+    M = np.full((n, n), np.nan)
+    for k, v in D["binary_pairs"].items():
+        a, b = k.split("-")
+        if a in els and b in els:
+            i, j = els.index(a), els.index(b)
+            M[i, j] = v["E_form"]
+            M[j, i] = v["E_form"]
+
+    # Wide, non-square cells: the .2f labels are 5 chars, so square cells make
+    # adjacent numbers touch. Stretching the cells horizontally (aspect="auto"
+    # on a wide canvas) gives each value clear horizontal room at a large font.
+    fig, ax = plt.subplots(figsize=(15.5, 9.0))
+    vmax = float(np.nanmax(np.abs(M))) if np.isfinite(M).any() else 1.0
+    im = ax.imshow(M, cmap="RdBu_r", vmin=-vmax, vmax=vmax, aspect="auto")
+    ax.set_xticks(range(n)); ax.set_xticklabels(els, fontsize=23, fontweight="bold")
+    ax.set_yticks(range(n)); ax.set_yticklabels(els, fontsize=23, fontweight="bold")
+    for i in range(n):
+        for j in range(n):
+            if np.isfinite(M[i, j]):
+                ax.text(j, i, f"{M[i,j]:+.2f}", ha="center", va="center",
+                        fontsize=18, fontweight="bold",
+                        color="black" if abs(M[i, j]) < vmax * 0.55 else "white")
+    ax.set_title(r"DFT binary formation energy $E_\mathrm{form}$ (eV/atom)",
+                 fontsize=23, fontweight="bold")
+    cb = fig.colorbar(im, ax=ax, fraction=0.040, pad=0.03)
+    cb.ax.tick_params(labelsize=16)
+    fig.tight_layout()
+    fig.savefig(FIG_DIR / "formation_energy_heatmap.png")
+    plt.close(fig)
+    print(f"[formation_heatmap] {n} elements, {len(D['binary_pairs'])} pairs")
+
+
 def main() -> None:
     R = _load(RESULTS_JSON)
     print(f"[make_figures] {len(R)} records from {RESULTS_JSON.name}")
     fig_e_nu_scatter(R)
     fig_element_frequency(R)
     fig_dataset_distributions(R)
+    fig_formation_heatmap(_load(DFT_RESULTS_JSON))
     fig_training_loss(_load(NNIP / "nn_diagnostics.json"))
     fig_nnip_parity(_load(NNIP / "pipeline_summary.json"))
     print(f"[make_figures] wrote figures into {FIG_DIR}")
