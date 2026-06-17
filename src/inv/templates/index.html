@@ -110,6 +110,25 @@
           </div>
         </div>
 
+        <!-- ── Shape constraints (Al-dominant, element count) ──────────── -->
+        <div class="shape">
+          <label class="toggle shape__al">
+            <input type="checkbox" id="al-dominant-toggle">
+            <span class="toggle__box"></span>
+            <span class="toggle__lbl">Al-dominant <span class="hint">Al &ge;</span></span>
+          </label>
+          <div class="shape__pct">
+            <input class="shape__num" type="number" id="al-min" min="50" max="95"
+                   step="5" value="50" aria-label="Minimum Al percentage">
+            <span class="shape__unit">%</span>
+          </div>
+          <label class="shape__count">
+            <span class="shape__lbl">max&nbsp;elements</span>
+            <input class="shape__num" type="number" id="max-el" min="1" max="12"
+                   step="1" placeholder="any" aria-label="Maximum number of elements">
+          </label>
+        </div>
+
         <div class="actions">
           <label class="toggle">
             <input type="checkbox" id="refine-toggle" checked>

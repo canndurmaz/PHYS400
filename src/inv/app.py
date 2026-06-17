@@ -123,6 +123,33 @@ def api_suggest():
         return jsonify(error=f"Element(s) both required and forbidden: "
                              f"{', '.join(sorted(overlap))}."), 400
 
+    # Shape constraints -------------------------------------------------------
+    max_elements = payload.get("max_elements")
+    if max_elements in (None, "", 0, "0"):
+        max_elements = None
+    else:
+        try:
+            max_elements = int(max_elements)
+        except (TypeError, ValueError):
+            return jsonify(error="max_elements must be an integer."), 400
+        if max_elements < 1:
+            return jsonify(error="max_elements must be >= 1."), 400
+
+    al_dominant = bool(payload.get("al_dominant", False))
+    try:
+        al_min = float(payload.get("al_min", 0.5))
+    except (TypeError, ValueError):
+        al_min = 0.5
+    if not (0.0 < al_min < 1.0):
+        al_min = 0.5
+
+    if al_dominant and "Al" in forbid:
+        return jsonify(error="Al-dominant conflicts with forbidding Al."), 400
+    min_needed = len(set(require) | ({"Al"} if al_dominant else set()))
+    if max_elements is not None and max_elements < min_needed:
+        return jsonify(error=f"max_elements={max_elements} is too small for "
+                             f"{min_needed} pinned element(s)."), 400
+
     try:
         k = int(payload.get("k", 5))
     except (TypeError, ValueError):
@@ -132,7 +159,9 @@ def api_suggest():
 
     try:
         result = suggest(target_E, target_nu, forbid=forbid, require=require,
-                         k=k, refine_iters=40 if refine else 0)
+                         k=k, refine_iters=40 if refine else 0,
+                         max_elements=max_elements, al_dominant=al_dominant,
+                         al_min=al_min)
     except FileNotFoundError as e:
         return jsonify(error=str(e)), 503
 

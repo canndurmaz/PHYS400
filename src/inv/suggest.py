@@ -54,6 +54,9 @@ _REQUIRE_FLOOR = 0.02
 # Two candidates whose composition vectors are within this L1 distance are
 # considered the same alloy (keep the more accurate one).
 _DEDUP_L1 = 0.04
+# "Al-dominant" means Al is a true majority; this is the default floor.
+_AL = "Al"
+_AL_MIN_DEFAULT = 0.5
 
 
 # ── Inverse-ensemble loading ─────────────────────────────────────────────────
@@ -101,16 +104,60 @@ def _vec_to_comp(vec: np.ndarray) -> dict[str, float]:
     return {el: round(f / tot, 4) for el, f in keep.items()}
 
 
+def _enforce_al_floor(comp: Mapping[str, float], al_min: float) -> dict[str, float]:
+    """Scale a *normalised* comp so Al >= ``al_min``, shrinking the rest
+    proportionally so the fractions still sum to 1."""
+    al = comp.get(_AL, 0.0)
+    if al >= al_min:
+        return {el: float(f) for el, f in comp.items()}
+    others = {el: float(f) for el, f in comp.items() if el != _AL and f > 0}
+    tot = sum(others.values())
+    if tot <= 0:                       # nothing else to balance against
+        return {_AL: 1.0}
+    scale = (1.0 - al_min) / tot
+    out = {_AL: al_min}
+    for el, f in others.items():
+        out[el] = f * scale
+    return out
+
+
+def _cap_elements(comp: Mapping[str, float], protected: set,
+                  max_elements: int) -> dict[str, float]:
+    """Keep only the ``max_elements`` largest components; ``protected``
+    elements always survive (required + Al-dominant), the rest compete by mass."""
+    if len(comp) <= max_elements:
+        return dict(comp)
+    keep = {el for el in protected if el in comp}
+    others = sorted((el for el in comp if el not in keep),
+                    key=lambda el: comp[el], reverse=True)
+    slots = max(0, max_elements - len(keep))
+    keep |= set(others[:slots])
+    return {el: f for el, f in comp.items() if el in keep}
+
+
 def _apply_constraints(comp: Mapping[str, float],
-                       forbid: Sequence[str], require: Sequence[str]) -> dict[str, float]:
-    out = {el: float(f) for el, f in comp.items() if el not in forbid}
+                       forbid: Sequence[str], require: Sequence[str],
+                       max_elements: int | None = None,
+                       al_min: float | None = None) -> dict[str, float]:
+    out = {el: float(f) for el, f in comp.items() if el not in forbid and f > 0}
     for el in require:
         if out.get(el, 0.0) < _REQUIRE_FLOOR:
             out[el] = _REQUIRE_FLOOR
+    al_on = al_min is not None and _AL not in forbid
+    if al_on and out.get(_AL, 0.0) <= 0:
+        out[_AL] = _REQUIRE_FLOOR      # seed Al so it survives the cap below
+    if max_elements is not None:
+        protected = set(require) | ({_AL} if al_on else set())
+        out = _cap_elements(out, protected, max_elements)
     tot = sum(out.values())
     if tot <= 0:
-        return {require[0]: 1.0} if require else {}
-    return {el: f / tot for el, f in out.items()}
+        if require:
+            return {require[0]: 1.0}
+        return {_AL: 1.0} if al_on else {}
+    out = {el: f / tot for el, f in out.items()}
+    if al_on:
+        out = _enforce_al_floor(out, al_min)
+    return out
 
 
 def _comp_key(comp: Mapping[str, float]) -> tuple:
@@ -154,8 +201,14 @@ def _load_corpus() -> dict:
 
 def _retrieval_candidates(target_E: float, target_nu: float,
                           forbid: Sequence[str], require: Sequence[str],
-                          n: int) -> list[dict[str, float]]:
-    """Nearest real training alloys in normalised (E, nu) space."""
+                          n: int, max_elements: int | None = None,
+                          al_min: float | None = None) -> list[dict[str, float]]:
+    """Nearest real training alloys in normalised (E, nu) space.
+
+    Real alloys are returned *as-is* (never reshaped onto the Al-floor or
+    element cap -- that would break the physicality guarantee), so the
+    Al-dominant / max-element constraints act as a *filter* here, not a
+    transform: an alloy is only retrieved if it already satisfies them."""
     corpus = _load_corpus()
     if corpus["E"].size == 0:
         return []
@@ -174,7 +227,18 @@ def _retrieval_candidates(target_E: float, target_nu: float,
         tot = sum(c.values())
         if tot <= 0:
             continue
-        out.append({el: v / tot for el, v in c.items() if v > 0})
+        # Drop sub-trace noise and renormalise, matching how net proposals are
+        # cleaned -- so the reported element count is exact.
+        kept = {el: v / tot for el, v in c.items() if v / tot >= _TRACE_FLOOR}
+        t2 = sum(kept.values())
+        if t2 <= 0:
+            continue
+        norm = {el: v / t2 for el, v in kept.items()}
+        if max_elements is not None and len(norm) > max_elements:
+            continue
+        if al_min is not None and norm.get(_AL, 0.0) < al_min:
+            continue
+        out.append(norm)
         if len(out) >= n:
             break
     return out
@@ -215,7 +279,8 @@ def _score(comp: Mapping[str, float], target_E: float, target_nu: float) -> dict
 
 def _refine(comp: Mapping[str, float], target_E: float, target_nu: float,
             forbid: Sequence[str], require: Sequence[str],
-            iters: int) -> dict:
+            iters: int, max_elements: int | None = None,
+            al_min: float | None = None) -> dict:
     """Gradient-free hill-climb: shift mass between two elements, keep if the
     forward (E, nu) error drops. Cheap polish on a net proposal."""
     best = _score(comp, target_E, target_nu)
@@ -238,7 +303,7 @@ def _refine(comp: Mapping[str, float], target_E: float, target_nu: float,
         trial[donor] = cur[donor] - step
         trial[recv] = cur.get(recv, 0.0) + step
         trial = {e: f for e, f in trial.items() if f > 1e-6}
-        trial = _apply_constraints(trial, forbid, require)
+        trial = _apply_constraints(trial, forbid, require, max_elements, al_min)
         cand = _score(trial, target_E, target_nu)
         if cand["score"] < cur_score:
             cur, cur_score, best = trial, cand["score"], cand
@@ -249,10 +314,26 @@ def _refine(comp: Mapping[str, float], target_E: float, target_nu: float,
 def suggest(target_E: float, target_nu: float,
             forbid: Sequence[str] | None = None,
             require: Sequence[str] | None = None,
-            k: int = 5, refine_iters: int = 40) -> dict:
-    """Return ranked candidate compositions for a target (E, nu)."""
+            k: int = 5, refine_iters: int = 40,
+            max_elements: int | None = None,
+            al_dominant: bool = False,
+            al_min: float = _AL_MIN_DEFAULT) -> dict:
+    """Return ranked candidate compositions for a target (E, nu).
+
+    Shape constraints (on top of forbid/require):
+      * ``max_elements`` -- cap each candidate to its N largest components.
+      * ``al_dominant``  -- force Al to at least ``al_min`` (a true majority),
+        unless Al is forbidden.
+    """
     forbid = [e for e in (forbid or []) if e in ALL_ELEMENTS]
     require = [e for e in (require or []) if e in ALL_ELEMENTS and e not in forbid]
+    if max_elements is not None:
+        max_elements = max(1, int(max_elements))
+    al_floor = None
+    if al_dominant and _AL not in forbid:
+        al_floor = float(al_min)
+        if not (0.0 < al_floor < 1.0):
+            al_floor = _AL_MIN_DEFAULT
 
     target = _e_nu_to_cij_scaled(target_E, target_nu)
 
@@ -260,18 +341,21 @@ def suggest(target_E: float, target_nu: float,
     raw: list[dict[str, float]] = []
     for m in _get_inv_models():
         vec = m(target, training=False).numpy()[0]
-        comp = _apply_constraints(_vec_to_comp(vec), forbid, require)
+        comp = _apply_constraints(_vec_to_comp(vec), forbid, require,
+                                  max_elements, al_floor)
         if comp:
             raw.append(comp)
 
     # 2) retrieval proposals from the real training corpus
-    retrieved = _retrieval_candidates(target_E, target_nu, forbid, require, n=k)
+    retrieved = _retrieval_candidates(target_E, target_nu, forbid, require,
+                                      n=k, max_elements=max_elements, al_min=al_floor)
 
     # 3) score everything (refine only the net proposals -- retrieved alloys
     #    are already real and shouldn't be perturbed off the data manifold)
     scored: list[dict] = []
     for comp in raw:
-        r = _refine(comp, target_E, target_nu, forbid, require, refine_iters)
+        r = _refine(comp, target_E, target_nu, forbid, require, refine_iters,
+                    max_elements, al_floor)
         r["source"] = "inverse-net"
         scored.append(r)
     for comp in retrieved:
@@ -295,7 +379,10 @@ def suggest(target_E: float, target_nu: float,
 
     return {
         "target": {"E_GPa": target_E, "nu": target_nu},
-        "constraints": {"forbid": forbid, "require": require},
+        "constraints": {"forbid": forbid, "require": require,
+                        "max_elements": max_elements,
+                        "al_dominant": al_floor is not None,
+                        "al_min": al_floor},
         "achievability": _achievability(target_E, target_nu),
         "candidates": ranked,
         "n_evaluated": len(scored),
@@ -304,19 +391,36 @@ def suggest(target_E: float, target_nu: float,
 
 def _cli():
     if len(sys.argv) < 3:
-        print("Usage: python suggest.py <E_GPa> <nu> [forbid=El,..] [require=El,..]")
+        print("Usage: python suggest.py <E_GPa> <nu> [forbid=El,..] [require=El,..] "
+              "[max_elements=N] [al_dominant[=0.5]]")
         return
     E, nu = float(sys.argv[1]), float(sys.argv[2])
     forbid, require = [], []
+    max_elements, al_dominant, al_min = None, False, _AL_MIN_DEFAULT
     for tok in sys.argv[3:]:
         if tok.startswith("forbid="):
             forbid = tok.split("=", 1)[1].split(",")
         elif tok.startswith("require="):
             require = tok.split("=", 1)[1].split(",")
-    res = suggest(E, nu, forbid=forbid, require=require)
+        elif tok.startswith("max_elements="):
+            max_elements = int(tok.split("=", 1)[1])
+        elif tok == "al_dominant" or tok.startswith("al_dominant="):
+            al_dominant = True
+            if "=" in tok:
+                al_min = float(tok.split("=", 1)[1])
+    res = suggest(E, nu, forbid=forbid, require=require,
+                  max_elements=max_elements, al_dominant=al_dominant, al_min=al_min)
     a = res["achievability"]
+    c = res["constraints"]
+    shape = []
+    if c["max_elements"] is not None:
+        shape.append(f"<={c['max_elements']} elements")
+    if c["al_dominant"]:
+        shape.append(f"Al>={c['al_min']:.0%}")
     print("\n" + "=" * 60)
     print(f"  Target: E = {E:.1f} GPa, nu = {nu:.3f}")
+    if shape:
+        print(f"  Shape: {', '.join(shape)}")
     print(f"  Achievability: {a['class']} (nearest training dist={a['nearest_dist']})")
     print("=" * 60)
     for i, c in enumerate(res["candidates"], 1):

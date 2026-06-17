@@ -25,6 +25,9 @@ const presetSel = document.getElementById('preset-select');
 const inE       = document.getElementById('in-E');
 const inNu      = document.getElementById('in-nu');
 const refineTog = document.getElementById('refine-toggle');
+const alDomTog  = document.getElementById('al-dominant-toggle');
+const alMinEl   = document.getElementById('al-min');
+const maxElEl   = document.getElementById('max-el');
 const noticeEl  = document.getElementById('notice');
 const empty     = document.getElementById('empty-state');
 const readout   = document.getElementById('readout');
@@ -66,6 +69,7 @@ btnClear.addEventListener('click', () => {
     c.dataset.state = 'free';
     c.querySelector('[data-tag]').textContent = '';
   });
+  alDomTog.checked = false; alMinEl.value = 50; maxElEl.value = '';
   hideNotice();
   empty.hidden = false; readout.hidden = true;
   inE.focus();
@@ -93,12 +97,24 @@ form.addEventListener('submit', async (e) => {
   if (!Number.isFinite(nu) || nu <= 0 || nu >= 0.5) { showNotice('ν must be in (0, 0.5).', 'err'); return; }
 
   const { forbid, require } = collectConstraints();
+  if (alDomTog.checked && forbid.includes('Al')) {
+    showNotice('Al-dominant conflicts with forbidding Al.', 'err'); return;
+  }
+  const maxEl = parseInt(maxElEl.value, 10);
+  const alMin = parseFloat(alMinEl.value);
+  const payload = {
+    E_GPa: E, nu, forbid, require, refine: refineTog.checked, k: 6,
+    al_dominant: alDomTog.checked,
+    al_min: Number.isFinite(alMin) ? alMin / 100 : 0.5,
+  };
+  if (Number.isFinite(maxEl) && maxEl >= 1) payload.max_elements = maxEl;
+
   btn.classList.add('is-loading'); btn.disabled = true;
   try {
     const r = await fetch('/api/suggest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ E_GPa: E, nu, forbid, require, refine: refineTog.checked, k: 6 }),
+      body: JSON.stringify(payload),
     });
     const data = await r.json();
     if (!r.ok) { showNotice(data.error || `Server returned ${r.status}.`, 'err'); return; }
