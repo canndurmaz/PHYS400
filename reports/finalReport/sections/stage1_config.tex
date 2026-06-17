@@ -4,8 +4,8 @@
 The configuration generator produces randomized alloy compositions over the
 twelve elements covered by at least one of the available MEAM library files:
 Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, and Zn. Each configuration is a
-JSON object holding the species composition (mass fractions that sum to unity
-at $10^{-4}$ precision), the simulation box edge in metres, the target
+single JSON object. It holds the species composition (mass fractions that sum
+to unity at $10^{-4}$ precision), the simulation box edge in metres, the target
 temperature, and the requested number of MD steps. A representative example:
 
 \begin{verbatim}
@@ -18,9 +18,9 @@ temperature, and the requested number of MD steps. A representative example:
 \end{verbatim}
 
 To push the dataset towards practically interesting alloys, aluminium is
-forced to be the majority species whenever it appears in a draw. A total of
-$7879$ configuration records were generated, of which $7815$ survive the
-Stage~2 physicality filter described in Section~\ref{sec:stage2}. That
+forced to be the majority species whenever it appears in a draw. In total,
+$7879$ configuration records were generated. Of those, $7815$ survive the
+Stage~2 physicality filter described in Section~\ref{sec:stage2}, and that
 surviving set is the corpus quoted throughout this report. The
 element-occurrence counts are shown in Figure~\ref{fig:element_freq}:
 aluminium appears in about $45\,\%$ of records, consistent with the

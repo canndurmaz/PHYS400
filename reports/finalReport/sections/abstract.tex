@@ -13,11 +13,10 @@ Young's modulus $E$ and Poisson's ratio $\nu$, (iii) density functional
 theory (DFT) reference data computed in Quantum Espresso through the Atomic
 Simulation Environment, (iv) DFT-driven MEAM initialization that merges the
 existing libraries and fills the missing cross-terms, and (v) a neural-network
-surrogate of the MEAM-to-$(C_{11},C_{12})$ map that is inverted with the
+surrogate of the MEAM-to-$(C_{11},C_{12})$ map that is fed into the
 Adam optimizer to refit the cross-interaction parameters. A separate composition-only
 surrogate that maps element fractions straight to $(C_{11},C_{12})$ runs
-alongside Stage~2 as a fast consistency check on the LAMMPS dataset and as a
-ready predictor for new compositions. All five stages are running end to end. On
+alongside Stage~2 as a fast consistency check on the LAMMPS dataset and as a predictor for new compositions. On
 42 named alloys with experimental data from ASM and MatWeb, both surrogates
 reproduce the aluminium Young's modulus to within a few percent (composition
 NN $2.3\,\%$, refitted MEAM $7.4\,\%$); accuracy degrades once the

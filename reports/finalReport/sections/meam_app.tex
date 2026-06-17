@@ -6,11 +6,10 @@ LAMMPS-backed web app that runs the elastic-property protocol of
 Section~\ref{sec:stage2} against it on demand. A composition and a few box and
 run-length knobs go in, a real strain sweep runs, and the app reports
 $C_{11}$, $C_{12}$, the derived $E$ and $\nu$, and whether the result passes
-the Born stability check. Each run is keyed by a
-hash of its inputs and cached, and the cache is invalidated whenever the MEAM
-file changes, so re-running a composition after a refit recomputes rather than
-returning a stale number. Figure~\ref{fig:meam_app} shows the interface on a
-pure-aluminium run.
+the Born stability check. Each run is cached, keyed by a hash of its inputs.
+The cache is invalidated whenever the MEAM file changes, so re-running a
+composition after a refit recomputes rather than returning a stale number.
+Figure~\ref{fig:meam_app} shows the interface on a pure-aluminium run.
 
 \begin{figure}[htbp]
 	\centering

@@ -4,9 +4,8 @@
 \subsection{Pipeline Architecture}
 The project is implemented as a set of Python modules chained into five
 sequential stages. Each stage is also exposed as a standalone entry point, so
-any part of the workflow can be re-run on its own. All five stages now run end
-to end; the completion status is summarized in
-Table~\ref{tab:pipeline_status}.
+any part of the workflow can be re-run on its own. All five now run end to end.
+Table~\ref{tab:pipeline_status} summarizes their status.
 
 \begin{table}[htbp]
 	\centering
@@ -28,15 +27,15 @@ Table~\ref{tab:pipeline_status}.
 \end{table}
 
 Figure~\ref{fig:pipeline} shows the data flow. Stage~1 emits JSON
-descriptions of alloy configurations. Stage~2 simulates them in LAMMPS and
-writes the measured elastic constants to a shared results database. Stage~3
+descriptions of alloy configurations, and Stage~2 simulates them in LAMMPS,
+writing the measured elastic constants to a shared results database. Stage~3
 produces DFT reference values for every selected element and binary pair.
-Stage~4 reads both databases and emits a merged, DFT-initialized MEAM
-library. Stage~5b then consumes that library together with the
-LAMMPS-evaluated $(C_{11},C_{12})$ targets and produces a refitted parameter
-set. The composition-only surrogate (dashed in Figure~\ref{fig:pipeline})
-reads the Stage~2 database as a consistency check; it is described in
-Section~\ref{sec:comp_nn}.
+Stage~4 reads both databases and emits a merged, DFT-initialized MEAM library.
+From there, Stage~5b consumes that library together with the LAMMPS-evaluated
+$(C_{11},C_{12})$ targets and produces a refitted parameter set. One branch
+stays off to the side. The composition-only surrogate (dashed in
+Figure~\ref{fig:pipeline}) reads the Stage~2 database as a consistency check,
+and is described in Section~\ref{sec:comp_nn}.
 
 \begin{figure}[htbp]
 	\centering

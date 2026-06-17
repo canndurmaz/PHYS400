@@ -14,7 +14,7 @@ $\{$Al, Co, Cr, Cu, Fe, Mg, Mn, Mo, Ni, Si, Ti, Zn$\}$. The network is a
 fully connected $12\to32\to20\to2$ MLP with ReLU activations, trained under a
 70/30 train/validation split with Adam over the $7839$ records that pass the
 $\nu<0.48$ cap (slightly more than the $7815$-record Stage~2 corpus of
-Section~\ref{sec:stage2}, which additionally drops $E\geq400$\,GPa). To get a usable uncertainty estimate,
+Section~\ref{sec:stage2}, which also drops $E\geq400$\,GPa). To get a usable uncertainty estimate,
 five copies are trained from different random seeds and combined as a deep
 ensemble \citep{lakshminarayanan2017}; the spread across the ensemble flags
 inputs the network is unsure about.
